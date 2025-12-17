@@ -1,0 +1,83 @@
+html,
+body {
+	padding: 8px;
+}
+
+:root {
+	/* MVP theme caps labels to 800px by default */
+	--width-card-wide: auto;
+}
+
+
+/* Prevent contents of buttons from being selectable */
+button img {
+	pointer-events: none;
+	user-select: none;
+}
+
+
+/* General stylings for sections */
+div.settings-section {
+	margin: 1em 0px 1em 0px;
+	padding: 10px 10px 10px 10px;
+	border-radius: 5px;
+}
+
+div.settings-section > div {
+	width: 100%;
+}
+
+
+/* Stylings for buttons section */
+.buttons-section {
+	width: fit-content;
+	float: right;
+}
+
+
+/* Spinner animation */
+.spinner-animation {
+	display: flex;
+	padding: 10px 10px 10px 10px;
+}
+
+.spinner {
+	width: 32px;
+	height: 32px;
+	border: 5px dotted var(--spinner-color);
+	border-radius: 50%;
+	border-top-color: var(--spinner-fill-color);
+	animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+
+/* Styles for confirmation dialogs */
+.confirmation-dialog label {	
+	text-align: center;
+}
+
+.confirmation-dialog * {	
+	justify-content: center;
+}
+
+
+/* Styles for labels */
+label {
+	font-weight: normal;
+	display: inline-block;
+}
+
+/* Styles for select boxes */
+select {
+	display: inline-block;
+}
+

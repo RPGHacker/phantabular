@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en-US" color-mode="user">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="stylesheet" href="../shared/shared-styles.css" />
+		<link rel="stylesheet" href="settings.css" />
+		<title>Settings - PhanTabular</title>
+		<link rel="icon" type="image/x-icon" href="../icons/phantabular-32.png">
+	</head>
+
+	<body>
+		<dialog id="confirmArchiveDeletionDialog" class="confirmation-dialog">
+			<form method="dialog">
+				<p>
+					<label>WARNING!<br/>This will delete this profile's entire tab archive (including tabs, sessions and categories). This action is irreversible. Are you sure you want to proceed?</label>
+				</p>
+				<div>
+					<button type="submit" data-action="confirm-archive-deletion" class="colorize-button colorize-red">Confirm Deletion</button>
+					<button type="reset" data-action="cancel-archive-deletion"  class="colorize-button" style="float: right;">Cancel</button>
+				</div>
+			</form>
+		</dialog>
+		
+		<dialog id="deletingArchiveDialog" class="confirmation-dialog">
+			<form method="dialog">
+				<p>
+					<label>Deletion in progress...</label>
+					
+				</p>
+				<div class="spinner-container">
+					<div class="spinner-animation">
+						<div class="spinner"></div>
+					</div>
+				</div>
+			</form>
+		</dialog>
+	
+		<div>
+			<div id="settings-root">
+				<h1>Settings</h1>
+				
+				<div id="archive-settings" class="settings-section colorize-section">
+					<h2>Archival settings:</h2>
+					<div><input type="checkbox" id="archiveHiddenTabsCheckbox" /><label for="archiveHiddenTabsCheckbox">Archive hidden tabs</label></div>
+					<div><input type="checkbox" id="archivePinnedTabsCheckbox" /><label for="archivePinnedTabsCheckbox">Archive pinned tabs</label></div>
+					<div><input type="checkbox" id="noDuplicateUrlsCheckbox" /><label for="noDuplicateUrlsCheckbox">No duplicates (when archiving a tab that already exists in the archive with an identical URL, that entry will be updated instead of creating a new one)</label></div>
+					<div><input type="checkbox" id="autoCloseCheckbox" /><label for="autoCloseCheckbox">Archiving a tab automatically closes it</label></div>
+					<div><input type="checkbox" id="archiveAllOnCloseCheckbox" /><label for="archiveAllOnCloseCheckbox">Closing a browser window automatically archives all tabs within it</label></div>
+				</div>
+				
+				<div id="open-settings" class="settings-section colorize-section">
+					<h2>Open settings:</h2>
+					<div><input type="checkbox" id="deleteTabsUponOpen" /><label for="deleteTabsUponOpen">Opening tabs from the archive automatically deletes them from it</label></div>
+					<div>
+						<label for="tabOpenPosition">Position of tabs after opening from the archive:</label>
+						<select id="tabOpenPosition" class="inline-option">
+							<option value="originalPosition" selected>Original position before archival (if possible)</option>
+							<option value="nextToActiveTab">Next to active tab</option>
+							<option value="endOfActiveWindow">At the end of the active window</option>
+						</select>
+					</div>
+					<div><input type="checkbox" id="confirmTabDeletionCheckbox" /><label for="confirmTabDeletionCheckbox">Show confirmation dialog when deleting individual tabs</label></div>
+				</div>
+				
+				<div class="buttons-section">
+					<button data-action="reset-settings" class="colorize-button">Reset Settings to Default</button>
+					<button data-action="delete-archive" class="colorize-button colorize-red">Delete Archive</button>
+				</div>
+			</div>
+			<script type="module" src="settings.js"></script>
+		</div>
+	</body>
+</html>

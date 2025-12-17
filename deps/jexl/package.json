@@ -1,0 +1,120 @@
+{
+  "name": "@pawel-up/jexl",
+  "version": "4.4.2",
+  "description": "Javascript Expression Language: Powerful context-based expression parser and evaluator",
+  "type": "module",
+  "main": "./lib/index.js",
+  "module": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "import": "./lib/index.js"
+    },
+    "./package.json": "./package.json",
+    "./math.js": "./lib/definitions/math.js",
+    "./string.js": "./lib/definitions/string.js",
+    "./date.js": "./lib/definitions/date.js",
+    "./array.js": "./lib/definitions/array.js",
+    "./operators.js": "./lib/definitions/operators.js",
+    "./Jexl.js": "./lib/Jexl.js",
+    "./schemas/*.js": "./lib/definitions/schemas/*.js",
+    "./schemas/*": "./lib/definitions/schemas/*"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "files": [
+    "lib",
+    "src",
+    "README.md",
+    "LICENSE.txt",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "build:watch": "tsc -p tsconfig.build.json --watch",
+    "clean": "rm -rf lib build dist",
+    "lint": "npm run lint:prettier && npm run lint:eslint",
+    "lint:eslint": "eslint --color --cache --cache-location .eslintcache .",
+    "lint:prettier": "prettier \"**/*.{json,js,ts,md}\" --check",
+    "format": "npm run format:prettier && npm run format:eslint",
+    "format:prettier": "prettier --write \"**/*.{json,js,ts,md}\"",
+    "format:eslint": "eslint --color --cache --fix --cache-location .eslintcache .",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import ts-node-maintained/register/esm --enable-source-maps bin/test.ts",
+    "coverage": "c8 --reporter lcov --reporter text node --import ts-node-maintained/register/esm --enable-source-maps bin/test.ts",
+    "prepare": "husky",
+    "benchmark:expressions": "node --import ts-node-maintained/register/esm --enable-source-maps benchmarks/expressions.ts",
+    "benchmark:validation": "node --import ts-node-maintained/register/esm --enable-source-maps benchmarks/validation.ts",
+    "example:quick": "node --import ts-node-maintained/register/esm --enable-source-maps examples/quick-start.ts",
+    "example:basic": "node --import ts-node-maintained/register/esm --enable-source-maps examples/basic-usage.ts",
+    "example:transforms": "node --import ts-node-maintained/register/esm --enable-source-maps examples/custom-transforms.ts",
+    "example:functions": "node --import ts-node-maintained/register/esm --enable-source-maps examples/custom-functions.ts",
+    "example:operators": "node --import ts-node-maintained/register/esm --enable-source-maps examples/custom-operators.ts",
+    "example:namespace": "node --import ts-node-maintained/register/esm --enable-source-maps examples/namespace-functions-transforms.ts",
+    "example:advanced": "node --import ts-node-maintained/register/esm --enable-source-maps examples/advanced-features.ts",
+    "example:real-world": "node --import ts-node-maintained/register/esm --enable-source-maps examples/real-world-use-cases.ts",
+    "example:all": "npm run example:basic && npm run example:transforms && npm run example:functions && npm run example:operators && npm run example:namespace && npm run example:advanced && npm run example:real-world"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pawel-up/jexl"
+  },
+  "keywords": [
+    "JSON",
+    "expression",
+    "evaluator",
+    "parser",
+    "target",
+    "context",
+    "jsep",
+    "filter",
+    "selector"
+  ],
+  "author": "Tom Shawver <tom@frosteddesign.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pawel-up/jexl/issues"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "**/*.{md,json}": [
+      "prettier --write"
+    ],
+    "*.ts": [
+      "eslint --fix"
+    ]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.23.0",
+    "@japa/assert": "^4.0.1",
+    "@japa/runner": "^4.2.0",
+    "@pawel-up/benchmark": "^1.0.5",
+    "@pawel-up/semver": "^0.1.4",
+    "@types/json-schema": "^7.0.15",
+    "@types/sinon": "^17.0.4",
+    "c8": "^10.1.3",
+    "eslint": "^9.23.0",
+    "eslint-config-prettier": "^10.1.1",
+    "eslint-plugin-prettier": "^5.2.6",
+    "globals": "^16.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.2",
+    "prettier": "^3.5.3",
+    "sinon": "^21.0.0",
+    "ts-node-maintained": "^10.9.5",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.29.0"
+  },
+  "dependencies": {
+    "json-schema": "^0.4.0"
+  }
+}

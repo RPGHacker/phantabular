@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en-US" color-mode="user" >
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="stylesheet" href="../shared/shared-styles.css" />
+		<link rel="stylesheet" href="archive.css" />
+		<title>Archive - PhanTabular</title>
+		<link rel="icon" type="image/x-icon" href="../icons/phantabular-32.png">
+	</head>
+
+	<body>
+		<dialog id="editCategoryDialog">
+			<form method="dialog">
+				<div>
+					<label for="categoryName">Name:</label>
+					<input type="text" id="categoryName" placeholder="Name..." />
+				</div>
+				<div>
+					<label for="categoryColor">Color:</label>
+					<div id="categoryColorSelector" class="color-selector-menu">
+					</div>
+				</div>
+				<div>
+					<label for="categoryRule" class="inline-label">Auto-catch Rule:</label> <button type="button" data-action="category-rule-whats-this" class="colorize-button inline-button">What's this?</button>
+					<details id="categoryRuleTemplates" class="group-box">
+						<summary>
+							<span class="summary-contents">
+								<span class="summary-statics">
+									<span class="summary-open-marker"></span>
+								</span>
+								<span class="summary-dynamics">
+									Fill from template
+								</span>
+							</span>
+						</summary>
+						<div>
+							<label for="categoryTemplateTarget">Rule:</label>
+							<div class="indented-section">
+								<select id="categoryTemplateTarget" class="inline-option">
+									<option value="title" selected>Title</option>
+									<option value="url">URL</option>
+								</select>
+								<select id="categoryTemplateType" class="inline-option" autocomplete="off">
+									<option value="never-matches" selected>never matches</option>
+									<option value="always-matches">always matches</option>
+									<option value="equal-to">equal to</option>
+									<option value="contains">contains</option>
+									<option value="doesnt-contain">doesn't contain</option>
+									<option value="starts-with">starts with</option>
+									<option value="ends-with">ends with</option>
+									<option value="matches-regex">matches RegEx</option>
+								</select>
+								<input type="checkbox" id="categoryTemplateCaseInsensitive" checked/>
+								<label for="categoryTemplateCaseInsensitive">Case-insensitive</label>
+							</div>
+							<div id="categoryRuleStringRoot" class="indented-section" hidden>
+								<input type="text" id="categoryRuleString" placeholder="" />
+							</div>
+						</div>
+						<div id="categoryRegexRuleCaptureGroupsRoot" hidden>
+							<label>With capture groups equal to:</label>
+							<ol class="editable-list capture-group-list indented-section" id="categoryRegexRuleCaptureGroups">
+								<li><button type="button" data-action="add-category-regex-capture-group" class="colorize-button image-button">&#xff0b;</button></li>
+							</ol>
+						</div>
+						<div>
+							<center><button type="button" data-action="fill-category-rule-from-template" class="colorize-button">Fill rule</button></center>
+						</div>
+					</details>
+					<textarea id="categoryRule" name="categoryRule" rows="5" cols="33">
+					</textarea>
+				</div>
+				<div>
+					<button type="submit" data-action="confirm-edit-category" class="colorize-button">Save</button>
+					<button type="reset" data-action="cancel-edit-category"  class="colorize-button" style="float: right;">Cancel</button>
+				</div>
+			</form>
+		</dialog>
+		
+		<dialog id="ruleValidtyCheckFailedDialog">
+			<form method="dialog">
+				<div>
+					<label>The auto-catch rule contains errors:</label>
+					<p><label id="autoCatchRuleError"></label></p>
+					<label>Please fix all errors or remove the auto-catch rule.</label>
+				</div>
+				<div>
+					<center><button type="submit" data-action="confirm-rule-validity-check-failed" class="colorize-button">OK</button></center>
+				</div>
+			</form>
+		</dialog>
+		
+		<dialog id="ruleExplanationDialog">
+			<form method="dialog">
+				<div>
+					<p>Auto-catch rules make it possible to automatically sort tabs into categories when archiving. They consist of <a href="https://github.com/pawel-up/Jexl" target="_blank" class="colorize-link">Jexl</a> expressions
+					that automatically get the <a href="https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/tabs/Tab" target="_blank" class="colorize-link">data</a> of the tab to be archived passed in via the <code class="colorize-code">tab</code> variable.
+					Returning any truthy value inside a category's expression for a given tab leads to that tab being added to that category.</p>
+					<p>The following Jexl transforms are available inside expressions:</p>
+					<table class="colorize-table">
+						<thead>
+							<tr>
+								<th scope="col">Transform</th>
+								<th scope="col">Description</th>
+								<th scope="col">Example</th>
+								<th scope="col">Returns</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<th scope="row"><code class="colorize-code">lower</code></th>
+								<td>Converts a string to lower-case.</td>
+								<td><code class="colorize-code">"mIxEd CaSe"|lower</code></td>
+								<td><code class="colorize-code">"mixed case"</code></td>
+							</tr>
+							<tr>
+								<th scope="row"><code class="colorize-code">upper</code></th>
+								<td>Converts a string to upper-case.</td>
+								<td><code class="colorize-code">"mIxEd CaSe"|upper</code></td>
+								<td><code class="colorize-code">"MIXED CASE"</code></td>
+							</tr>
+						</tbody>
+					</table>
+					<p>Additionally, the following Jexl functions are available:</p>
+					<table class="colorize-table">
+						<thead>
+							<tr>
+								<th scope="col">Function</th>
+								<th scope="col">Description</th>
+								<th scope="col">Example</th>
+								<th scope="col">Returns</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<th scope="row"><code class="colorize-code">matchRegex</code></th>
+								<td>Tests if a string (first parameter) matches a regular expression (second parameter), and if so, returns an array with the full match at index 0 and the contents of all capturing groups at the subsequent indices.
+								If a string value is passed as the optional third parameter, the return value is also stored in a variable of the given name. The regular expression needs to be passed in as a string, so backslahes and quotation marks
+								must be escaped with a backslash, but the string can optionally contain / delimiters and flags.</td>
+								<td><pre><code class="colorize-code">matchRegex("FOOTBALL", "/\\S*(oo)\\S*(ll)/i", "matches")
+  && matches[1] == "OO"
+  && matches[2] == "LL"</code></pre></td>
+								<td><code class="colorize-code">matchRegex</code> returns <code class="colorize-code">[&nbsp;"FOOTBALL",&nbsp;"OO",&nbsp;"LL"&nbsp;]</code>.<br />Overall expression returns <code class="colorize-code">true</code>.</td>
+							</tr>
+						</tbody>
+					</table>
+					<p>You can use the "Fill from template" menu to automatically generate rules for the most common use cases.</p>
+				</div>
+				<div>
+					<center><button type="submit" class="colorize-button">Gotcha!</button></center>
+				</div>
+			</form>
+		</dialog>
+		
+		<dialog id="confirmDeleteCategory">
+			<form method="dialog">
+				<p>
+					You're about to delete a category! Are you sure? This action can't be undone!<br/>NOTE: Tabs themselves won't be deleted, unless you check the checkbox below.
+				</p>
+				<div>
+					<input type="checkbox" id="categoryDeletionAlsoDeletesTabs"/>
+					<label for="categoryDeletionAlsoDeletesTabs">Delete all tabs inside this category.</label>
+				</div>
+				<p>
+					<center><label>WARNING!<br />Checking this will also delete the tabs from any other categories or sessions that contain them!</label></center>
+				</p>
+				<div>
+					<button type="submit" data-action="confirm-category-deletion" class="colorize-button colorize-red">Confirm Deletion</button>
+					<button type="reset" data-action="cancel-category-deletion"  class="colorize-button" style="float: right;">Cancel</button>
+				</div>
+			</form>
+		</dialog>
+		
+		<dialog id="confirmDeleteSession">
+			<form method="dialog">
+				<p>
+					You're about to delete a session! Are you sure? This action can't be undone!<br/>NOTE: Tabs themselves won't be deleted, unless you check the checkbox below.
+				</p>
+				<div>
+					<input type="checkbox" id="sessionDeletionAlsoDeletesTabs"/>
+					<label for="sessionDeletionAlsoDeletesTabs">Delete all tabs inside this session.</label>
+				</div>
+				<p>
+					<center><label>WARNING!<br />Checking this will also delete the tabs from any other categories or sessions that contain them!</label></center>
+				</p>
+				<div>
+					<button type="submit" data-action="confirm-session-deletion" class="colorize-button colorize-red">Confirm Deletion</button>
+					<button type="reset" data-action="cancel-session-deletion"  class="colorize-button" style="float: right;">Cancel</button>
+				</div>
+			</form>
+		</dialog>
+		
+		<dialog id="openTabErrorDialog">
+			<form method="dialog">
+				<div>
+					<label>An error occured while trying to open the tab:</label>
+					<p><label id="openTabError"></label></p>
+				</div>
+				<div>
+					<center><button type="submit" class="colorize-button">OK</button></center>
+				</div>
+			</form>
+		</dialog>
+		
+		<dialog id="confirmDeleteTab">
+			<form method="dialog">
+				<p>
+					<center><label>WARNING!<br />You're about to delete a tab, which will also delete it from any categories or sessions that contain it! Are you sure?</label></center>
+				</p>
+				<p>
+					NOTE: This dialog can be disabled in the settings.
+				</p>
+				<div>
+					<button type="submit" data-action="confirm-tab-deletion" class="colorize-button colorize-red">Confirm Deletion</button>
+					<button type="reset" data-action="cancel-tab-deletion"  class="colorize-button" style="float: right;">Cancel</button>
+				</div>
+			</form>
+		</dialog>
+		
+		<div>
+			<div id="archive-root">
+				<h1>Archive</h1>
+				
+				<div class="filter-root">
+					<label for="filterText">Filter:</label>
+					<input type="text" id="filterText" placeholder="Filter..." />
+				</div>
+					
+				<div id="groups-root-list" >
+				</div>
+			</div>
+			<script type="module" src="archive.js"></script>
+		</div>		
+		<div id="tooltipLayer"></div>
+	</body>
+</html>

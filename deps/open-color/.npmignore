@@ -1,0 +1,7 @@
+docs/
+templates/
+builder/
+build_release
+.travis.yml
+CONTRIBUTING.md
+compile-templates.js

@@ -1,0 +1,430 @@
+html,
+body {
+	margin: 8px;
+}
+
+
+/* Prevent contents of buttons from being selectable */
+button img {
+	pointer-events: none;
+	user-select: none;
+}
+
+
+/* General stylings of detail groups */
+details {
+	padding: 0px 0px 0px 0px;
+	margin: 5px 0px 5px 0px;
+	width: 100%;
+	overflow-x: hidden;
+	word-break: break-word;
+	overflow-wrap: anywhere;
+}
+
+details:not([open])::details-content {
+	padding: 0px 0px 0px 0px;
+	margin: 0px 0px 0px 0px;
+	border-radius: 0px 0px 0px 0px;
+	border-style: none;
+}
+
+details[open]::details-content {
+	--padding: 5px;
+	--border-width: 5px;
+	padding: var(--padding) var(--padding) var(--padding) var(--padding);
+	margin: 0px 0px 0px 0px;
+	width: calc(100% - 2*(var(--padding)) - 2*(var(--border-width)));
+	border-radius: 0px 0px 5px 5px;	
+	border-style: none solid solid solid;
+	border-width: 0px var(--border-width) var(--border-width) var(--border-width);
+	border-color: var(--group-details-summary-bg-color);
+}
+
+details > summary {
+	list-style: none;
+	align-items: center;
+	border-radius: 5px 5px 5px 5px;
+}
+
+details[open] > summary {
+	border-radius: 5px 5px 0px 0px;
+}
+
+details > summary .summary-contents {
+	--summary-contents-padding: 10px;
+	display: flex;
+	padding: var(--summary-contents-padding);
+	min-width: 0;
+	align-items: center;
+	justify-content: flex-start;
+}
+
+details > summary .summary-contents * {
+	align-items: center;
+}
+
+details > summary .summary-statics {
+	display: flex;
+	flex: none;
+	margin: 0px 5px 0px 0px;
+	justify-content: start;
+}
+
+details > summary .summary-dynamics {
+	display: flex;
+	justify-content: space-between;
+	width: 100%;
+	min-width: 0;
+}
+
+details > summary .summary-badge {
+	display: flex;
+	flex: none;
+	font-size: 80%;
+	/*
+		The top margin here is eye-balled to align the badge vertically in the center.
+		I don't know what the proper calculation would be...
+	*/
+	margin: 1px 5px 0px 0px;
+	padding: 0px 5px 0px 5px;
+	justify-content: flex-start;
+	background-color: red;
+	border-radius: 20px;
+}
+
+details > summary .summary-title {
+	display: block; 
+	min-width: 0;
+	flex: auto;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	justify-content: flex-start;
+}
+
+details > summary .summary-actions {
+	display: none;
+}
+
+details > summary:hover .summary-actions {
+	display: flex;
+	flex: none;
+	gap: 0.5rem;
+	justify-content: flex-end;
+}
+
+details > summary .summary-actions button {
+	/*
+		Kinda dirty: This counteracts the padding from the parent container to prevent the group summary
+		from growing and shrinking when the button appears and disappears. Could also accomplish this by
+		using "opacity: 0%" instead of "display: none", but that has the disadvantage of taking away space
+		from the group title even while the buttons aren't being shown.
+	*/
+	margin: calc(-1.0 * var(--summary-contents-padding)) 1px calc(-1.0 * var(--summary-contents-padding)) 1px;
+	/*padding: 0px 1px 0px 1px;*/
+	/*width: 32px;*/
+	/*height: 32px;*/
+}
+
+details:not([open]) > summary .summary-open-marker::before {
+	content: "\ff0b";
+}
+
+details[open] > summary .summary-open-marker::before {
+	content: "\ff0d";
+}
+
+details > summary::-webkit-details-marker {
+	display: none;
+}
+
+
+/* Stylings of "root" detail boxes (aka outer group boxes) */
+details.root-details .groups-list {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: self-start;
+	gap: 5px;
+}
+
+details.root-details .groups-list > * {
+	/*
+		This will make groups only take up as much horizontal space as
+		required to make the entire title bar fit, but curiously it will
+		lead to the detail contents opening to the right of their summary.
+		Well, unless I can figure out why that happens, this will stay out.
+	*/
+	/* display: flex; */
+	margin: 0px;
+	flex: auto;
+}
+
+/* Stylings of "group" detail boxes (aka inner group boxes) */
+.group-details {
+	display: inline-block;
+	width: fit-content;
+	min-width: min(100%, 300px);
+	max-width: min(100%, 600px);
+}
+
+
+/* Stylings for tab list */
+ul.tabs-list, ul.tabs-list-for-drag-and-drop {
+	list-style-type: none;
+	padding: 0px 0px 0px 0px;
+	margin: 0px 0px 0px 0px;
+}
+
+ul.tabs-list > li, ul.tabs-list-for-drag-and-drop > li {
+	background-color: light-dark(var(--oc-gray-2), var(--oc-gray-7));	
+    border: 1px solid #ccc;
+	padding: 5px;
+	margin: -1px 0px 0px 0px;
+	color: light-dark(var(--oc-black), var(--oc-white));
+}
+
+ul.tabs-list-for-drag-and-drop > li.drop-footer {
+	background-color: light-dark(var(--oc-gray-3), var(--oc-gray-8));
+}
+
+ul.tabs-list > li:hover {
+	background-color: light-dark(var(--oc-gray-1), var(--oc-gray-6));
+}
+
+.group-contents > ul.tabs-list-for-drag-and-drop {
+	display: none;
+}
+
+.group-contents[data-dragparent=true] > ul.tabs-list {
+	display: none;
+}
+
+.group-contents[data-dragparent=true] > ul.tabs-list-for-drag-and-drop {
+	display: block;
+}
+
+.group-contents > ul.tabs-list-for-drag-and-drop > li * {
+	pointer-events: none;
+}
+
+.group-contents > ul.tabs-list-for-drag-and-drop > li[data-dragtarget=true] {
+	background-color: light-dark(var(--oc-indigo-3), var(--oc-indigo-5));
+}
+
+
+/* Stylings for tab list entries */
+.tab-entry {
+	display: flex;
+	padding: 10px 10px 10px 10px;
+	min-width: 0;
+	align-items: center;
+	user-select: none;
+}
+
+.tab-entry * {
+	align-items: center;
+}
+
+.tab-entry > .fav-icon-list-item {
+	pointer-events: none;
+}
+
+.tab-entry > .title {
+	display: block; 
+	min-width: 0;
+	flex: 1 1 auto;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.tab-entry .actions {
+	display: none;
+}
+
+.tab-entry:hover .actions {
+	display: inline-flex;
+	flex: none;
+	gap: 0.5rem;
+	justify-content: flex-end;
+}
+
+
+/* Stylings for action buttons */
+button.action-button {
+	padding: 0px;
+	margin: 0px;
+}
+
+
+/* Spinner animation */
+.spinner-animation {
+	display: flex;
+	padding: 10px 10px 10px 10px;
+}
+
+.spinner {
+	width: 32px;
+	height: 32px;
+	border: 5px dotted var(--spinner-color); /* Dotted border style */
+	border-radius: 50%;
+	border-top-color: var(--spinner-fill-color);
+	animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+
+/* Stylings for color selectors */
+.color-selector-menu .color-selector-root {
+	display: inline-block;
+	border-style: solid;
+	border-radius: 5px;
+	border-color: transparent;
+	margin: 0px 5px 5px 0px;
+	padding: 2px;
+	width: 48px;
+	height: 48px;
+}
+
+.color-selector-menu .color-selector-root .colorize-color-selector {
+	border-radius: 2px;
+	width: 100%;
+	height: 100%;
+	color: transparent;
+	user-select: none;
+	align-content: center;
+	font-size: 30px;
+	padding: 0px;
+}
+
+.color-selector-menu .color-selector-root .colorize-color-selector * {
+	pointer-events: none;
+	user-select: none;
+}
+
+/* Seems there's currently no solution that avoids listing every single color... */
+.color-selector-menu[data-selectedcolor="gray"]   .color-selector-root[data-color="gray"],
+.color-selector-menu[data-selectedcolor="red"]    .color-selector-root[data-color="red"],
+.color-selector-menu[data-selectedcolor="pink"]   .color-selector-root[data-color="pink"],
+.color-selector-menu[data-selectedcolor="grape"]  .color-selector-root[data-color="grape"],
+.color-selector-menu[data-selectedcolor="violet"] .color-selector-root[data-color="violet"],
+.color-selector-menu[data-selectedcolor="indigo"] .color-selector-root[data-color="indigo"],
+.color-selector-menu[data-selectedcolor="blue"]   .color-selector-root[data-color="blue"],
+.color-selector-menu[data-selectedcolor="cyan"]   .color-selector-root[data-color="cyan"],
+.color-selector-menu[data-selectedcolor="teal"]   .color-selector-root[data-color="teal"],
+.color-selector-menu[data-selectedcolor="green"]  .color-selector-root[data-color="green"],
+.color-selector-menu[data-selectedcolor="lime"]   .color-selector-root[data-color="lime"],
+.color-selector-menu[data-selectedcolor="yellow"] .color-selector-root[data-color="yellow"],
+.color-selector-menu[data-selectedcolor="orange"] .color-selector-root[data-color="orange"] {
+	border-color: var(--oc-lime-5);
+	
+	.colorize-color-selector {
+		color: var(--content-color);
+	}
+}
+
+/* Stylings for our custom tooltip */
+#tooltipLayer {
+    position: fixed;
+    pointer-events: none;
+    z-index: 999999;
+    white-space: pre-line;
+    background: var(--group-details-content-bg-color);
+    color: var(--group-details-content-text-color);
+    padding: 6px 8px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+	border-style: solid;
+    border-radius: 4px;
+	border-width: 3px;
+	border-color: var(--group-details-summary-bg-color);
+    overflow-wrap: break-word;
+    word-break: break-word;
+	width: max-content;
+	max-width: 30vw;
+	white-space: collapse;
+}
+
+/* A bunch of inline stylings useful for creating dialogs */
+.inline-option, .inline-label, .inline-text, .inline-button {
+	display: inline-block;
+	margin: 5px 5px 5px 0px;
+}
+
+.inline-button {
+	padding: 3px;
+}
+
+.indented-section {
+	padding: 0px 0px 0px 15px;
+}
+
+/* Stylings for editable lists */
+ol.editable-list {
+	list-style-type: none;
+	margin: 0px;
+}
+
+ol.editable-list > li {
+	/*
+		I don't quite understand why I need the padding on both the ol and the li.
+		Something is creating a negative margin, and I have no idea what it is.
+	*/
+	margin: 0px 0px 0px 15px;
+	padding: 0px;
+}
+
+ol.editable-list > li::marker {
+  content: counter(list-item) ":  ";
+  font-weight: bold;
+}
+
+ol.editable-list > li > button {
+	padding: 0px 0px 0px 0px;
+	display: inline-block;
+	border: 0px none;
+	min-width: 32px;
+	min-height: 32px;
+}
+
+/* Stylings for fav icons */
+.fav-icon-small {
+	width: 16px;
+	height: 16px;
+}
+
+.fav-icon-list-item {
+	display: inline-flex;
+	margin: 0px 8px 0px 0px;
+}
+
+.fav-icon-list-item[data-validimage="false"] {
+	margin: 0px 0px 0px 0px;
+	display: none;
+}
+
+/* Stylings for titles in tooltips */
+.tooltip-title {
+	font-weight: bold;
+	margin-left: 0px;
+	margin-right: 0px;
+}
+
+/* Stylings for metadata list in tooltips */
+.metadata-entry {
+	display: inline-block;
+	margin: 0px 32px 0px 0px;
+}
+
+.metadata-entry[data-show="false"] {
+	margin: 0px 0px 0px 0px;
+	display: none;
+}

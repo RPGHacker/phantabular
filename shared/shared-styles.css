@@ -1,0 +1,465 @@
+@import url("../deps/mvp/mvp.css");
+@import url("../deps/open-color/open-color.css");
+
+
+/* Disable or override certain default behaviors of the MPV theme */
+:root {
+	/* No brightness animations on buttons */
+	--active-brightness: 1.0;
+	--hover-brightness: 1.0;
+	
+	/* Allow dialogs to be wider */
+	--width-card-wide: 70vw;
+ }
+ 
+dialog {
+	/* Restore the scroll bar inside dialogs */
+	scrollbar-width: auto;
+	scrollbar-color: auto;
+	
+	/* Make dialogs slightly wider*/
+	max-width: 90vw;
+}
+
+table td {
+	/* Allow table contents to break lines again */
+	white-space: wrap;
+}
+
+table td, table th, table td {
+	/* Move text inside tables back to the left */
+	text-align: start;
+}
+
+pre > code {
+	white-space: pre;
+}
+ 
+ 
+ /* Add support for light and dark themes */
+:root {	
+	color-scheme: light dark;
+}
+
+
+/* Define default colors when not specifying a color manually */
+:root {
+	--group-details-summary-text-color:     light-dark(var(--oc-gray-9), var(--oc-gray-0));
+	
+	--group-details-content-text-color:     light-dark(var(--oc-gray-9), var(--oc-gray-0));
+	
+	--section-text-color:                   light-dark(var(--oc-gray-9), var(--oc-gray-0));
+	
+	--button-text-color:                    light-dark(var(--oc-gray-9), var(--oc-gray-0));
+	--button-shadow-color:                  light-dark(var(--oc-gray-6), var(--oc-gray-8));
+	--button-hover-shadow-color:            light-dark(var(--oc-gray-5), var(--oc-gray-7));
+	
+	--spinner-color:                        light-dark(var(--oc-gray-6), var(--oc-gray-5));
+	--spinner-fill-color:                   light-dark(var(--oc-blue-6), var(--oc-blue-5));
+	
+	--table-text-color:                     light-dark(var(--oc-gray-9), var(--oc-gray-0));
+	
+	--link-text-color:                      light-dark(var(--oc-gray-6), var(--oc-gray-5));
+	--link-text-hover-color:                light-dark(var(--oc-gray-5), var(--oc-gray-4));
+}
+
+:root, .colorize-root-default, .colorize-gray {
+	--group-details-summary-bg-color:       light-dark(var(--oc-gray-4), var(--oc-gray-6));
+	--group-details-summary-hover-bg-color: light-dark(var(--oc-gray-3), var(--oc-gray-5));
+	--group-details-summary-bg-text-color:  light-dark(var(--oc-gray-1), var(--oc-gray-9));
+	
+	--group-details-content-bg-color:       light-dark(var(--oc-gray-1), var(--oc-gray-9));
+	
+	--section-bg-color:                     light-dark(var(--oc-gray-1), var(--oc-gray-9));
+	
+	--button-bg-color:                      light-dark(var(--oc-gray-4), var(--oc-gray-6));
+	--button-hover-bg-color:                light-dark(var(--oc-gray-3), var(--oc-gray-5));
+	--button-active-bg-color:               light-dark(var(--oc-gray-5), var(--oc-gray-7));
+	
+	--table-header-bg-color:                light-dark(var(--oc-gray-4), var(--oc-gray-6));
+	--table-row-primary-bg-color:           light-dark(var(--oc-gray-1), var(--oc-gray-9));
+	--table-row-secondary-bg-color:         light-dark(var(--oc-gray-2), var(--oc-gray-8));
+	
+	--code-bg-color:                        light-dark(var(--oc-gray-3), var(--oc-gray-7));
+}
+
+/* Override the default colors defined above based on user choice */
+.colorize-red {
+	--group-details-summary-bg-color:       light-dark(var(--oc-red-4), var(--oc-red-6));
+	--group-details-summary-hover-bg-color: light-dark(var(--oc-red-3), var(--oc-red-5));
+	--group-details-summary-bg-text-color:  light-dark(var(--oc-red-1), var(--oc-red-9));
+	
+	--group-details-content-bg-color:       light-dark(var(--oc-red-1), var(--oc-red-9));
+	
+	--section-bg-color:                     light-dark(var(--oc-red-1), var(--oc-red-9));
+	
+	--button-bg-color:                      light-dark(var(--oc-red-4), var(--oc-red-6));
+	--button-hover-bg-color:                light-dark(var(--oc-red-3), var(--oc-red-5));
+	--button-active-bg-color:               light-dark(var(--oc-red-5), var(--oc-red-7));
+	
+	--table-header-bg-color:                light-dark(var(--oc-red-4), var(--oc-red-6));
+	--table-row-primary-bg-color:           light-dark(var(--oc-red-1), var(--oc-red-9));
+	--table-row-secondary-bg-color:         light-dark(var(--oc-red-2), var(--oc-red-8));
+	
+	--code-bg-color:                        light-dark(var(--oc-red-3), var(--oc-red-7));
+}
+
+.colorize-pink {
+	--group-details-summary-bg-color:       light-dark(var(--oc-pink-4), var(--oc-pink-6));
+	--group-details-summary-hover-bg-color: light-dark(var(--oc-pink-3), var(--oc-pink-5));
+	--group-details-summary-bg-text-color:  light-dark(var(--oc-pink-1), var(--oc-pink-9));
+	
+	--group-details-content-bg-color:       light-dark(var(--oc-pink-1), var(--oc-pink-9));
+	
+	--section-bg-color:                     light-dark(var(--oc-pink-1), var(--oc-pink-9));
+	
+	--button-bg-color:                      light-dark(var(--oc-pink-4), var(--oc-pink-6));
+	--button-hover-bg-color:                light-dark(var(--oc-pink-3), var(--oc-pink-5));
+	--button-active-bg-color:               light-dark(var(--oc-pink-5), var(--oc-pink-7));
+	
+	--table-header-bg-color:                light-dark(var(--oc-pink-4), var(--oc-pink-6));
+	--table-row-primary-bg-color:           light-dark(var(--oc-pink-1), var(--oc-pink-9));
+	--table-row-secondary-bg-color:         light-dark(var(--oc-pink-2), var(--oc-pink-8));
+	
+	--code-bg-color:                        light-dark(var(--oc-pink-3), var(--oc-pink-7));
+}
+
+.colorize-grape {
+	--group-details-summary-bg-color:       light-dark(var(--oc-grape-4), var(--oc-grape-6));
+	--group-details-summary-hover-bg-color: light-dark(var(--oc-grape-3), var(--oc-grape-5));
+	--group-details-summary-bg-text-color:  light-dark(var(--oc-grape-1), var(--oc-grape-9));
+	
+	--group-details-content-bg-color:       light-dark(var(--oc-grape-1), var(--oc-grape-9));
+	
+	--section-bg-color:                     light-dark(var(--oc-grape-1), var(--oc-grape-9));
+	
+	--button-bg-color:                      light-dark(var(--oc-grape-4), var(--oc-grape-6));
+	--button-hover-bg-color:                light-dark(var(--oc-grape-3), var(--oc-grape-5));
+	--button-active-bg-color:               light-dark(var(--oc-grape-5), var(--oc-grape-7));
+	
+	--table-header-bg-color:                light-dark(var(--oc-grape-4), var(--oc-grape-6));
+	--table-row-primary-bg-color:           light-dark(var(--oc-grape-1), var(--oc-grape-9));
+	--table-row-secondary-bg-color:         light-dark(var(--oc-grape-2), var(--oc-grape-8));
+	
+	--code-bg-color:                        light-dark(var(--oc-grape-3), var(--oc-grape-7));
+}
+
+.colorize-violet {
+	--group-details-summary-bg-color:       light-dark(var(--oc-violet-4), var(--oc-violet-6));
+	--group-details-summary-hover-bg-color: light-dark(var(--oc-violet-3), var(--oc-violet-5));
+	--group-details-summary-bg-text-color:  light-dark(var(--oc-violet-1), var(--oc-violet-9));
+	
+	--group-details-content-bg-color:       light-dark(var(--oc-violet-1), var(--oc-violet-9));
+	
+	--section-bg-color:                     light-dark(var(--oc-violet-1), var(--oc-violet-9));
+	
+	--button-bg-color:                      light-dark(var(--oc-violet-4), var(--oc-violet-6));
+	--button-hover-bg-color:                light-dark(var(--oc-violet-3), var(--oc-violet-5));
+	--button-active-bg-color:               light-dark(var(--oc-violet-5), var(--oc-violet-7));
+	
+	--table-header-bg-color:                light-dark(var(--oc-violet-4), var(--oc-violet-6));
+	--table-row-primary-bg-color:           light-dark(var(--oc-violet-1), var(--oc-violet-9));
+	--table-row-secondary-bg-color:         light-dark(var(--oc-violet-2), var(--oc-violet-8));
+	
+	--code-bg-color:                        light-dark(var(--oc-violet-3), var(--oc-violet-7));
+}
+
+.colorize-indigo {
+	--group-details-summary-bg-color:       light-dark(var(--oc-indigo-4), var(--oc-indigo-6));
+	--group-details-summary-hover-bg-color: light-dark(var(--oc-indigo-3), var(--oc-indigo-5));
+	--group-details-summary-bg-text-color:  light-dark(var(--oc-indigo-1), var(--oc-indigo-9));
+	
+	--group-details-content-bg-color:       light-dark(var(--oc-indigo-1), var(--oc-indigo-9));
+	
+	--section-bg-color:                     light-dark(var(--oc-indigo-1), var(--oc-indigo-9));
+	
+	--button-bg-color:                      light-dark(var(--oc-indigo-4), var(--oc-indigo-6));
+	--button-hover-bg-color:                light-dark(var(--oc-indigo-3), var(--oc-indigo-5));
+	--button-active-bg-color:               light-dark(var(--oc-indigo-5), var(--oc-indigo-7));
+	
+	--table-header-bg-color:                light-dark(var(--oc-indigo-4), var(--oc-indigo-6));
+	--table-row-primary-bg-color:           light-dark(var(--oc-indigo-1), var(--oc-indigo-9));
+	--table-row-secondary-bg-color:         light-dark(var(--oc-indigo-2), var(--oc-indigo-8));
+	
+	--code-bg-color:                        light-dark(var(--oc-indigo-3), var(--oc-indigo-7));
+}
+
+.colorize-blue {
+	--group-details-summary-bg-color:       light-dark(var(--oc-blue-4), var(--oc-blue-6));
+	--group-details-summary-hover-bg-color: light-dark(var(--oc-blue-3), var(--oc-blue-5));
+	--group-details-summary-bg-text-color:  light-dark(var(--oc-blue-1), var(--oc-blue-9));
+	
+	--group-details-content-bg-color:       light-dark(var(--oc-blue-1), var(--oc-blue-9));
+	
+	--section-bg-color:                     light-dark(var(--oc-blue-1), var(--oc-blue-9));
+	
+	--button-bg-color:                      light-dark(var(--oc-blue-4), var(--oc-blue-6));
+	--button-hover-bg-color:                light-dark(var(--oc-blue-3), var(--oc-blue-5));
+	--button-active-bg-color:               light-dark(var(--oc-blue-5), var(--oc-blue-7));
+	
+	--table-header-bg-color:                light-dark(var(--oc-blue-4), var(--oc-blue-6));
+	--table-row-primary-bg-color:           light-dark(var(--oc-blue-1), var(--oc-blue-9));
+	--table-row-secondary-bg-color:         light-dark(var(--oc-blue-2), var(--oc-blue-8));
+	
+	--code-bg-color:                        light-dark(var(--oc-blue-3), var(--oc-blue-7));
+}
+
+.colorize-cyan {
+	--group-details-summary-bg-color:       light-dark(var(--oc-cyan-4), var(--oc-cyan-6));
+	--group-details-summary-hover-bg-color: light-dark(var(--oc-cyan-3), var(--oc-cyan-5));
+	--group-details-summary-bg-text-color:  light-dark(var(--oc-cyan-1), var(--oc-cyan-9));
+	
+	--group-details-content-bg-color:       light-dark(var(--oc-cyan-1), var(--oc-cyan-9));
+	
+	--section-bg-color:                     light-dark(var(--oc-cyan-1), var(--oc-cyan-9));
+	
+	--button-bg-color:                      light-dark(var(--oc-cyan-4), var(--oc-cyan-6));
+	--button-hover-bg-color:                light-dark(var(--oc-cyan-3), var(--oc-cyan-5));
+	--button-active-bg-color:               light-dark(var(--oc-cyan-5), var(--oc-cyan-7));
+	
+	--table-header-bg-color:                light-dark(var(--oc-cyan-4), var(--oc-cyan-6));
+	--table-row-primary-bg-color:           light-dark(var(--oc-cyan-1), var(--oc-cyan-9));
+	--table-row-secondary-bg-color:         light-dark(var(--oc-cyan-2), var(--oc-cyan-8));
+	
+	--code-bg-color:                        light-dark(var(--oc-cyan-3), var(--oc-cyan-7));
+}
+
+.colorize-teal {
+	--group-details-summary-bg-color:       light-dark(var(--oc-teal-4), var(--oc-teal-6));
+	--group-details-summary-hover-bg-color: light-dark(var(--oc-teal-3), var(--oc-teal-5));
+	--group-details-summary-bg-text-color:  light-dark(var(--oc-teal-1), var(--oc-teal-9));
+	
+	--group-details-content-bg-color:       light-dark(var(--oc-teal-1), var(--oc-teal-9));
+	
+	--section-bg-color:                     light-dark(var(--oc-teal-1), var(--oc-teal-9));
+	
+	--button-bg-color:                      light-dark(var(--oc-teal-4), var(--oc-teal-6));
+	--button-hover-bg-color:                light-dark(var(--oc-teal-3), var(--oc-teal-5));
+	--button-active-bg-color:               light-dark(var(--oc-teal-5), var(--oc-teal-7));
+	
+	--table-header-bg-color:                light-dark(var(--oc-teal-4), var(--oc-teal-6));
+	--table-row-primary-bg-color:           light-dark(var(--oc-teal-1), var(--oc-teal-9));
+	--table-row-secondary-bg-color:         light-dark(var(--oc-teal-2), var(--oc-teal-8));
+	
+	--code-bg-color:                        light-dark(var(--oc-teal-3), var(--oc-teal-7));
+}
+
+.colorize-green {
+	--group-details-summary-bg-color:       light-dark(var(--oc-green-4), var(--oc-green-6));
+	--group-details-summary-hover-bg-color: light-dark(var(--oc-green-3), var(--oc-green-5));
+	--group-details-summary-bg-text-color:  light-dark(var(--oc-green-1), var(--oc-green-9));
+	
+	--group-details-content-bg-color:       light-dark(var(--oc-green-1), var(--oc-green-9));
+	
+	--section-bg-color:                     light-dark(var(--oc-green-1), var(--oc-green-9));
+	
+	--button-bg-color:                      light-dark(var(--oc-green-4), var(--oc-green-6));
+	--button-hover-bg-color:                light-dark(var(--oc-green-3), var(--oc-green-5));
+	--button-active-bg-color:               light-dark(var(--oc-green-5), var(--oc-green-7));
+	
+	--table-header-bg-color:                light-dark(var(--oc-green-4), var(--oc-green-6));
+	--table-row-primary-bg-color:           light-dark(var(--oc-green-1), var(--oc-green-9));
+	--table-row-secondary-bg-color:         light-dark(var(--oc-green-2), var(--oc-green-8));
+	
+	--code-bg-color:                        light-dark(var(--oc-green-3), var(--oc-green-7));
+}
+
+.colorize-lime {
+	--group-details-summary-bg-color:       light-dark(var(--oc-lime-4), var(--oc-lime-6));
+	--group-details-summary-hover-bg-color: light-dark(var(--oc-lime-3), var(--oc-lime-5));
+	--group-details-summary-bg-text-color:  light-dark(var(--oc-lime-1), var(--oc-lime-9));
+	
+	--group-details-content-bg-color:       light-dark(var(--oc-lime-1), var(--oc-lime-9));
+	
+	--section-bg-color:                     light-dark(var(--oc-lime-1), var(--oc-lime-9));
+	
+	--button-bg-color:                      light-dark(var(--oc-lime-4), var(--oc-lime-6));
+	--button-hover-bg-color:                light-dark(var(--oc-lime-3), var(--oc-lime-5));
+	--button-active-bg-color:               light-dark(var(--oc-lime-5), var(--oc-lime-7));
+	
+	--table-header-bg-color:                light-dark(var(--oc-lime-4), var(--oc-lime-6));
+	--table-row-primary-bg-color:           light-dark(var(--oc-lime-1), var(--oc-lime-9));
+	--table-row-secondary-bg-color:         light-dark(var(--oc-lime-2), var(--oc-lime-8));
+	
+	--code-bg-color:                        light-dark(var(--oc-lime-3), var(--oc-lime-7));
+}
+
+.colorize-yellow {
+	--group-details-summary-bg-color:       light-dark(var(--oc-yellow-4), var(--oc-yellow-6));
+	--group-details-summary-hover-bg-color: light-dark(var(--oc-yellow-3), var(--oc-yellow-5));
+	--group-details-summary-bg-text-color:  light-dark(var(--oc-yellow-1), var(--oc-yellow-9));
+	
+	--group-details-content-bg-color:       light-dark(var(--oc-yellow-1), var(--oc-yellow-9));
+	
+	--section-bg-color:                     light-dark(var(--oc-yellow-1), var(--oc-yellow-9));
+	
+	--button-bg-color:                      light-dark(var(--oc-yellow-4), var(--oc-yellow-6));
+	--button-hover-bg-color:                light-dark(var(--oc-yellow-3), var(--oc-yellow-5));
+	--button-active-bg-color:               light-dark(var(--oc-yellow-5), var(--oc-yellow-7));
+	
+	--table-header-bg-color:                light-dark(var(--oc-yellow-4), var(--oc-yellow-6));
+	--table-row-primary-bg-color:           light-dark(var(--oc-yellow-1), var(--oc-yellow-9));
+	--table-row-secondary-bg-color:         light-dark(var(--oc-yellow-2), var(--oc-yellow-8));
+	
+	--code-bg-color:                        light-dark(var(--oc-yellow-3), var(--oc-yellow-7));
+}
+
+.colorize-orange {
+	--group-details-summary-bg-color:       light-dark(var(--oc-orange-4), var(--oc-orange-6));
+	--group-details-summary-hover-bg-color: light-dark(var(--oc-orange-3), var(--oc-orange-5));
+	--group-details-summary-bg-text-color:  light-dark(var(--oc-orange-1), var(--oc-orange-9));
+	
+	--group-details-content-bg-color:       light-dark(var(--oc-orange-1), var(--oc-orange-9));
+	
+	--section-bg-color:                     light-dark(var(--oc-orange-1), var(--oc-orange-9));
+	
+	--button-bg-color:                      light-dark(var(--oc-orange-4), var(--oc-orange-6));
+	--button-hover-bg-color:                light-dark(var(--oc-orange-3), var(--oc-orange-5));
+	--button-active-bg-color:               light-dark(var(--oc-orange-5), var(--oc-orange-7));
+	
+	--table-header-bg-color:                light-dark(var(--oc-orange-4), var(--oc-orange-6));
+	--table-row-primary-bg-color:           light-dark(var(--oc-orange-1), var(--oc-orange-9));
+	--table-row-secondary-bg-color:         light-dark(var(--oc-orange-2), var(--oc-orange-8));
+	
+	--code-bg-color:                        light-dark(var(--oc-orange-3), var(--oc-orange-7));
+}
+
+@media (prefers-color-scheme: dark) {
+	.colorize-invert-in-dark-theme {
+		color-scheme: dark;
+	}
+	
+	.colorize-no-invert-in-dark-theme {
+		color-scheme: light;
+	}
+}
+
+
+/* Stylings for group boxes */
+details.group-box > summary {
+	background-color: var(--group-details-summary-bg-color);
+	color: var(--group-details-summary-text-color);
+}
+
+details.group-box > summary * {
+	color: var(--group-details-summary-text-color);
+}
+
+details.group-box > summary:hover {
+	background-color: var(--group-details-summary-hover-bg-color);
+}
+
+details.group-box::details-content {
+	background-color: var(--group-details-content-bg-color);
+	color: var(--group-details-content-text-color);
+}
+
+details.group-box::details-content * {
+	color: var(--group-details-content-text-color);
+}
+
+/* Stylings for section-like containers */
+.colorize-section {
+	background-color: var(--section-bg-color);
+	color: var(--section-text-color);
+}
+
+:where(.colorize-section) * {
+	color: var(--section-text-color);
+}
+
+/* Stylings for tables */
+.colorize-table {
+	> thead > tr {
+		background-color: var(--table-header-bg-color);
+	}
+	
+	> tbody > tr {
+		background-color: var(--table-row-primary-bg-color);
+	}
+	
+	> tbody > tr:nth-child(even) {
+		background-color: var(--table-row-secondary-bg-color);
+	}
+}
+
+:where(.colorize-table) * {
+	color: var(--table-text-color);
+}
+
+/* Stylings for code blocks */
+.colorize-code {
+	background-color: var(--code-bg-color);
+}
+
+/* Stylings for links */
+.colorize-link {
+	color: var(--link-text-color);
+}
+
+.colorize-link:hover {
+	color: var(--link-text-hover-color);
+}
+
+/* Stylings for buttons */
+button.colorize-button, .colorize-section button {
+	background-color: var(--button-bg-color);
+	border-color: var(--button-bg-color);
+	color: var(--button-text-color);
+}
+
+button.colorize-button:hover, .colorize-section button:hover {
+	background-color: var(--button-hover-bg-color);
+	border-color: var(--button-hover-bg-color);
+}
+
+button.colorize-button:active, .colorize-section button:active {
+	background-color: var(--button-active-bg-color);
+	border-color: var(--button-active-bg-color);
+}
+
+button.colorize-button *, .colorize-section button * {
+	color: var(--button-text-color);
+}
+
+button.image-button {
+	padding: 0px 0px 0px 0px;
+	/*
+	I have no idea why this works. All I wanted was to remove the empty space
+	at the bottom of the button. For some reason, just setting the padding
+	alone didn't do the trick, and the inspector didn't help me figuring out
+	where that empty space was coming from. Setting the display type to flex
+	was the only working solution I found...
+	*/
+	display: flex;
+	border: 0px none;
+}
+
+/* Stylings for color selectors */
+.colorize-color-selector {
+	background-color: var(--group-details-summary-bg-color);
+	--content-color: var(--group-details-summary-bg-text-color);
+	color: var(--content-color);
+}
+
+.colorize-color-selector:hover {
+	background-color: var(--group-details-summary-hover-bg-color);
+}
+
+/* Stylings for code editor */
+textarea.code-editor {
+  font-family: Consolas, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
+}
+
+/* Stylings to hide elements based on theming */
+@media (prefers-color-scheme: light) {
+  .only-in-dark-theme {
+    display: none;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .only-in-light-theme {
+    display: none;
+  }
+}

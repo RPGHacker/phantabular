@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en-US" color-mode="user">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="stylesheet" href="../shared/shared-styles.css" />
+		<link rel="stylesheet" href="popup.css" />
+		<title>Actions - PhanTabular</title>
+		<link rel="icon" type="image/x-icon" href="../icons/phantabular-32.png">
+	</head>
+
+	<body>
+		<div>
+			<div id="popup-content">
+				<h1>PhanTabular</h1>
+				
+				<div class="button-section view-section colorize-section colorize-cyan">
+					<h2>View:</h2>
+					<button data-action="view-archive">View Archive</button>
+				</div>
+				
+				<div class="button-section archive-now-section colorize-section colorize-red">
+					<h2>Archive now:</h2>
+					<button data-action="archive-current-tab">Current Tab</button>
+					<button data-action="archive-tabs-in-current-window">Tabs in Current Window</button>
+					<button data-action="archive-tabs-in-all-windows">Tabs in All Windows</button>
+				</div>
+				
+				<div class="buttons-section">
+					<button data-action="view-settings" class="colorize-button image-button"><img src="../icons/iconoir/edits/settings-solid-fixed-light.svg" class="only-in-light-theme" style="height: 40px;" /><img src="../icons/iconoir/edits/settings-solid-fixed-dark.svg" class="only-in-dark-theme" style="height: 40px;" /></button>
+				</div>
+			</div>
+			<script type="module" src="popup.js"></script>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,107 @@
+{
+  "name": "dexie-cloud-addon",
+  "version": "4.2.2",
+  "description": "Dexie addon that syncs with to Dexie Cloud",
+  "type": "module",
+  "module": "dist/modern/dexie-cloud-addon.min.js",
+  "homepage": "https://dexie.org/cloud/docs/dexie-cloud-addon",
+  "exports": {
+    ".": {
+      "development": {
+        "import": "./dist/modern/dexie-cloud-addon.js",
+        "require": false,
+        "types": "./dist/modern/dexie-cloud-addon.d.ts"
+      },
+      "production": {
+        "import": "./dist/modern/dexie-cloud-addon.min.js",
+        "require": false,
+        "types": "./dist/modern/dexie-cloud-addon.d.ts"
+      },
+      "default": {
+        "import": "./dist/modern/dexie-cloud-addon.min.js",
+        "require": false,
+        "types": "./dist/modern/dexie-cloud-addon.d.ts"
+      }
+    },
+    "./service-worker": {
+      "development": {
+        "import": "./dist/modern/service-worker.js",
+        "require": "./dist/umd/service-worker.js",
+        "default": "./dist/umd/service-worker.js",
+         "types": "./dist/modern/service-worker.d.ts"
+      },
+      "production": {
+        "import": "./dist/modern/service-worker.min.js",
+        "require": "./dist/umd/service-worker.min.js",
+        "default": "./dist/umd/service-worker.min.js",
+        "types": "./dist/modern/service-worker.d.ts"
+      },
+      "default": {
+        "import": "./dist/modern/service-worker.min.js",
+        "require": "./dist/umd/service-worker.min.js",
+        "default": "./dist/umd/service-worker.min.js",
+        "types": "./dist/modern/service-worker.d.ts"
+      }
+    }
+  },
+  "types": "dist/modern/dexie-cloud-addon.d.ts",
+  "engines": {
+    "node": ">=14"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dexie/Dexie.js.git"
+  },
+  "scripts": {
+    "test": "just-build test && pnpm run test-unit",
+    "test-unit": "karma start test/unit/karma.conf.cjs --single-run",
+    "build": "rollup -c tools/build-configs/rollup.config.mjs",
+    "watch": "rollup -c tools/build-configs/rollup.config.mjs --watch",
+    "clean": "rm -rf tools/tmp dist test/unit/bundle.*"
+  },
+  "just-build": {
+    "default": [
+      "rollup -c tools/build-configs/rollup.config.mjs"
+    ],
+    "test": [
+      "just-build test-unit"
+    ],
+    "test-unit": [
+      "tsc -p test [--watch 'Watching for file changes.']",
+      "rollup -c tools/build-configs/rollup.test.unit.config.js"
+    ]
+  },
+  "author": "david.fahlander@gmail.com",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-replace": "^5.0.4",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^11.1.5",
+    "@types/node": "^18.11.18",
+    "dreambase-library": "^1.0.26",
+    "just-build": "*",
+    "karma": "*",
+    "karma-chrome-launcher": "*",
+    "karma-firefox-launcher": "*",
+    "karma-qunit": "*",
+    "lib0": "^0.2.97",
+    "preact": "*",
+    "rollup": "^4.1.4",
+    "terser": "^5.20.0",
+    "tslib": "*",
+    "typescript": "^5.6.3",
+    "y-dexie": "workspace:>=4.2.0-alpha.1 <5.0.0"
+  },
+  "dependencies": {
+    "dexie-cloud-common": "workspace:^",
+    "y-dexie": "workspace:^",
+    "rxjs": "^7.x",
+    "yjs": "^13.6.27",
+    "y-protocols": "^1.0.6"
+  },
+  "peerDependencies": {
+    "dexie": "workspace:^"
+  }
+}

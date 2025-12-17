@@ -1,0 +1,53 @@
+html,
+body {
+	width: 250px;
+	/* Having only the padding in body > div doesn't seem to work for bottom padding, though... */
+	padding-bottom: 8px;
+}
+
+body > div {
+	/* Can't put this into body, or else the right margin won't be respected */
+	padding: 8px;
+}
+
+
+/* Prevent contents of buttons from being selectable */
+button img {
+	pointer-events: none;
+	user-select: none;
+}
+
+
+/* Stylings for button animation */
+button {
+	border: none;
+	width: 100%;
+	margin: 3% auto;
+	padding: 4px;
+	text-align: center;
+	font-size: 1.0em;
+	cursor: pointer;
+	box-shadow: 2px 2px 3px var(--button-shadow-color);
+	border-radius: 2px;	
+	transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+button:hover {
+	transform: scale(1.08);
+	box-shadow: 3px 3px 6px var(--button-hover-shadow-color);
+}
+
+
+/* General stylings for sections */
+div.button-section {
+	margin: 1em 0px 1em 0px;
+	padding: 10px 10px 10px 10px;
+	border-radius: 5px;
+}
+
+
+/* Stylings for buttons section */
+.buttons-section {
+	width: fit-content;
+	float: right;
+}

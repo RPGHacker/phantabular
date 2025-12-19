@@ -16,7 +16,7 @@ details {
 	padding: 0px 0px 0px 0px;
 	margin: 5px 0px 5px 0px;
 	width: 100%;
-	overflow-x: hidden;
+	/* overflow-x: hidden; */
 	word-break: break-word;
 	overflow-wrap: anywhere;
 }
@@ -257,16 +257,51 @@ button.action-button {
 }
 
 
-/* Spinner animation */
+/* Stylings related to spinner animation */
+.group-content-setup-root {
+	position: relative;
+	top: 0px;
+	right: 0px;
+	bottom: 0px;
+	left: 0px;
+}
+
+.spinner-root {
+	--spinner-size: 32px;
+	--spinner-border-size: 5px;
+	--spinner-overall-size: calc(var(--spinner-size) + var(--spinner-border-size));
+	min-height: calc(20px + var(--spinner-overall-size));
+}
+
+.spinner-background {
+	position: absolute;
+	top: 0px;
+	right: 0px;
+	bottom: 0px;
+	left: 0px;
+	/* background-color: gray; */
+	/* opacity: 25%; */
+	background-color: var(--group-details-content-bg-color);
+	opacity: 75%;
+	z-index: 20;
+}
+
+.spinner-container {
+	position: absolute;
+	top: 0px;
+	left: calc(calc(50%) - var(--spinner-overall-size));
+	z-index: 30;
+}
+
 .spinner-animation {
 	display: flex;
 	padding: 10px 10px 10px 10px;
 }
 
 .spinner {
-	width: 32px;
-	height: 32px;
-	border: 5px dotted var(--spinner-color); /* Dotted border style */
+	width: var(--spinner-size);
+	height: var(--spinner-size);
+	border: var(--spinner-border-size) dotted var(--spinner-color); /* Dotted border style */
 	border-radius: 50%;
 	border-top-color: var(--spinner-fill-color);
 	animation: spin 2s linear infinite;

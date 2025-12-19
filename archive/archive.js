@@ -35,7 +35,9 @@ function createGroup(container, className, id, displayName, actionsContent, inse
 					</span>
 				</span>
 			</summary>
-			<div class="group-contents">
+			<div class="group-content-setup-root">
+				<div class="group-contents">
+				</div>
 			</div>
 		</details>
 	`);
@@ -49,25 +51,29 @@ function createGroup(container, className, id, displayName, actionsContent, inse
 
 function createSpinnerAnimation(container) {
 	container.insertAdjacentHTML("beforeend", `
-		<div class="spinner-container" data-activequerycount="0">
-			<div class="spinner-animation">
-				<div class="spinner"></div>
+		<div class="spinner-root" data-activequerycount="0">
+			<div class="spinner-background">
+			</div>
+			<div class="spinner-container">
+				<div class="spinner-animation">
+					<div class="spinner"></div>
+				</div>
 			</div>
 		</div>
 	`);
 	
-	return container.querySelector(".spinner-container");
+	return container.querySelector(".spinner-root");
 }
 
 function showSpinnerAnimation(container) {
-	const spinnerElement = container.querySelector(".spinner-container");
+	const spinnerElement = container.querySelector(".spinner-root");
 	
 	spinnerElement.hidden = false;
 	spinnerElement.dataset.activequerycount = parseInt(spinnerElement.dataset.activequerycount) + 1;
 }
 
 function hideSpinnerAnimation(container) {
-	const spinnerElement = container.querySelector(".spinner-container");
+	const spinnerElement = container.querySelector(".spinner-root");
 	
 	const activeQueryCount = parseInt(spinnerElement.dataset.activequerycount) - 1;
 	spinnerElement.dataset.activequerycount = activeQueryCount;
@@ -92,9 +98,10 @@ function initializeGroupAsTabListContainer(group, type) {
 	group.setAttribute("data-istablist", true);
 	group.setAttribute(`data-is${type}`, true);
 	
+	const groupContentSetupRoot = group.querySelector(".group-content-setup-root");
 	const groupContents = group.querySelector(".group-contents");
 	
-	const spinnerElement = createSpinnerAnimation(groupContents);
+	const spinnerElement = createSpinnerAnimation(groupContentSetupRoot);
 	const tabsList = createTabsList(groupContents);
 }
 
@@ -143,9 +150,10 @@ function initializeGroupAsChildGroupListContainer(group, type) {
 	group.setAttribute("data-isgrouplist", true);
 	group.setAttribute(`data-is${type}list`, true);
 	
+	const groupContentSetupRoot = group.querySelector(".group-content-setup-root");
 	const groupContents = group.querySelector(".group-contents");
 	
-	const spinnerElement = createSpinnerAnimation(groupContents);
+	const spinnerElement = createSpinnerAnimation(groupContentSetupRoot);
 	const groupsList = createGroupsList(groupContents);
 }
 
@@ -1007,12 +1015,12 @@ document.addEventListener("dragend", async (e) => {
 		currentDragParent.dataset.dragparent = false;
 		
 		if (e.dataTransfer.dropEffect === "none") {
-			const group = currentDragParent.closest(".group-details");
+			const group = currentDragParent.closest(".group-content-setup-root");
 			const tabsList = group.querySelector(".tabs-list");
 			createTabsListForDragAndDrop(group, tabsList);
 		} else if (e.dataTransfer.dropEffect == "move") {
 			if (currentDragElement !== null) {		
-				const group = currentDragParent.closest(".group-details");		
+				const group = currentDragParent.closest(".group-content-setup-root");
 				const tabsList = group.querySelector(".tabs-list");
 				const tabsListForDragAndDrop = group.querySelector(".tabs-list-for-drag-and-drop");
 	

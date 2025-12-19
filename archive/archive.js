@@ -1015,14 +1015,12 @@ document.addEventListener("dragend", async (e) => {
 		currentDragParent.dataset.dragparent = false;
 		
 		if (e.dataTransfer.dropEffect === "none") {
-			const group = currentDragParent.closest(".group-content-setup-root");
-			const tabsList = group.querySelector(".tabs-list");
-			createTabsListForDragAndDrop(group, tabsList);
+			const tabsList = currentDragParent.querySelector(".tabs-list");
+			createTabsListForDragAndDrop(currentDragParent, tabsList);
 		} else if (e.dataTransfer.dropEffect == "move") {
-			if (currentDragElement !== null) {		
-				const group = currentDragParent.closest(".group-content-setup-root");
-				const tabsList = group.querySelector(".tabs-list");
-				const tabsListForDragAndDrop = group.querySelector(".tabs-list-for-drag-and-drop");
+			if (currentDragElement !== null) {
+				const tabsList = currentDragParent.querySelector(".tabs-list");
+				const tabsListForDragAndDrop = currentDragParent.querySelector(".tabs-list-for-drag-and-drop");
 	
 				const tabsListChildren = tabsList.querySelectorAll("li");
 				const tabsListForDragAndDropChildren = tabsListForDragAndDrop.querySelectorAll("li");
@@ -1059,7 +1057,8 @@ document.addEventListener("dragend", async (e) => {
 						}
 					});
 				}
-				
+					
+				const group = currentDragParent.closest("details");
 				showSpinnerAnimation(group);
 				db.tabs.bulkUpdate(entriesToUpdate).then(() => {
 					incrementGroupVersion(group);

@@ -193,24 +193,29 @@ function getSessionProperties(session) {
 }
 
 
-function querySessions() {
-	return db.sessions.reverse().sortBy("creationdate");
+async function sortedQuery(originalQuery, sortFunction) {
+	const queryResult = await originalQuery;
+	return queryResult.sort(sortFunction);
 }
 
-function queryCategories() {
-	return db.categories.reverse().sortBy("sortkey")
+async function querySessions() {
+	return sortedQuery(db.sessions.toArray(), compareSortKeysReversed);
 }
 
-function queryTabsInSession(session) {
-	return db.tabs.where("sessions").equals(session.id).sortBy("sortkey");
+async function queryCategories() {
+	return sortedQuery(db.categories.toArray(), compareSortKeysReversed);
 }
 
-function queryTabsInCategory(category) {
-	return db.tabs.where("categories").equals(category.id).sortBy("sortkey");
+async function queryTabsInSession(session) {
+	return sortedQuery(db.tabs.where("sessions").equals(session.id).toArray(), compareSortKeys);
 }
 
-function queryAllTabs(_) {
-	return db.tabs.toCollection().sortBy("sortkey");
+async function queryTabsInCategory(category) {
+	return sortedQuery(db.tabs.where("categories").equals(category.id).toArray(), compareSortKeys);
+}
+
+async function queryAllTabs(_) {
+	return sortedQuery(db.tabs.toCollection().toArray(), compareSortKeys);
 }
 
 initializeGroupAsTabListContainer(rootGroups.unsortedTabs, "unsortedtabs");
@@ -526,7 +531,7 @@ document.addEventListener("change", (e) => {
 	}
 });
 
-function createTabsListForDragAndDrop(group, tabsList) {				
+function createTabsListForDragAndDrop(group, tabsList) {
 	const tabsListForDragAndDrop = group.querySelector(".tabs-list-for-drag-and-drop");
 	tabsListForDragAndDrop.textContent = "";
 	
@@ -630,6 +635,7 @@ async function populateTabListGroup(group) {
 					
 					const newElement = tabsList.querySelector(`[data-tabid="${tab.id}"]`);
 					newElement.setAttribute("data-tooltiptype", "tab");
+					newElement.setAttribute("data-sortkey", JSON.stringify(tab.sortkey));
 					
 					++dropTargetIndex;
 				}
@@ -843,12 +849,38 @@ async function openTabById(tabId) {
 	return returnPromise;
 }
 
+function compareSortKeys(a, b) {
+	if (typeof a.sortkey !== "object") {
+		return Math.sign(a.sortkey - b.sortkey);
+	}
+	
+	let lastComparisonResult = 0;
+	
+	for (const propertyName in a.sortkey) {		
+		if (typeof a.sortkey[propertyName] === "object") {
+			lastComparisonResult = compareSortKeys(a.sortkey[propertyName], b.sortkey[propertyName]);
+		} else {
+			lastComparisonResult = Math.sign(a.sortkey[propertyName] - b.sortkey[propertyName]);
+		}
+		
+		if (lastComparisonResult != 0) {
+			return lastComparisonResult;
+		}
+	}
+	
+	return lastComparisonResult;
+}
+
+function compareSortKeysReversed(a, b) {
+	return compareSortKeys(a, b) * -1;
+}
+
 async function openTabsById(tabIds) {
 	const openSettings = await settings.openSettings;
 	
 	const keys = tabIds.map((tabId) => {id: tabId});
 	
-	const tabs = await db.tabs.bulkGet(keys).sortBy("sortkey");
+	const tabs = await sortedQuery(db.tabs.bulkGet(keys).toArray(), compareSortKeys);
 	
 	const defaultTabsToClose = [];
 	if (openSettings.tabOpenPosition == "originalPosition") {
@@ -970,12 +1002,7 @@ document.addEventListener("dragstart", (e) => {
 	}
 });
 
-document.addEventListener("dragend", (e) => {	
-	if (currentDragElement !== null) {
-		currentDragElement.dataset.dragtarget = false;
-		currentDragElement = null;
-	}
-	
+document.addEventListener("dragend", async (e) => {	
 	if (currentDragParent !== null) {
 		currentDragParent.dataset.dragparent = false;
 		
@@ -983,11 +1010,64 @@ document.addEventListener("dragend", (e) => {
 			const group = currentDragParent.closest(".group-details");
 			const tabsList = group.querySelector(".tabs-list");
 			createTabsListForDragAndDrop(group, tabsList);
-		} else {
-			console.log("Drop success: " + e.dataTransfer.dropEffect);
+		} else if (e.dataTransfer.dropEffect == "move") {
+			if (currentDragElement !== null) {		
+				const group = currentDragParent.closest(".group-details");		
+				const tabsList = group.querySelector(".tabs-list");
+				const tabsListForDragAndDrop = group.querySelector(".tabs-list-for-drag-and-drop");
+	
+				const tabsListChildren = tabsList.querySelectorAll("li");
+				const tabsListForDragAndDropChildren = tabsListForDragAndDrop.querySelectorAll("li");
+				
+				// Iterate our tab lists once from the front and once from the back and check for all
+				// elements that didn't move (i.e. whose tab ID didn't change). That leaves us with a
+				// range within which elements were actually reordered. Only this smaller range needs
+				// to be updated in the database, everything else can remain untouched, avoiding
+				// unnecessary database write operations.
+				let firstNonMatchingIndex = 0;
+				let lastNonMatchingIndex = tabsListChildren.length - 1;
+				
+				for (let index = firstNonMatchingIndex; index <= lastNonMatchingIndex; ++index) {
+					firstNonMatchingIndex = index;
+					if (tabsListChildren[index].dataset.tabid !== tabsListForDragAndDropChildren[index].dataset.tabid) {
+						break;
+					}
+				}
+				
+				for (let index = lastNonMatchingIndex; index >= firstNonMatchingIndex; --index) {
+					lastNonMatchingIndex = index;
+					if (tabsListChildren[index].dataset.tabid !== tabsListForDragAndDropChildren[index].dataset.tabid) {
+						break;
+					}
+				}
+				
+				const entriesToUpdate = [];
+				
+				for (let index = firstNonMatchingIndex; index <= lastNonMatchingIndex; ++index) {
+					entriesToUpdate.push({
+						key: parseInt(tabsListForDragAndDropChildren[index].dataset.tabid),
+						changes: {
+							sortkey: JSON.parse(tabsListChildren[index].dataset.sortkey)
+						}
+					});
+				}
+				
+				showSpinnerAnimation(group);
+				db.tabs.bulkUpdate(entriesToUpdate).then(() => {
+					incrementGroupVersion(group);
+					hideSpinnerAnimation(group);
+				}).catch((error) => {
+					hideSpinnerAnimation(group);
+				});
+			}
 		}
 		
 		currentDragParent = null;
+	}
+	
+	if (currentDragElement !== null) {
+		currentDragElement.dataset.dragtarget = false;
+		currentDragElement = null;
 	}
 });
 

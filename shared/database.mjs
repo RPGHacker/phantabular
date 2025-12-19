@@ -9,7 +9,7 @@ export class TabArchiveDB extends Dexie {
 
 		this.version(1).stores({
 			categories: '++id, name', // non-indexed fields: color, rule, sortkey
-			sessions: '++id, creationdate',
+			sessions: '++id, creationdate', // non-indexed fields: sortkey
 			tabs: '++id, url, title, *categories, *sessions' // non-indexed fields: metadata, sortkey
 		});
 	}
@@ -36,7 +36,12 @@ export class TabArchiveDB extends Dexie {
 	}
 
 	async createNewSession() {
-		let newSession = { creationdate: Date.now() };
+		let currentDate = Date.now();
+		
+		let newSession = {
+			creationdate: currentDate,
+			sortkey: currentDate
+		};
 		const newSessionId = await this.sessions.add(newSession);
 
 		newSession.id = newSessionId;
@@ -44,7 +49,7 @@ export class TabArchiveDB extends Dexie {
 		return newSession;
 	}
 
-	async createNewCategory(name = "New Category", color = undefined, rule = undefined) {		
+	async createNewCategory(name = "New Category", color = undefined, rule = undefined) {
 		let currentDate = Date.now();
 		
 		let newCategory = {

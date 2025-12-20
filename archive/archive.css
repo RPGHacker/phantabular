@@ -191,6 +191,21 @@ ul.tabs-list > li:hover {
 	background-color: light-dark(var(--oc-gray-1), var(--oc-gray-6));
 }
 
+/* Stylings for the content of groups */
+
+/*
+	This one stinks a little bit: Tab lists overflow their respective group container if we don't set the overflow.
+	However, we can't set the overfloa on the .tabs-list class itself, it has to be set on the .group-contents that
+	contains it, otherwise it won't work. However, we can't just set overflow on ALL .group-contents elements, because
+	we use nested groups and this would prevent the "position: sticky;" on the spinner animation of child groups
+	from working. This rather ugly selector here is the best solution I could come up with.
+*/
+:where([data-istablist=true]) :where(.group-contents) {
+	overflow: hidden;
+	/* Counteracts the -1px margin on tab list elements, so that the upper border on the first element isn't clipped */
+	padding-top: 1px;
+}
+
 .group-contents > ul.tabs-list-for-drag-and-drop {
 	display: none;
 }
@@ -290,12 +305,15 @@ button.action-button {
 	position: absolute;
 	top: 0px;
 	left: calc(calc(50%) - var(--spinner-overall-size));
+	height: 100%;
 	z-index: 30;
 }
 
 .spinner-animation {
+	position: sticky;
 	display: flex;
 	padding: 10px 10px 10px 10px;
+	top: 0px;
 }
 
 .spinner {
@@ -462,4 +480,20 @@ ol.editable-list > li > button {
 .metadata-entry[data-show="false"] {
 	margin: 0px 0px 0px 0px;
 	display: none;
+}
+
+
+/* Stylings for overlapping content */
+.overlapping-content {
+	display: grid;
+}
+
+:where(.overlapping-content) > :where(*) {
+	/*
+		Can't have this here because of nested groups. Having the overflow on the parent group
+		prevents the "position: sticky;" on the spinner element of the child group from working.
+	*/
+	/* overflow: hidden; */
+	grid-column-start: 1;
+	grid-row-start: 1;
 }

@@ -35,7 +35,7 @@ function createGroup(container, className, id, displayName, actionsContent, inse
 					</span>
 				</span>
 			</summary>
-			<div class="group-content-setup-root">
+			<div class="group-content-setup-root overlapping-content">
 				<div class="group-contents">
 				</div>
 			</div>
@@ -1010,10 +1010,14 @@ document.addEventListener("dragstart", (e) => {
 	}
 });
 
+async function waitUntilGroupUpToDate(group) {
+	while (group.dataset.receivedversion < group.dataset.version) {
+		await new Promise(r => setTimeout(r, 25));
+	}
+}
+
 document.addEventListener("dragend", async (e) => {	
-	if (currentDragParent !== null) {
-		currentDragParent.dataset.dragparent = false;
-		
+	if (currentDragParent !== null) {		
 		if (e.dataTransfer.dropEffect === "none") {
 			const tabsList = currentDragParent.querySelector(".tabs-list");
 			createTabsListForDragAndDrop(currentDragParent, tabsList);
@@ -1057,18 +1061,17 @@ document.addEventListener("dragend", async (e) => {
 						}
 					});
 				}
-					
-				const group = currentDragParent.closest("details");
-				showSpinnerAnimation(group);
-				db.tabs.bulkUpdate(entriesToUpdate).then(() => {
-					incrementGroupVersion(group);
-					hideSpinnerAnimation(group);
-				}).catch((error) => {
-					hideSpinnerAnimation(group);
-				});
+				
+				await db.tabs.bulkUpdate(entriesToUpdate);
+				
+				// This await keeps the "for drag & drop" list visible until our changes have been
+				// commited to the database and then read back to us. This effectively removes any
+				// visible popping of list elements while the update is being processed.
+				await waitUntilGroupUpToDate(currentDragParent.closest("details"));
 			}
 		}
 		
+		currentDragParent.dataset.dragparent = false;
 		currentDragParent = null;
 	}
 	

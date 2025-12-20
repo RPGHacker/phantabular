@@ -263,7 +263,8 @@ function updateTooltipData(e) {
 		
 		switch (tooltipElement.dataset.tooltiptype) {
 			case "tab":
-				db.tabs.get({id: parseInt(tooltipElement.dataset.tabid)}).then((tab) => {
+				try {
+					const tab = await db.tabs.get({id: parseInt(tooltipElement.dataset.tabid)});
 					tooltipLayer.insertAdjacentHTML("afterbegin", `
 						<div>
 							<span class="fav-icon-list-item" data-validimage="${tab.metadata.favIconUrl !== undefined}"><img src="${tab.metadata.favIconUrl}" class="fav-icon-small"></span><span class="tooltip-title">${tab.title}</span>
@@ -276,7 +277,7 @@ function updateTooltipData(e) {
 							<span class="metadata-entry" data-show="${tab.metadata.hidden}"><img src="../icons/iconoir/edits/eye-closed-dark.svg" class="only-in-dark-theme" /><img src="../icons/iconoir/edits/eye-closed-light.svg" class="only-in-light-theme" /> Hidden</span>
 						</div>
 					`);
-				});
+				} catch {}
 				break;
 				
 			default:

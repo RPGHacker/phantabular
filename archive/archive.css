@@ -477,6 +477,11 @@ ol.editable-list > li > button {
 	margin: 0px 32px 0px 0px;
 }
 
+.metadata-entry > img {
+	width: 24px;
+	height: 24px;
+}
+
 .metadata-entry[data-show="false"] {
 	margin: 0px 0px 0px 0px;
 	display: none;

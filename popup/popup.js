@@ -84,10 +84,10 @@ document.addEventListener("click", (e) => {
 	}
 
 	switch (e.target.dataset.action) {
-		case "archive-current-tab":
-			console.log("[Tab Archive] Archiving active tab.");
+		case "archive-selected-tabs":
+			console.log("[Tab Archive] Archiving selected tabs.");
 			browser.tabs
-				.query({ active: true, currentWindow: true })
+				.query({ highlighted: true, currentWindow: true })
 				.then(archiveTabs);
 			break;
 		case "archive-tabs-in-current-window":

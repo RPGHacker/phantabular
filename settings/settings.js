@@ -2,6 +2,7 @@ import settings from "../shared/settings.mjs";
 import db from "../shared/database.mjs";
 
 let previewImageTimer = null;
+let hasCapturePermission = false;
 
 function initializeForms(archiveSettings, openSettings) {
 	archiveHiddenTabsCheckbox.checked = archiveSettings.archiveHiddenTabs;
@@ -110,6 +111,13 @@ async function refreshPreviewImage() {
 		const archiveSettings = await settings.archiveSettings;
 		
 		if (archiveSettings.savePreviewImages) {
+			await updatePreviewImageCapturePermissions();
+			
+			if (!hasCapturePermission) {
+				needsCapturePermissionDialog.showModal();
+				return;
+			}
+			
 			const activeTab = (await browser.tabs.query({ active: true, currentWindow: true }))[0];
 			
 			const previewOptions = {
@@ -145,6 +153,23 @@ async function refreshPreviewImage() {
 	}, 100);
 }
 
+async function updatePreviewImageCapturePermissions() {
+	let allPermissions = await browser.permissions.getAll();
+	
+	hasCapturePermission = allPermissions.origins.includes("<all_urls>");
+}
+
+async function requestPreviewImageCapturePermissions() {	
+	const permissionsToRequest = {
+		origins: ["<all_urls>"]
+	}
+	
+	hasCapturePermission = await browser.permissions.request(permissionsToRequest);
+}
+
+browser.permissions.onAdded.addListener(updatePreviewImageCapturePermissions);
+browser.permissions.onRemoved.addListener(updatePreviewImageCapturePermissions);
+
 
 document.addEventListener("input", async (e) => {
 	let updatePreviewImage = false;
@@ -171,7 +196,13 @@ document.addEventListener("input", async (e) => {
 });
 
 
-document.addEventListener("change", async (e) => {	
+document.addEventListener("change", async (e) => {
+	// A very sucky place to have this check, but Firefox requires permission
+	// requests to always be coming directly from a user input action.
+	if (e.target == savePreviewImagesCheckbox && savePreviewImagesCheckbox.checked) {
+		await requestPreviewImageCapturePermissions();
+	}
+	
 	await saveChanges();
 	updateFormActivityStates();
 	refreshPreviewImage();

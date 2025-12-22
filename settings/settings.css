@@ -79,5 +79,49 @@ label {
 /* Styles for select boxes */
 select {
 	display: inline-block;
+	margin-bottom: 0.4rem;
+}
+
+/* Styles for ranges */
+input[type="range"], input[type="number"] {
+	display: inline-block;
+	margin: 0px 5px 0px 5px;
+	padding: 0px;
+}
+
+/* Styles for centering inputs with labels */
+.inputs-with-labels {
+	display: flex;
+}
+
+/* Styles of image previews */
+.capture-preview-container[open]::details-content {
+	display: grid;
+	grid: 'source target';
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	
+	border-style: solid;
+	border-radius: 5px;
+	border-width: 2px;
+	border-color: light-dark(var(--oc-black), var(--oc-white));
+}
+
+.capture-preview-container[open] > * {
+	margin: 5px;
+}
+
+.capture-preview-source {
+	grid-area: source;
+}
+
+.capture-preview-target {
+	grid-area: target;
+}
+
+.capture-preview-source-content {
+	padding: 5px;
+}
+
+.capture-preview-target-content {
 }
 

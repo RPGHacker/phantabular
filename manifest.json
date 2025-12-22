@@ -10,7 +10,7 @@
     "96": "icons/phantabular-96.png"
   },
   
-  "permissions": ["activeTab", "sessions", "tabGroups", "tabHide", "tabs", "storage", "unlimitedStorage", "cookies"],
+  "permissions": ["activeTab", "sessions", "tabGroups", "tabHide", "tabs", "storage", "unlimitedStorage", "cookies", "<all_urls>"],
   
   "browser_specific_settings": {
     "gecko": {

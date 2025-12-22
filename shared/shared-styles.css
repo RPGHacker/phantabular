@@ -34,6 +34,10 @@ table td, table th, table td {
 pre > code {
 	white-space: pre;
 }
+
+[disabled] {
+	color: light-dark(var(--oc-gray-6), var(--oc-gray-4));
+}
  
  
  /* Add support for light and dark themes */

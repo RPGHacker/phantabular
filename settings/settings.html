@@ -46,14 +46,57 @@
 					<div><input type="checkbox" id="noDuplicateUrlsCheckbox" /><label for="noDuplicateUrlsCheckbox">No duplicates (when archiving a tab that already exists in the archive with an identical URL, that entry will be updated instead of creating a new one)</label></div>
 					<div><input type="checkbox" id="autoCloseCheckbox" /><label for="autoCloseCheckbox">Archiving a tab automatically closes it</label></div>
 					<div><input type="checkbox" id="archiveAllOnCloseCheckbox" /><label for="archiveAllOnCloseCheckbox">Closing a browser window automatically archives all tabs within it</label></div>
+					<p>
+						<div><input type="checkbox" id="savePreviewImagesCheckbox" /><label for="savePreviewImagesCheckbox">Save preview images of tabs contents (requires additional storage space and RAM, archiving tabs takes longer)</label></div>
+						<div>
+							<label id="previewImageFormatLabel" for="previewImageFormatSelect" disabled>Image format:</label>
+							<select id="previewImageFormatSelect" class="inline-option" disabled>
+								<option value="jpeg" selected>JPEG (lower quality, takes up less space)</option>
+								<option value="png">PNG (higher quality, takes up more space)</option>
+							</select>
+						</div>
+						<div>
+							<div class="inputs-with-labels">
+								<label id="previewImageQualityLabel" for="previewImageQualityNumber" disabled>Image quality (0 = lowest, 100 = highest):</label>
+								<input type="range" id="previewImageQualityRange" min="0" max="100" disabled></input>
+								<input type="number" id="previewImageQualityNumber" min="0" max="100" disabled></input>
+							</div>
+						</div>
+						<div>
+							<div class="inputs-with-labels">
+								<label id="previewImageScaleLabel" for="previewImageScaleNumber" disabled>Image scale:</label>
+								<input type="range" id="previewImageScaleRange" min="5" max="500" disabled></input>
+								<input type="number" id="previewImageScaleNumber" min="5" max="500" disabled></input>
+								<label id="previewImageScalePercentLabel" for="previewImageScaleNumber" disabled>%</label>
+							</div>
+						</div>
+						<div><label>Estimated preview image size:</label> <label id="previewImageSizeEstimateLabel">0 bytes</label></div>
+						<div>NOTE: The actual image size for any given tab may vary, depending on several factors such as visible viewport area, zoom level and the content being captures.</div>
+						<details id="previewImageRoot" class="capture-preview-container">
+							<summary>Preview:</summary>
+							<div id="previewImageSource" class="capture-preview-source">
+								<h2>Input:</h2>
+								<div id="previewImageSourceContent" class="capture-preview-source-content colorize-section colorize-red">
+									<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam vel luctus ipsum. Sed ac placerat ipsum. In pretium, velit sed pretium tincidunt, lectus velit aliquet lorem, ac posuere nulla lectus sit amet neque. Nunc vel nisl vel velit consequat porttitor. Duis sed varius metus, quis elementum mauris. Fusce pharetra neque nec risus mollis aliquet. Nam mollis nisi ligula. Maecenas eu leo sit amet arcu porta maximus. Phasellus pretium nec magna sed interdum. Vestibulum sagittis molestie purus vel scelerisque. Morbi posuere sed ex quis viverra. Cras lacinia nunc ac rutrum dapibus. Nam consectetur dignissim purus, non sagittis nunc convallis eget. Proin tempus neque id magna pulvinar porttitor.</p>
+									<p><center><img src="../images/preview_geese.jpg"/></center></p>
+									<p>Pellentesque ac ligula nisi. Curabitur eu justo non quam volutpat rutrum vitae ac risus. Suspendisse at aliquet nibh, eu pulvinar tellus. Donec ullamcorper sollicitudin dolor sed dignissim. Donec nisi dui, finibus sit amet dui sed, tincidunt efficitur lectus. Nullam viverra nibh ut cursus convallis. Fusce efficitur tellus tortor, vel aliquet massa maximus vel. Fusce id augue quis sapien consequat laoreet. Nullam sed felis non libero maximus condimentum. Sed tempor efficitur purus vitae tempor. Curabitur eu ante sollicitudin, accumsan ante sit amet, placerat nisi. Suspendisse suscipit, lacus ut sodales maximus, lacus nunc blandit tellus, sit amet luctus ante nibh feugiat quam. Mauris dui leo, ullamcorper a luctus pharetra, semper ac elit. Praesent blandit velit vel maximus aliquam. In ut iaculis justo, vitae gravida nulla.</p>
+								</div>
+							</div>
+							<div id="previewImageTarget" class="capture-preview-target">
+								<h2>Output:</h2>
+								<div id="previewImageContainer">
+								</div>
+							</div>
+						</details>
+					</p>
 				</div>
 				
 				<div id="open-settings" class="settings-section colorize-section">
 					<h2>Open settings:</h2>
-					<div><input type="checkbox" id="deleteTabsUponOpen" /><label for="deleteTabsUponOpen">Opening tabs from the archive automatically deletes them from it</label></div>
+					<div><input type="checkbox" id="deleteTabsUponOpenCheckbox" /><label for="deleteTabsUponOpenCheckbox">Opening tabs from the archive automatically deletes them from it</label></div>
 					<div>
-						<label for="tabOpenPosition">Position of tabs after opening from the archive:</label>
-						<select id="tabOpenPosition" class="inline-option">
+						<label for="tabOpenPositionSelect">Position of tabs after opening from the archive:</label>
+						<select id="tabOpenPositionSelect" class="inline-option">
 							<option value="originalPosition" selected>Original position before archival (if possible)</option>
 							<option value="nextToActiveTab">Next to active tab</option>
 							<option value="endOfActiveWindow">At the end of the active window</option>

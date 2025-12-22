@@ -19,13 +19,18 @@ export class Settings {
 		Object.freeze(this._supportedColors);
 		
 		this._storage = {};
-		this._storage.defaultSettings = {
+		this._defaultSettings = {
 			archiveSettings: {
 				archiveHiddenTabs: false,
 				archivePinnedTabs: false,
 				noDuplicateUrls: false,
 				autoCloseArchivedTabs: true,
-				archiveAllTabsOnBrowserClose: false
+				archiveAllTabsOnBrowserClose: false,
+				
+				savePreviewImages: false,
+				previewImageFormat: "jpeg",
+				previewImageQuality: 92,
+				previewImageScale: 1.0
 			},
 			openSettings: {
 				deleteTabsUponOpen: false,
@@ -34,7 +39,7 @@ export class Settings {
 			}
 		};
 		
-		this._storage.currentSettings = JSON.parse(JSON.stringify(this._storage.defaultSettings));
+		this._storage.currentSettings = JSON.parse(JSON.stringify(this._defaultSettings));
 		
 		this._storagePromise = browser.storage.sync.get(this._storage);
 	}
@@ -65,8 +70,8 @@ export class Settings {
 		return browser.storage.sync.set(this._storage);
 	}
 	
-	async reset() {		
-		this._storage.currentSettings = JSON.parse(JSON.stringify(this._storage.defaultSettings));
+	async reset() {
+		this._storage.currentSettings = JSON.parse(JSON.stringify(this._defaultSettings));
 		
 		return this.update();
 	}

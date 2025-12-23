@@ -1,16 +1,16 @@
 import { Dexie, liveQuery } from "../deps/dexie/dist/dexie.mjs";
 import settings from "../shared/settings.mjs";
 
-console.log("[Tab Archive] Using Dexie: v" + Dexie.semVer);
+console.log("[PhanTabular] Using Dexie: v" + Dexie.semVer);
 
-export class TabArchiveDB extends Dexie {
+export class PhanTabularDB extends Dexie {
 	constructor() {
-		super('TabArchiveDB');
+		super('PhanTabularDB');
 
 		this.version(1).stores({
 			categories: '++id, name', // non-indexed fields: color, rule, sortkey
 			sessions: '++id, creationdate', // non-indexed fields: sortkey
-			tabs: '++id, url, title, *categories, *sessions' // non-indexed fields: metadata, sortkey
+			tabs: '++id, url, title, *categories, *sessions' // non-indexed fields: metadata, sortkey, previewimage (optional)
 		});
 	}
 
@@ -135,7 +135,6 @@ export class TabArchiveDB extends Dexie {
 			}
 		}
 		
-		console.log(newTableEntries);
 		await this.tabs.bulkPut(newTableEntries);
 	}
 	
@@ -196,7 +195,87 @@ export class TabArchiveDB extends Dexie {
 	newLiveQuery(query) {
 		return liveQuery(query);
 	}
+
+	async archiveTabs(tabs) {	
+		const errors = [];
+		
+		const archiveSettings = await settings.archiveSettings;
+	
+		let tabsToArchive = [];
+	
+		// Sort out tabs that are part of the selection, but we don't want to archive.
+		for (const tab of tabs){
+			if ((tab.hidden && !archiveSettings.archiveHiddenTabs)
+				|| (tab.pinned && !archiveSettings.archivePinnedTabs))
+			{
+				continue;
+			}
+	
+			console.log("[PhanTabular] Archiving: " + tab.url);
+			tabsToArchive.push(tab);
+		};
+	
+		if (tabsToArchive.length === 0) {
+			errors.push("No archivable tabs in selection.");
+		} else {
+			// Retrieve all categories that have auto-catch rules, so that we can check if
+			// any of them need to be applied to the tab's we're about to archive.
+			let autoCatchCategories = [];
+			try {
+				autoCatchCategories = await this.getCategoriesWithAutoCatchRules();
+			} catch (error) {
+				errors.push("Retrieving categories with auto-catch rules failed: " + error);
+			}
+		
+			// Retrieve or create the session that our tabs will go into.
+			let currentSession = -1;
+			try {
+				currentSession = await this.getCurrentSession();
+			
+				if (!currentSession) {
+					currentSession = await this.createNewSession();
+				}
+			} catch (error) {
+				// Should this be a critical error instead and abort archival process?
+				errors.push("Retrieving or creating session for tabs failed: " + error);
+			}
+		
+			console.log("[PhanTabular] Session: " + currentSession.id + " -> " + currentSession.creationdate);
+		
+			// Transform our list of tabs into the format that our DB helper expects.
+			let tabsToArchiveWithCategories = [];
+		
+			for (const tab of tabsToArchive) {
+				let categoriesToAdd = [];
+				
+				// Check, which categories match, and add them to our list of categories for this tab.
+				for (const category of autoCatchCategories) {
+					try {
+						if (await ruleeval.matchesRule(tab, category.rule)) {
+							categoriesToAdd.push(category.id);
+						}
+					} catch (error) {
+						if (!errors.includes(error)) {
+							errors.push("Evaluating auto-catch rule failed: " + error);
+						}
+					}
+				}
+		
+				tabsToArchiveWithCategories.push({tab: tab, categories: categoriesToAdd})
+			}
+		
+			try {
+				await this.addTabsToArchive(tabsToArchiveWithCategories, currentSession.id);
+			} catch(error) {
+				errors.push("Adding tabs to archive failed: " + error);
+			}
+		}
+		
+		if (errors.length > 0) {
+			throw(errors.join("\n"));
+		}
+	}
 }
 
-export const db = new TabArchiveDB();
+export const db = new PhanTabularDB();
 export { db as default };

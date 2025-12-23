@@ -304,7 +304,8 @@ button.action-button {
 .spinner-container {
 	position: absolute;
 	top: 0px;
-	left: calc(calc(50%) - var(--spinner-overall-size));
+	/* The 12px here are probably from paddings and margins that I haven't accounted for... */
+	left: calc(calc(50%) - (var(--spinner-overall-size) * 0.5) - 12px);
 	height: 100%;
 	z-index: 30;
 }
@@ -319,7 +320,7 @@ button.action-button {
 .spinner {
 	width: var(--spinner-size);
 	height: var(--spinner-size);
-	border: var(--spinner-border-size) dotted var(--spinner-color); /* Dotted border style */
+	border: var(--spinner-border-size) dotted var(--spinner-color);
 	border-radius: 50%;
 	border-top-color: var(--spinner-fill-color);
 	animation: spin 2s linear infinite;

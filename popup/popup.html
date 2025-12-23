@@ -8,7 +8,19 @@
 		<link rel="icon" type="image/x-icon" href="../icons/phantabular-32.png">
 	</head>
 
-	<body>
+	<body>		
+		<dialog id="archiveTabsErrorDialog">
+			<form method="dialog">
+				<div>
+					<label>Errors occured while trying to archive tabs:</label>
+					<p><label id="archiveTabsError"></label></p>
+				</div>
+				<div>
+					<center><button type="submit" class="colorize-button">Close</button></center>
+				</div>
+			</form>
+		</dialog>
+		
 		<div>
 			<div id="popup-content">
 				<h1>PhanTabular</h1>
@@ -27,6 +39,14 @@
 				
 				<div class="buttons-section">
 					<button data-action="view-settings" class="colorize-button image-button"><img src="../icons/iconoir/edits/settings-solid-fixed-light.svg" class="only-in-light-theme" style="height: 40px;" /><img src="../icons/iconoir/edits/settings-solid-fixed-dark.svg" class="only-in-dark-theme" style="height: 40px;" /></button>
+				</div>
+				
+				<div id="spinnerRoot" class="spinner-root" hidden>
+					<div class="spinner-background">
+					</div>
+					<div class="spinner-animation">
+						<div class="spinner"></div>
+					</div>
 				</div>
 			</div>
 			<script type="module" src="popup.js"></script>

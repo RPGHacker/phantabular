@@ -1106,7 +1106,7 @@ document.addEventListener("click", (e) => {
 
 	switch (e.target.dataset.action) {
 		case "create-category":
-			console.log("[Tab Archive] Creating new category.");
+			console.log("[PhanTabular] Creating new category.");
 			createNewCategory();
 			break;
 			

@@ -222,7 +222,7 @@ document.addEventListener("click", (e) => {
 
 	switch (e.target.dataset.action) {
 		case "reset-settings":
-			console.log("[Tab Archive] Resetting settings.");
+			console.log("[PhanTabular] Resetting settings.");
 			settings.reset().then(() => {
 				settings.archiveSettings.then((archiveSettings) => {
 					settings.openSettings.then((openSettings) => {
@@ -233,17 +233,17 @@ document.addEventListener("click", (e) => {
 			break;
 			
 		case "delete-archive":
-			console.log("[Tab Archive] Requesting deletion of archive.");
+			console.log("[PhanTabular] Requesting deletion of archive.");
 			confirmArchiveDeletionDialog.showModal();
 			break;
 			
 		case "cancel-archive-deletion":
-			console.log("[Tab Archive] Cancelling deletion of archive.");
+			console.log("[PhanTabular] Cancelling deletion of archive.");
 			confirmArchiveDeletionDialog.close();
 			break;
 			
 		case "confirm-archive-deletion":
-			console.log("[Tab Archive] Deleting archive.");
+			console.log("[PhanTabular] Deleting archive.");
 			
 			deletingArchiveDialog.showModal();
 			

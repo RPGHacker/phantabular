@@ -483,9 +483,28 @@ ol.editable-list > li > button {
 	height: 24px;
 }
 
-.metadata-entry[data-show="false"] {
+.metadata-entry[data-show=false] {
 	margin: 0px 0px 0px 0px;
 	display: none;
+}
+
+/* Stylings for preview image */
+.tooltip-tab-preview-image {
+	max-height: 30vh;
+	overflow: hidden;
+}
+
+.tooltip-tab-preview-image[data-show=false] {
+	margin: 0px 0px 0px 0px;
+	display: none;
+}
+
+.tooltip-tab-preview-image > img {
+	position: static;
+	display: block;
+	/* This, very unfortunately, doesn*t work */
+	/* max-height: 100%; */
+	max-height: 30vh;
 }
 
 

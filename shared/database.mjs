@@ -10,7 +10,7 @@ export class PhanTabularDB extends Dexie {
 		this.version(1).stores({
 			categories: '++id, name', // non-indexed fields: color, rule, sortkey
 			sessions: '++id, creationdate', // non-indexed fields: sortkey
-			tabs: '++id, url, title, *categories, *sessions' // non-indexed fields: metadata, sortkey, previewimage (optional)
+			tabs: '++id, url, title, *categories, *sessions' // non-indexed fields: metadata, sortkey, previewimageurl (optional)
 		});
 	}
 
@@ -82,7 +82,7 @@ export class PhanTabularDB extends Dexie {
 		return categoriesWithAutoCatchRules;
 	}
 
-	async addTabsToArchive(tabsWithCategories, sessionId) {
+	async _addTabsToArchive(preprocessedTabDatas, sessionId) {
 		let justUrls = [];
 		let newTableEntries = [];
 		let urlsWithIndices = {};
@@ -91,19 +91,25 @@ export class PhanTabularDB extends Dexie {
 
 		// Convert our list of tabs into the correct format for the database.
 		let currentIndex = 0;
-		for (const tabWithCategories of tabsWithCategories) {
-			justUrls.push(tabWithCategories.tab.url);
+		for (const preprocessedTabData of preprocessedTabDatas) {
+			justUrls.push(preprocessedTabData.tab.url);
 			
-			newTableEntries.push({
-				url: tabWithCategories.tab.url,
-				title: tabWithCategories.tab.title,
-				categories: tabWithCategories.categories,
+			const newEntry = {
+				url: preprocessedTabData.tab.url,
+				title: preprocessedTabData.tab.title,
+				categories: preprocessedTabData.categories,
 				sessions: [ sessionId ],
-				metadata: tabWithCategories.tab,
-				sortkey: { keyHigh: currentDate, keyMid: tabWithCategories.tab.windowId, keyLow: tabWithCategories.tab.id }
-			});
+				metadata: preprocessedTabData.tab,
+				sortkey: { keyHigh: currentDate, keyMid: preprocessedTabData.tab.windowId, keyLow: preprocessedTabData.tab.id }
+			}
 			
-			urlsWithIndices[tabWithCategories.tab.url] = currentIndex;
+			if (preprocessedTabData.previewImage) {
+				newEntry.previewimageurl = preprocessedTabData.previewImage;
+			}
+			
+			newTableEntries.push(newEntry);
+			
+			urlsWithIndices[preprocessedTabData.tab.url] = currentIndex;
 			++currentIndex;
 		}
 		
@@ -136,6 +142,130 @@ export class PhanTabularDB extends Dexie {
 		}
 		
 		await this.tabs.bulkPut(newTableEntries);
+	}
+
+	async hasPreviewImageCapturePermissions() {	
+		let allPermissions = await browser.permissions.getAll();
+	
+		return allPermissions.origins.includes("<all_urls>");
+	}
+
+	async archiveTabs(tabs) {	
+		const errors = [];
+		
+		const archiveSettings = await settings.archiveSettings;
+		
+		let savePreviewImages = false;
+		
+		if (archiveSettings.savePreviewImages) {
+			const previewImageCapturePermissions = await this.hasPreviewImageCapturePermissions();
+			
+			if (previewImageCapturePermissions) {
+				savePreviewImages = true;
+			} else {
+				errors.push("Saving preview images requires the permission to access your data for all websites.");
+			}
+		}
+	
+		let tabsToArchive = [];
+	
+		// Sort out tabs that are part of the selection, but we don't want to archive.
+		for (const tab of tabs){
+			if ((tab.hidden && !archiveSettings.archiveHiddenTabs)
+				|| (tab.pinned && !archiveSettings.archivePinnedTabs))
+			{
+				continue;
+			}
+	
+			console.log("[PhanTabular] Archiving: " + tab.url);
+			tabsToArchive.push(tab);
+		};
+	
+		if (tabsToArchive.length === 0) {
+			errors.push("No archivable tabs in selection.");
+		} else {
+			// Retrieve all categories that have auto-catch rules, so that we can check if
+			// any of them need to be applied to the tab's we're about to archive.
+			let autoCatchCategories = [];
+			try {
+				autoCatchCategories = await this.getCategoriesWithAutoCatchRules();
+			} catch (error) {
+				errors.push("Retrieving categories with auto-catch rules failed: " + error);
+			}
+		
+			// Retrieve or create the session that our tabs will go into.
+			let currentSession = -1;
+			try {
+				currentSession = await this.getCurrentSession();
+			
+				if (!currentSession) {
+					currentSession = await this.createNewSession();
+				}
+			} catch (error) {
+				// Should this be a critical error instead and abort archival process?
+				errors.push("Retrieving or creating session for tabs failed: " + error);
+			}
+		
+			console.log("[PhanTabular] Session: " + currentSession.id + " -> " + currentSession.creationdate);
+		
+			// Transform our list of tabs into the format that our DB helper expects.
+			let preprocessedTabDatas = [];
+		
+			for (const tab of tabsToArchive) {
+				let categoriesToAdd = [];
+				
+				// Check, which categories match, and add them to our list of categories for this tab.
+				for (const category of autoCatchCategories) {
+					try {
+						if (await ruleeval.matchesRule(tab, category.rule)) {
+							categoriesToAdd.push(category.id);
+						}
+					} catch (error) {
+						const errorText = "Evaluating auto-catch rule failed: " + error;
+						if (!errors.includes(errorText)) {
+							errors.push(errorText);
+						}
+					}
+				}
+				
+				const newEntry = {
+					tab: tab,
+					categories: categoriesToAdd
+				}
+				
+				if (savePreviewImages) {			
+					const previewImageOptions = {
+						format: archiveSettings.previewImageFormat,
+						quality: archiveSettings.previewImageQuality,
+						scale: archiveSettings.previewImageScale / window.devicePixelRatio
+					};
+					
+					try {
+						if (tab.discarded) {
+							throw("Couldn't capture preview images for unloaded tabs.");
+						}
+						newEntry.previewImage = await browser.tabs.captureTab(tab.id, previewImageOptions);
+					} catch(error) {
+						const errorText = "Capturing tab preview image failed: " + error;
+						if (!errors.includes(errorText)) {
+							errors.push(errorText);
+						}
+					}
+				}
+		
+				preprocessedTabDatas.push(newEntry);
+			}
+		
+			try {
+				await this._addTabsToArchive(preprocessedTabDatas, currentSession.id);
+			} catch(error) {
+				errors.push("Adding tabs to archive failed: " + error);
+			}
+		}
+		
+		if (errors.length > 0) {
+			throw(errors.join("\n"));
+		}
 	}
 	
 	async deleteSessionIfNoLongerNeeded(sessionId) {
@@ -194,86 +324,6 @@ export class PhanTabularDB extends Dexie {
 	
 	newLiveQuery(query) {
 		return liveQuery(query);
-	}
-
-	async archiveTabs(tabs) {	
-		const errors = [];
-		
-		const archiveSettings = await settings.archiveSettings;
-	
-		let tabsToArchive = [];
-	
-		// Sort out tabs that are part of the selection, but we don't want to archive.
-		for (const tab of tabs){
-			if ((tab.hidden && !archiveSettings.archiveHiddenTabs)
-				|| (tab.pinned && !archiveSettings.archivePinnedTabs))
-			{
-				continue;
-			}
-	
-			console.log("[PhanTabular] Archiving: " + tab.url);
-			tabsToArchive.push(tab);
-		};
-	
-		if (tabsToArchive.length === 0) {
-			errors.push("No archivable tabs in selection.");
-		} else {
-			// Retrieve all categories that have auto-catch rules, so that we can check if
-			// any of them need to be applied to the tab's we're about to archive.
-			let autoCatchCategories = [];
-			try {
-				autoCatchCategories = await this.getCategoriesWithAutoCatchRules();
-			} catch (error) {
-				errors.push("Retrieving categories with auto-catch rules failed: " + error);
-			}
-		
-			// Retrieve or create the session that our tabs will go into.
-			let currentSession = -1;
-			try {
-				currentSession = await this.getCurrentSession();
-			
-				if (!currentSession) {
-					currentSession = await this.createNewSession();
-				}
-			} catch (error) {
-				// Should this be a critical error instead and abort archival process?
-				errors.push("Retrieving or creating session for tabs failed: " + error);
-			}
-		
-			console.log("[PhanTabular] Session: " + currentSession.id + " -> " + currentSession.creationdate);
-		
-			// Transform our list of tabs into the format that our DB helper expects.
-			let tabsToArchiveWithCategories = [];
-		
-			for (const tab of tabsToArchive) {
-				let categoriesToAdd = [];
-				
-				// Check, which categories match, and add them to our list of categories for this tab.
-				for (const category of autoCatchCategories) {
-					try {
-						if (await ruleeval.matchesRule(tab, category.rule)) {
-							categoriesToAdd.push(category.id);
-						}
-					} catch (error) {
-						if (!errors.includes(error)) {
-							errors.push("Evaluating auto-catch rule failed: " + error);
-						}
-					}
-				}
-		
-				tabsToArchiveWithCategories.push({tab: tab, categories: categoriesToAdd})
-			}
-		
-			try {
-				await this.addTabsToArchive(tabsToArchiveWithCategories, currentSession.id);
-			} catch(error) {
-				errors.push("Adding tabs to archive failed: " + error);
-			}
-		}
-		
-		if (errors.length > 0) {
-			throw(errors.join("\n"));
-		}
 	}
 }
 

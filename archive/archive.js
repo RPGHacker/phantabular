@@ -247,6 +247,32 @@ const tooltipData = {
 	lastMouseEvent: null
 }
 
+function repositionTooltipLayer() {
+	if (tooltipData.lastMouseEvent === null) {
+		return;
+	}
+		
+	const tooltipWidth = tooltipLayer.offsetWidth;
+	const tooltipHeight = tooltipLayer.offsetHeight;
+	
+	const xOffset = 0;
+	const yOffset = 20;
+	
+	let xPos = tooltipData.lastMouseEvent.clientX + xOffset;
+	let yPos = tooltipData.lastMouseEvent.clientY + yOffset;
+	
+	if (tooltipWidth + xPos > window.innerWidth) {
+		xPos = window.innerWidth - tooltipWidth;
+	}
+	
+	if (tooltipHeight + yPos > window.innerHeight) {
+		yPos = tooltipData.lastMouseEvent.clientY - yOffset - tooltipHeight;
+	}
+	
+	tooltipLayer.style.left = `${xPos}px`;
+	tooltipLayer.style.top = `${yPos}px`;
+}
+
 function updateTooltipData(e) {	
 	tooltipData.lastMouseEvent = e;
 
@@ -267,7 +293,7 @@ function updateTooltipData(e) {
 					const tab = await db.tabs.get({id: parseInt(tooltipElement.dataset.tabid)});
 					tooltipLayer.insertAdjacentHTML("afterbegin", `
 						<div>
-							<span class="fav-icon-list-item" data-validimage="${tab.metadata.favIconUrl !== undefined}"><img src="${tab.metadata.favIconUrl}" class="fav-icon-small"></span><span class="tooltip-title">${tab.title}</span>
+							<span class="fav-icon-list-item" data-validimage="${tab.metadata.favIconUrl !== undefined}"><img src="${tab.metadata.favIconUrl}" class="fav-icon-small" /></span><span class="tooltip-title">${tab.title}</span>
 						</div>
 						<div><a href="${tab.url}" class="colorize-link">${tab.url}</a></div>
 						<div>
@@ -275,6 +301,9 @@ function updateTooltipData(e) {
 							<span class="metadata-entry"><img src="../icons/iconoir/edits/window-tabs-solid-dark.svg" class="only-in-dark-theme" /><img src="../icons/iconoir/edits/window-tabs-solid-light.svg" class="only-in-light-theme" /> Tab Id: ${tab.metadata.id}</span>
 							<span class="metadata-entry" data-show="${tab.metadata.pinned}"><img src="../icons/iconoir/edits/pin-solid.svg" /> Pinned</span>
 							<span class="metadata-entry" data-show="${tab.metadata.hidden}"><img src="../icons/iconoir/edits/eye-closed-dark.svg" class="only-in-dark-theme" /><img src="../icons/iconoir/edits/eye-closed-light.svg" class="only-in-light-theme" /> Hidden</span>
+						</div>
+						<div class="tooltip-tab-preview-image" data-show="${Boolean(tab.previewimageurl)}">
+							<center><img src="${tab.previewimageurl}" /></center>
 						</div>
 					`);
 				} catch {}
@@ -285,28 +314,18 @@ function updateTooltipData(e) {
 				break;
 		}
 		
-		const tooltipWidth = tooltipLayer.offsetWidth;
-		const tooltipHeight = tooltipLayer.offsetHeight;
-		
-		const xOffset = 0;
-		const yOffset = 20;
-		
-		let xPos = tooltipData.lastMouseEvent.clientX + xOffset;
-		let yPos = tooltipData.lastMouseEvent.clientY + yOffset;
-		
-		if (tooltipWidth + xPos > window.innerWidth) {
-			xPos = window.innerWidth - tooltipWidth;
-		}
-		
-		if (tooltipHeight + yPos > window.innerHeight) {
-			yPos = tooltipData.lastMouseEvent.clientY - yOffset - tooltipHeight;
-		}
-	
-		tooltipLayer.style.left = `${xPos}px`;
-		tooltipLayer.style.top = `${yPos}px`;
+		repositionTooltipLayer();
 		tooltipLayer.style.opacity = 1;
 	}, 500);
 }
+
+const tooltipResizeObserver = new ResizeObserver(() => {
+	if (tooltipLayer.style.opacity === 0) {
+		return;
+	}
+	
+	repositionTooltipLayer();
+}).observe(tooltipLayer);
 
 
 async function editCategorySettings(categoryElement) {	
@@ -503,7 +522,7 @@ async function getCategoryForId(id) {
 
 
 function checkTooltipMouseMove(e) {
-	const movementThreshold = 0.9;
+	const movementThreshold = 1.0;
 	
 	if (tooltipData.lastMouseEvent === null
 		|| Math.abs(e.clientX - tooltipData.lastMouseEvent.clientX) >= movementThreshold
@@ -527,6 +546,12 @@ document.addEventListener("scroll", (e) => {
 	clearTimeout(tooltipData.tooltipTimer);
 	tooltipLayer.style.opacity = 0;
 });
+
+document.addEventListener("load", (e) => {
+	if (e.target.closest("#tooltipLayer") === tooltipLayer && tooltipLayer.style.opacity !== 0) {
+		repositionTooltipLayer();
+	}
+}, true);
 
 document.addEventListener("change", (e) => {
 	if (e.target.tagName == "SELECT") {

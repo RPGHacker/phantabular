@@ -12,6 +12,8 @@ const windowIdRemaps = {};
 let currentDragParent = null;
 let currentDragElement = null;
 
+tooltipLayer.style.opacity = 0;
+
 const groupsRootList = document.querySelector("#groups-root-list");
 
 function escapeHTML(unescaped) {
@@ -244,11 +246,12 @@ async function createNewCategory() {
 
 const tooltipData = {
 	tooltipTimer: null,
-	lastMouseEvent: null
+	lastMousePos: null,
+	lastMouseTarget: null
 }
 
 function repositionTooltipLayer() {
-	if (tooltipData.lastMouseEvent === null) {
+	if (tooltipData.lastMousePos === null) {
 		return;
 	}
 		
@@ -258,28 +261,29 @@ function repositionTooltipLayer() {
 	const xOffset = 0;
 	const yOffset = 20;
 	
-	let xPos = tooltipData.lastMouseEvent.clientX + xOffset;
-	let yPos = tooltipData.lastMouseEvent.clientY + yOffset;
+	let xPos = tooltipData.lastMousePos.clientX + xOffset;
+	let yPos = tooltipData.lastMousePos.clientY + yOffset;
 	
 	if (tooltipWidth + xPos > window.innerWidth) {
 		xPos = window.innerWidth - tooltipWidth;
 	}
 	
 	if (tooltipHeight + yPos > window.innerHeight) {
-		yPos = tooltipData.lastMouseEvent.clientY - yOffset - tooltipHeight;
+		yPos = tooltipData.lastMousePos.clientY - yOffset - tooltipHeight;
 	}
 	
 	tooltipLayer.style.left = `${xPos}px`;
 	tooltipLayer.style.top = `${yPos}px`;
 }
 
-function updateTooltipData(e) {	
-	tooltipData.lastMouseEvent = e;
+function updateShowTooltip(mousePos, mouseTarget) {	
+	tooltipData.lastMousePos = mousePos;
+	tooltipData.lastMouseTarget = mouseTarget;
 
 	clearTimeout(tooltipData.tooltipTimer);
 
 	tooltipData.tooltipTimer = setTimeout(async () => {	
-		const tooltipElement = tooltipData.lastMouseEvent.target.closest(".has-tooltip");
+		const tooltipElement = tooltipData.lastMouseTarget.closest(".has-tooltip");
 		if (!tooltipElement) {
 			tooltipLayer.style.opacity = 0;
 			return;
@@ -320,7 +324,7 @@ function updateTooltipData(e) {
 }
 
 const tooltipResizeObserver = new ResizeObserver(() => {
-	if (tooltipLayer.style.opacity === 0) {
+	if (parseFloat(tooltipLayer.style.opacity) === 0) {
 		return;
 	}
 	
@@ -521,17 +525,37 @@ async function getCategoryForId(id) {
 }
 
 
-function checkTooltipMouseMove(e) {
-	const movementThreshold = 1.0;
-	
-	if (tooltipData.lastMouseEvent === null
-		|| Math.abs(e.clientX - tooltipData.lastMouseEvent.clientX) >= movementThreshold
-		|| Math.abs(e.clientY - tooltipData.lastMouseEvent.clientY) >= movementThreshold
-	) {
-		tooltipLayer.style.opacity = 0;
+function checkTooltipMouseMove(e) {	
+	if (tooltipData.lastMousePos === null) {
+		tooltipData.lastMousePos = {
+			clientX: e.clientX,
+			clientY: e.clientY
+		};
 	}
 	
-	updateTooltipData(e);
+	if (parseFloat(tooltipLayer.style.opacity) === 0) {
+		const movementThreshold = 1.0;
+		
+		if (Math.abs(e.clientX - tooltipData.lastMousePos.clientX) >= movementThreshold
+			|| Math.abs(e.clientY - tooltipData.lastMousePos.clientY) >= movementThreshold
+		) {
+			const mousePos = {
+				clientX: e.clientX,
+				clientY: e.clientY
+			};
+			
+			updateShowTooltip(mousePos, e.target);
+		}
+	} else {
+		const movementThreshold = 1.5;
+		
+		if (Math.abs(e.clientX - tooltipData.lastMousePos.clientX) >= movementThreshold
+			|| Math.abs(e.clientY - tooltipData.lastMousePos.clientY) >= movementThreshold
+		) {
+			clearTimeout(tooltipData.tooltipTimer);
+			tooltipLayer.style.opacity = 0;
+		}
+	}
 }
 
 document.addEventListener("mouseover", (e) => {
@@ -543,12 +567,18 @@ document.addEventListener("mousemove", (e) => {
 });
 
 document.addEventListener("scroll", (e) => {
+	// Hide existing tooltip, but also check if the cursor has scrolled over a new element
+	// that might have a tooltip that we want to display once the cooldown expires again.
 	clearTimeout(tooltipData.tooltipTimer);
 	tooltipLayer.style.opacity = 0;
+	if (tooltipData.lastMousePos !== null) {
+		tooltipData.lastMouseTarget = document.elementFromPoint(tooltipData.lastMousePos.clientX, tooltipData.lastMousePos.clientY);
+		updateShowTooltip(tooltipData.lastMousePos, tooltipData.lastMouseTarget);
+	}
 });
 
 document.addEventListener("load", (e) => {
-	if (e.target.closest("#tooltipLayer") === tooltipLayer && tooltipLayer.style.opacity !== 0) {
+	if (e.target.closest("#tooltipLayer") === tooltipLayer && parseFloat(tooltipLayer.style.opacity) !== 0) {
 		repositionTooltipLayer();
 	}
 }, true);

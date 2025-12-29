@@ -10,7 +10,10 @@ const activeMutationObservers = {};
 const windowIdRemaps = {};
 
 let currentDragParent = null;
-let currentDragElement = null;
+let currentlyDraggedElements = [];
+
+let currentTabSelectionParent = null;
+let currentlySelectedTabElements = [];
 
 tooltipLayer.style.opacity = 0;
 
@@ -25,7 +28,7 @@ function escapeHTML(unescaped) {
 function createGroup(container, className, id, displayName, actionsContent, insertLocation = "beforeend") {
 	container.insertAdjacentHTML(insertLocation, `
 		<details class="${className}" id="${id}" data-version="1" data-queriedversion="0" data-receivedversion="0">
-			<summary>
+			<summary data-focuscount="0" data-hasfocus="false">
 				<span class="summary-contents">
 					<span class="summary-statics">
 						<span class="summary-open-marker"></span>
@@ -608,7 +611,7 @@ function createTabsListForDragAndDrop(group, tabsList) {
 	}
 	
 	tabsListForDragAndDrop.insertAdjacentHTML("beforeend", `
-		<li class="tab-entry colorize-gray drop-footer" data-tabid="-1" data-droptargetindex="${dropTargetIndex}">
+		<li class="tab-entry colorize-gray drop-footer" data-tabid="-1" tabindex="0" data-focuscount="0" data-hasfocus="false" data-droptargetindex="${dropTargetIndex}">
 			<span class="fav-icon-list-item" data-validimage="false"><img src="" class="fav-icon-small"/></span>
 			<span class="title"><center>&#x2191;</center></span>
 		</li>
@@ -686,7 +689,7 @@ async function populateTabListGroup(group) {
 				let dropTargetIndex = 0;
 				for (const tab of tabs) {
 					tabsList.insertAdjacentHTML("beforeend", `
-						<li class="tab-entry has-tooltip colorize-gray" data-tabid="${tab.id}" data-droptargetindex="${dropTargetIndex}" draggable="true">
+						<li class="tab-entry has-tooltip colorize-gray" data-tabid="${tab.id}" tabindex="0" data-focuscount="0" data-hasfocus="false" data-droptargetindex="${dropTargetIndex}" draggable="true">
 							<span class="fav-icon-list-item" data-validimage="${tab.metadata.favIconUrl !== undefined}"><img src="${tab.metadata.favIconUrl}" class="fav-icon-small"/></span>
 							<span class="title">${escapeHTML(tab.title)}</span>
 							<span class="actions">
@@ -935,6 +938,19 @@ function compareSortKeys(a, b) {
 	return lastComparisonResult;
 }
 
+function compareElementSortKeys(a, b) {
+	// TODO: Oh no, this is bound to be incredibly slow!
+	// I don't have a great solution for this yet...
+	const dummyA = {
+		sortkey: JSON.parse(a.dataset.sortkey)
+	};
+	const dummyB = {
+		sortkey: JSON.parse(b.dataset.sortkey)
+	};
+	
+	return compareSortKeys(dummyA, dummyB);
+}
+
 function compareSortKeysReversed(a, b) {
 	return compareSortKeys(a, b) * -1;
 }
@@ -1037,14 +1053,16 @@ async function removeTabFromGroup(tabId, groupElement) {
 
 
 document.addEventListener("dragenter", (e) => {
-	if (currentDragElement === e.target || currentDragElement === null) {
+	if (currentlyDraggedElements.length === 0 || currentlyDraggedElements.includes(e.target)) {
 		return;
 	}
 	
 	if (e.target.dataset.droptargetindex !== undefined) {
 		const tabsListForDragAndDrop = e.target.closest(".tabs-list-for-drag-and-drop");
 		if (tabsListForDragAndDrop !== null) {
-			tabsListForDragAndDrop.insertBefore(currentDragElement, e.target);
+			for (const currentlyDraggedElement of currentlyDraggedElements) {
+				tabsListForDragAndDrop.insertBefore(currentlyDraggedElement, e.target);
+			}
 		}
 	}
 });
@@ -1060,8 +1078,25 @@ document.addEventListener("dragstart", (e) => {
 	if (e.target.dataset.droptargetindex !== undefined) {
 		const tabsListForDragAndDrop = container.querySelector(".tabs-list-for-drag-and-drop");
 		if (tabsListForDragAndDrop !== null) {
-			currentDragElement = tabsListForDragAndDrop.querySelector(`[data-droptargetindex="${e.target.dataset.droptargetindex}"]`);
-			currentDragElement.dataset.dragtarget = true;
+			const elementsToDrag = [];
+			if (currentlySelectedTabElements.includes(e.target)) {
+				for (const currentlySelectedTabElement of currentlySelectedTabElements) {
+					elementsToDrag.push(currentlySelectedTabElement);
+				}
+			} else {
+				elementsToDrag.push(e.target);
+			}
+			
+			deselectAllSelectedTabElements();
+			
+			elementsToDrag.sort(compareElementSortKeys);
+			
+			currentlyDraggedElements.length = 0;
+			for (const elementToDrag of elementsToDrag) {
+				const currentlyDraggedElement = tabsListForDragAndDrop.querySelector(`[data-droptargetindex="${elementToDrag.dataset.droptargetindex}"]`);
+				currentlyDraggedElement.dataset.dragtarget = true;
+				currentlyDraggedElements.push(currentlyDraggedElement);
+			}
 		}
 	}
 });
@@ -1078,7 +1113,7 @@ document.addEventListener("dragend", async (e) => {
 			const tabsList = currentDragParent.querySelector(".tabs-list");
 			createTabsListForDragAndDrop(currentDragParent, tabsList);
 		} else if (e.dataTransfer.dropEffect == "move") {
-			if (currentDragElement !== null) {
+			if (currentlyDraggedElements.length !== 0) {
 				const tabsList = currentDragParent.querySelector(".tabs-list");
 				const tabsListForDragAndDrop = currentDragParent.querySelector(".tabs-list-for-drag-and-drop");
 	
@@ -1131,10 +1166,11 @@ document.addEventListener("dragend", async (e) => {
 		currentDragParent = null;
 	}
 	
-	if (currentDragElement !== null) {
-		currentDragElement.dataset.dragtarget = false;
-		currentDragElement = null;
+	for (const currentlyDraggedElement of currentlyDraggedElements) {
+		currentlyDraggedElement.dataset.dragtarget = false;
 	}
+	
+	currentlyDraggedElements.length = 0;
 });
 
 document.addEventListener("dragover", (e) => {
@@ -1149,6 +1185,139 @@ document.addEventListener("dragover", (e) => {
 	
 		if (inside) {
 			e.preventDefault();
+		}
+	}
+});
+
+document.addEventListener("focusin", (e) => {
+	let actionContainer = e.target.closest(".tab-entry");
+	
+	if (actionContainer === null) {
+		actionContainer = e.target.closest("summary");
+	}
+	
+	if (actionContainer != null) {
+		// The counter here might be overkill, but just in case focusin and focusout events arrive
+		// in an unexpected order...
+		actionContainer.dataset.focuscount = parseInt(actionContainer.dataset.focuscount) + 1;
+		if (parseInt(actionContainer.dataset.focuscount) > 0) {
+			actionContainer.dataset.hasfocus = true;
+		}
+	}
+});
+
+document.addEventListener("focusout", (e) => {
+	let actionContainer = e.target.closest(".tab-entry");
+	
+	if (actionContainer === null) {
+		actionContainer = e.target.closest("summary");
+	}
+	
+	if (actionContainer != null) {
+		actionContainer.dataset.focuscount = parseInt(actionContainer.dataset.focuscount) - 1;
+		if (parseInt(actionContainer.dataset.focuscount) <= 0) {
+			actionContainer.dataset.hasfocus = false;
+		}
+	}
+});
+
+document.addEventListener("keydown", (e) => {
+	if (e.code == "Space" || e.code == "Enter") {
+		if (document.activeElement != null && document.activeElement.hasAttribute("tabindex")) {
+			// This won't do, because it won't trasmit the status of our modifier keys.
+			//document.activeElement.click(e);
+			
+			const simulatedMouseEvent = new MouseEvent("click", {
+				bubbles: true,
+				cancelable: true,
+				view: window,
+				shiftKey: e.shiftKey,
+				ctrlKey: e.ctrlKey,
+				altKey: e.altKey,
+				metaKey: e.metaKey
+			});
+
+			document.activeElement.dispatchEvent(simulatedMouseEvent);
+			
+			e.preventDefault();
+		}
+	}
+});
+
+function deselectAllSelectedTabElements() {
+	for (const tabElement of currentlySelectedTabElements) {
+		tabElement.dataset.isselected = false;
+	}
+	
+	currentTabSelectionParent = null;
+	currentlySelectedTabElements = [];
+}
+
+function getElementsBetween(a, b) {
+	if (a.parentElement !== b.parentElement || a === b) return [];
+
+	if (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_PRECEDING) {
+		[a, b] = [b, a];
+	}
+
+	const result = [];
+	let current = a.nextElementSibling;
+
+	while (current && current !== b) {
+		if (current.tagName === "LI") {
+			result.push(current);
+		}
+		current = current.nextElementSibling;
+	}
+
+	return result;
+}
+
+document.addEventListener("click", (e) => {
+	if (e.target.classList.contains("tab-entry")) {
+		const container = e.target.closest(".tabs-list");
+		
+		const isRangeSelect = e.shiftKey;
+		const isMultiSelect = e.ctrlKey;
+		
+		if (container != currentTabSelectionParent || (!isRangeSelect && !isMultiSelect)) {
+			deselectAllSelectedTabElements();
+		}
+		
+		currentTabSelectionParent = container;
+		
+		if (currentTabSelectionParent != null) {
+			if (isRangeSelect) {
+				if (currentlySelectedTabElements.length === 0) {
+					e.target.dataset.isselected = true;
+					currentlySelectedTabElements.push(e.target);
+				} else {
+					const first = currentlySelectedTabElements.at(-1);
+					const last = e.target;
+					
+					const elementsBetween = getElementsBetween(first, last);
+					elementsBetween.push(last);
+					
+					for (const element of elementsBetween) {
+						if (!currentlySelectedTabElements.includes(element)) {
+							element.dataset.isselected = true;
+							currentlySelectedTabElements.push(element);
+						}
+					}
+				}
+			} else if (isMultiSelect) {
+				const existingIndex = currentlySelectedTabElements.indexOf(e.target);
+				if (existingIndex != -1) {
+					e.target.dataset.isselected = false;
+					currentlySelectedTabElements.splice(existingIndex, 1);
+				} else {
+					e.target.dataset.isselected = true;
+					currentlySelectedTabElements.push(e.target);
+				}
+			} else {
+				e.target.dataset.isselected = true;
+				currentlySelectedTabElements.push(e.target);
+			}
 		}
 	}
 });

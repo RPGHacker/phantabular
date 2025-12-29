@@ -106,7 +106,7 @@ details > summary .summary-actions {
 	display: none;
 }
 
-details > summary:hover .summary-actions {
+details > summary:hover .summary-actions, details > summary:focus .summary-actions, details > summary[data-hasfocus=true] .summary-actions {
 	display: flex;
 	flex: none;
 	gap: 0.5rem;
@@ -191,6 +191,14 @@ ul.tabs-list > li:hover {
 	background-color: light-dark(var(--oc-gray-1), var(--oc-gray-6));
 }
 
+ul.tabs-list > li[data-isselected=true] {
+	background-color: light-dark(var(--oc-indigo-3), var(--oc-indigo-7));
+}
+
+ul.tabs-list > li[data-isselected=true]:hover {
+	background-color: light-dark(var(--oc-indigo-2), var(--oc-indigo-6));
+}
+
 /* Stylings for the content of groups */
 
 /*
@@ -223,7 +231,7 @@ ul.tabs-list > li:hover {
 }
 
 .group-contents > ul.tabs-list-for-drag-and-drop > li[data-dragtarget=true] {
-	background-color: light-dark(var(--oc-indigo-3), var(--oc-indigo-5));
+	background-color: light-dark(var(--oc-indigo-2), var(--oc-indigo-6));
 }
 
 
@@ -251,13 +259,14 @@ ul.tabs-list > li:hover {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+	pointer-events: none;
 }
 
 .tab-entry .actions {
 	display: none;
 }
 
-.tab-entry:hover .actions {
+.tab-entry:hover .actions, .tab-entry:focus .actions, .tab-entry[data-hasfocus=true] .actions {
 	display: inline-flex;
 	flex: none;
 	gap: 0.5rem;

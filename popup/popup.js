@@ -1,5 +1,4 @@
 import db from "../shared/database.mjs";
-import ruleeval from "../shared/rules.mjs";
 import settings from "../shared/settings.mjs";
 
 let hasCapturePermission = false;
@@ -19,8 +18,16 @@ updatePreviewImageCapturePermissions();
 async function archiveTabs(tabs) {
 	spinnerRoot.hidden = false;
 	
+	const archiveSettings = await settings.archiveSettings;
+	
 	try {
 		await db.archiveTabs(tabs);
+		
+		if (archiveSettings.autoCloseArchivedTabs) {
+			const justTabIds = tabs.map((tab) => tab.id);
+			await browser.tabs.remove(justTabIds);
+		}
+		
 		// A little timeout to prevent the spinner from disappearing so fast it looks glitchy.
 		await new Promise(r => setTimeout(r, 250));
 	} catch (error) {
@@ -31,30 +38,66 @@ async function archiveTabs(tabs) {
 	spinnerRoot.hidden = true;
 }
 
-document.addEventListener("click", (e) => {
+function applyTabFilters(tabQuery, archiveSettings) {
+	if (!archiveSettings.archiveHiddenTabs) {
+		tabQuery.hidden = false;
+	}
+	
+	if (!archiveSettings.archivePinnedTabs) {
+		tabQuery.pinned = false;
+	}
+}
+
+document.addEventListener("click", async (e) => {
 	if (e.target.tagName !== "BUTTON" || !e.target.closest("#popup-content")) {
 		return;
 	}
+	
+	const archiveSettings = await settings.archiveSettings;
+	
+	let tabQuery = null;
 
 	switch (e.target.dataset.action) {
 		case "archive-selected-tabs":
 			console.log("[PhanTabular] Archiving selected tabs.");
-			browser.tabs
-				.query({ highlighted: true, currentWindow: true })
-				.then(archiveTabs);
+			
+			tabQuery = {
+				highlighted: true,
+				currentWindow: true
+			};
+			
+			// Intentionally no filters applied here. Selecting hidden tabs should be impossible, anyways,
+			// and selecting a pinned tab for archival seems like a deliberate action that shouldn't be
+			// blocked by a setting.
+			
 			break;
 		case "archive-tabs-in-current-window":
 			console.log("[PhanTabular] Archiving tabs in current window.");
-			browser.tabs
-				.query({ currentWindow: true })
-				.then(archiveTabs);
+			
+			tabQuery = {
+				currentWindow: true
+			};
+			
+			applyTabFilters(tabQuery, archiveSettings);
+			
 			break;
 		case "archive-tabs-in-all-windows":
 			console.log("[PhanTabular] Archiving tabs in all windows.");
-			browser.tabs
-				.query({ })
-				.then(archiveTabs);
+			
+			tabQuery = {
+			};
+			
+			applyTabFilters(tabQuery, archiveSettings);
+			
 			break;
+	}
+	
+	if (tabQuery !== null) {
+		await browser.tabs.query(tabQuery).then(archiveTabs);		
+		return;
+	}
+		
+	switch (e.target.dataset.action) {
 		case "view-archive":
 			console.log("[PhanTabular] Viewing archive.");
 			browser.tabs.create({

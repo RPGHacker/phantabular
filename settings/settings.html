@@ -52,12 +52,13 @@
 				
 				<div id="archive-settings" class="settings-section colorize-section">
 					<h2>Archival settings:</h2>
-					<div><input type="checkbox" id="archiveHiddenTabsCheckbox" /><label for="archiveHiddenTabsCheckbox">Archive hidden tabs</label></div>
-					<div><input type="checkbox" id="archivePinnedTabsCheckbox" /><label for="archivePinnedTabsCheckbox">Archive pinned tabs</label></div>
-					<div><input type="checkbox" id="noDuplicateUrlsCheckbox" /><label for="noDuplicateUrlsCheckbox">No duplicates (when archiving a tab that already exists in the archive with an identical URL, that entry will be updated instead of creating a new one)</label></div>
-					<div><input type="checkbox" id="autoCloseCheckbox" /><label for="autoCloseCheckbox">Archiving a tab automatically closes it</label></div>
+					<div><input type="checkbox" id="archiveHiddenTabsCheckbox" /><label for="archiveHiddenTabsCheckbox">"Tabs in *" buttons also archive hidden tabs</label></div>
+					<div><input type="checkbox" id="archivePinnedTabsCheckbox" /><label for="archivePinnedTabsCheckbox">"Tabs in *" buttons also archive pinned tabs</label></div>
+					<div><input type="checkbox" id="noDuplicateUrlsCheckbox" /><label for="noDuplicateUrlsCheckbox">Never store duplicate URLs (when archiving a tab that already exists in the archive with an identical URL, that entry will be updated instead of creating a new one)</label></div>
+					<div><input type="checkbox" id="autoCloseCheckbox" /><label for="autoCloseCheckbox">Archiving tabs via the popup automatically closes them</label></div>
 					<div><input type="checkbox" id="archiveAllOnCloseCheckbox" /><label for="archiveAllOnCloseCheckbox">Closing a browser window automatically archives all tabs within it</label></div>
-					<p>
+					<div class="inner-section">
+						<h3>Preview images:</h3>
 						<div><input type="checkbox" id="savePreviewImagesCheckbox" /><label for="savePreviewImagesCheckbox">Save preview images of tabs contents (requires additional storage space and RAM, archiving tabs takes longer)</label></div>
 						<div>
 							<label id="previewImageFormatLabel" for="previewImageFormatSelect" disabled>Image format:</label>
@@ -82,7 +83,7 @@
 							</div>
 						</div>
 						<div><label>Estimated preview image size:</label> <label id="previewImageSizeEstimateLabel">0 bytes</label></div>
-						<div>NOTE: The actual image size for any given tab may vary, depending on several factors such as visible viewport area, zoom level and the content being captures.</div>
+						<div>NOTE: The actual image size for any given tab may vary, depending on several factors such as visible viewport area, zoom level and the content being captured.</div>
 						<details id="previewImageRoot" class="capture-preview-container">
 							<summary>Preview:</summary>
 							<div id="previewImageSource" class="capture-preview-source">
@@ -99,7 +100,7 @@
 								</div>
 							</div>
 						</details>
-					</p>
+					</div>
 				</div>
 				
 				<div id="open-settings" class="settings-section colorize-section">

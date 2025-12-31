@@ -42,6 +42,16 @@ export class Settings {
 		this._storage.currentSettings = JSON.parse(JSON.stringify(this._defaultSettings));
 		
 		this._storagePromise = browser.storage.sync.get(this._storage);
+		
+		browser.storage.sync.onChanged.addListener((changes) => {
+			console.log("[PhanTabular] Detected changed settings.");
+			
+			for (const changedKey in changes) {
+				this._storage[changedKey] = JSON.parse(JSON.stringify(changes[changedKey].newValue));
+			}
+			
+			this._storagePromise = browser.storage.sync.get(this._storage);
+		});
 	}
 	
 	get supportedColors() {

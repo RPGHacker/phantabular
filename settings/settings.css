@@ -125,3 +125,13 @@ input[type="range"], input[type="number"] {
 .capture-preview-target-content {
 }
 
+/* Stylings for inner sections */
+div.settings-section div.inner-section {
+	--section-margin: 10px;
+	--section-padding: 15px;
+	width: calc(100% - ((var(--section-margin) + var(--section-padding)) * 2));
+	margin: var(--section-margin);
+	padding: var(--section-padding);
+	box-shadow: 1px 1px 3px gray;
+}
+

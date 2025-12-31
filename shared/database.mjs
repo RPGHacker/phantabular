@@ -1,5 +1,6 @@
 import { Dexie, liveQuery } from "../deps/dexie/dist/dexie.mjs";
-import settings from "../shared/settings.mjs";
+import settings from "./settings.mjs";
+import ruleeval from "./rules.mjs";
 
 console.log("[PhanTabular] Using Dexie: v" + Dexie.semVer);
 
@@ -10,7 +11,13 @@ export class PhanTabularDB extends Dexie {
 		this.version(1).stores({
 			categories: '++id, name', // non-indexed fields: color, rule, sortkey
 			sessions: '++id, creationdate', // non-indexed fields: sortkey
-			tabs: '++id, url, title, *categories, *sessions' // non-indexed fields: metadata, sortkey, previewimageurl (optional)
+			tabs: '++id, url, title, *categories, *sessions', // non-indexed fields: metadata, sortkey, previewimageurl (optional)
+			// The "cached tabs" table mainly exists to work around browser limitations. Currently there is no meaningful and reliable support
+			// in browsers for doing something with tabs and windows BEFORE they're closed, so there is no direct path to implementing our
+			// "archive all tabs on browser close" feature. However, we can keep a cache of all opened tabs as they're being created or updated,
+			// and then instead of archiving the tabs on browser close, we can archive them the next time the browser is opened and the respective
+			// tab is restored.
+			cachedtabs: '&id' // non-indexed fields: metadata, previewimageurl (optional)
 		});
 	}
 
@@ -141,7 +148,12 @@ export class PhanTabularDB extends Dexie {
 			}
 		}
 		
-		await this.tabs.bulkPut(newTableEntries);
+		// Wrapping everything into a transaction here, just to make it easier to handle error cases.
+		// The caller might want to close tabs on success, so with the transaction we only ever have
+		// to close all tabs or none.
+		await this.transaction("rw", this.tabs, async (tx) => {
+			await this.tabs.bulkPut(newTableEntries);
+		});
 	}
 
 	async hasPreviewImageCapturePermissions() {	
@@ -149,8 +161,24 @@ export class PhanTabularDB extends Dexie {
 	
 		return allPermissions.origins.includes("<all_urls>");
 	}
+	
+	async capturePrewviewImage(tab) {		
+		const archiveSettings = await settings.archiveSettings;
+		
+		const previewImageOptions = {
+			format: archiveSettings.previewImageFormat,
+			quality: archiveSettings.previewImageQuality,
+			scale: archiveSettings.previewImageScale / window.devicePixelRatio
+		};
+		
+		if (tab.discarded) {
+			throw("Couldn't capture preview images for unloaded tabs.");
+		}
+		
+		return await browser.tabs.captureTab(tab.id, previewImageOptions);
+	}
 
-	async archiveTabs(tabs) {	
+	async archiveTabs(tabs) {
 		const errors = [];
 		
 		const archiveSettings = await settings.archiveSettings;
@@ -170,6 +198,9 @@ export class PhanTabularDB extends Dexie {
 		let tabsToArchive = [];
 	
 		// Sort out tabs that are part of the selection, but we don't want to archive.
+		// NOTE: Now handled by caller instead, because there's situations where we don't want to apply these settings.
+		tabsToArchive = tabs;
+		/*
 		for (const tab of tabs){
 			if ((tab.hidden && !archiveSettings.archiveHiddenTabs)
 				|| (tab.pinned && !archiveSettings.archivePinnedTabs))
@@ -180,6 +211,7 @@ export class PhanTabularDB extends Dexie {
 			console.log("[PhanTabular] Archiving: " + tab.url);
 			tabsToArchive.push(tab);
 		};
+		*/
 	
 		if (tabsToArchive.length === 0) {
 			errors.push("No archivable tabs in selection.");
@@ -233,22 +265,24 @@ export class PhanTabularDB extends Dexie {
 					categories: categoriesToAdd
 				}
 				
-				if (savePreviewImages) {			
-					const previewImageOptions = {
-						format: archiveSettings.previewImageFormat,
-						quality: archiveSettings.previewImageQuality,
-						scale: archiveSettings.previewImageScale / window.devicePixelRatio
-					};
-					
-					try {
-						if (tab.discarded) {
-							throw("Couldn't capture preview images for unloaded tabs.");
-						}
-						newEntry.previewImage = await browser.tabs.captureTab(tab.id, previewImageOptions);
-					} catch(error) {
-						const errorText = "Capturing tab preview image failed: " + error;
-						if (!errors.includes(errorText)) {
-							errors.push(errorText);
+				if (savePreviewImages) {
+					if (tab.previewImage) {
+						// Don't generate a new preview image if we're already passing one in (for example, from a cached tab).
+						newEntry.previewImage = tab.previewImage;
+					} else {
+						const previewImageOptions = {
+							format: archiveSettings.previewImageFormat,
+							quality: archiveSettings.previewImageQuality,
+							scale: archiveSettings.previewImageScale / window.devicePixelRatio
+						};
+						
+						try {
+							newEntry.previewImage = await this.capturePrewviewImage(tab);
+						} catch(error) {
+							const errorText = "Capturing tab preview image failed: " + error;
+							if (!errors.includes(errorText)) {
+								errors.push(errorText);
+							}
 						}
 					}
 				}
@@ -324,6 +358,18 @@ export class PhanTabularDB extends Dexie {
 	
 	newLiveQuery(query) {
 		return liveQuery(query);
+	}
+	
+	async getCachedTabs(ids) {
+		return await this.cachedtabs.bulkGet(ids);
+	}
+	
+	async writeCachedTabs(cachedTabs) {		
+		return await this.cachedtabs.bulkPut(cachedTabs);
+	}
+	
+	async deletedCachedTabs(ids) {
+		return await this.cachedtabs.bulkDelete(ids);
 	}
 }
 

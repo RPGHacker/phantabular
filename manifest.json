@@ -1,30 +1,35 @@
 {
-  "manifest_version": 2,
-  "name": "PhanTabular",
-  "version": "1.0",
+	"manifest_version": 2,
+	"name": "PhanTabular",
+	"version": "1.0",
 
-  "description": "Automatically archives open tabs into categories based on customizable patterns.",
+	"description": "Automatically archives open tabs into categories based on customizable patterns.",
 
-  "icons": {
-    "48": "icons/phantabular-48.png",
-    "96": "icons/phantabular-96.png"
-  },
-  
-  "permissions": ["activeTab", "sessions", "tabGroups", "tabHide", "tabs", "storage", "unlimitedStorage", "cookies"],
-  "optional_permissions": ["<all_urls>"],
-  
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "phantabular@rpghacker.github.io",
-      "strict_min_version": "144.0"
-    }
-  },
+	"icons": {
+		"48": "icons/phantabular-48.png",
+		"96": "icons/phantabular-96.png"
+	},
+	
+	"permissions": ["activeTab", "sessions", "tabGroups", "tabHide", "tabs", "storage", "unlimitedStorage", "cookies"],
+	"optional_permissions": ["<all_urls>"],
+	
+	"browser_specific_settings": {
+		"gecko": {
+			"id": "phantabular@rpghacker.github.io",
+			"strict_min_version": "144.0"
+		}
+	},
 
-  "browser_action": {
-    "default_icon": "icons/phantabular-32.png",
-    "default_title": "PhanTabular",
-    "default_popup": "popup/popup.html"
-  },
-  
-  "options_page": "settings/settings.html"
+	"browser_action": {
+		"default_icon": "icons/phantabular-32.png",
+		"default_title": "PhanTabular",
+		"default_popup": "popup/popup.html"
+	},
+	
+	"options_page": "settings/settings.html",
+
+	"background": {
+		"page": "background/background.html",
+		"persistent": false
+	}
 }

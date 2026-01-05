@@ -135,3 +135,17 @@ div.settings-section div.inner-section {
 	box-shadow: 1px 1px 3px gray;
 }
 
+/* Stylings for dependent settings */
+ul.dependent-settings {
+	margin: 0px;
+}
+
+ul.dependent-settings > li {
+	margin: 0px;
+	padding: 0px;
+}
+
+ul.dependent-settings > li::marker {
+	content: "";
+}
+

@@ -255,6 +255,7 @@ ul.tabs-list > li[data-isselected=true]:hover {
 .tab-entry > .title {
 	display: block; 
 	min-width: 0;
+	min-height: 1lh;
 	flex: 1 1 auto;
 	overflow: hidden;
 	text-overflow: ellipsis;

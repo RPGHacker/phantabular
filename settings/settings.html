@@ -56,7 +56,17 @@
 					<div><input type="checkbox" id="archivePinnedTabsCheckbox" /><label for="archivePinnedTabsCheckbox">"Tabs in *" buttons also archive pinned tabs</label></div>
 					<div><input type="checkbox" id="noDuplicateUrlsCheckbox" /><label for="noDuplicateUrlsCheckbox">Never store duplicate URLs (when archiving a tab that already exists in the archive with an identical URL, that entry will be updated instead of creating a new one)</label></div>
 					<div><input type="checkbox" id="autoCloseCheckbox" /><label for="autoCloseCheckbox">Archiving tabs via the popup automatically closes them</label></div>
-					<div><input type="checkbox" id="archiveAllOnCloseCheckbox" /><label for="archiveAllOnCloseCheckbox">Closing a browser window automatically archives all tabs within it</label></div>
+					
+					<div class="inner-section">
+						<h3>Close behavior:</h3>
+						<div><input type="checkbox" id="archiveTabOnCloseCheckbox" /><label for="archiveTabOnCloseCheckbox">Closing a tab automatically archives it</label></div>
+						<div><input type="checkbox" id="archiveAllTabsOnBrowserCloseCheckbox" /><label for="archiveAllTabsOnBrowserCloseCheckbox">Closing a browser window automatically archives all tabs within it</label></div>
+						<ul class="dependent-settings">
+							<li><input type="checkbox" id="archiveOnBrowserCloseArchivesHiddenTabsCheckbox" disabled /><label id="archiveOnBrowserCloseArchivesHiddenTabsLabel" for="archiveOnBrowserCloseArchivesHiddenTabsCheckbox" disabled>Also archive hidden tabs</label></li>
+							<li><input type="checkbox" id="archiveOnBrowserCloseArchivesPinnedTabsCheckbox" disabled /><label id="archiveOnBrowserCloseArchivesPinnedTabsLabel" for="archiveOnBrowserCloseArchivesPinnedTabsCheckbox" disabled>Also archive pinned tabs</label></li>
+							<li><input type="checkbox" id="archiveOnBrowserCloseClosesTabCheckbox" disabled /><label id="archiveOnBrowserCloseClosesTabLabel" for="archiveOnBrowserCloseClosesTabCheckbox" disabled>Also close the tabs archived this way</label></li>
+						<ul>
+					</div>
 					<div class="inner-section">
 						<h3>Preview images:</h3>
 						<div><input type="checkbox" id="savePreviewImagesCheckbox" /><label for="savePreviewImagesCheckbox">Save preview images of tabs contents (requires additional storage space and RAM, archiving tabs takes longer)</label></div>

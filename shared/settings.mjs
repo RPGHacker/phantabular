@@ -1,3 +1,4 @@
+import debugh from "./debughelper.mjs";
 
 export class Settings {
 	constructor() {
@@ -25,12 +26,20 @@ export class Settings {
 				archivePinnedTabs: false,
 				noDuplicateUrls: false,
 				autoCloseArchivedTabs: true,
-				archiveAllTabsOnBrowserClose: false,
 				
 				savePreviewImages: false,
 				previewImageFormat: "jpeg",
 				previewImageQuality: 92,
-				previewImageScale: 1.0
+				previewImageScale: 0.25,
+				
+				archiveTabOnClose: false,
+				archiveAllTabsOnBrowserClose: false,
+				archiveOnBrowserCloseArchivesHiddenTabs: false,
+				archiveOnBrowserCloseArchivesPinnedTabs: false,
+				archiveOnBrowserCloseClosesTab: false,
+				
+				// Should be overwritten by the extension only.
+				currentSessionDate: Date.now()
 			},
 			openSettings: {
 				deleteTabsUponOpen: false,
@@ -44,14 +53,23 @@ export class Settings {
 		this._storagePromise = browser.storage.sync.get(this._storage);
 		
 		browser.storage.sync.onChanged.addListener((changes) => {
-			console.log("[PhanTabular] Detected changed settings.");
+			debugh.log("Detected changed settings in sync storage.");
 			
 			for (const changedKey in changes) {
-				this._storage[changedKey] = JSON.parse(JSON.stringify(changes[changedKey].newValue));
+				if (this._storage[changedKey]) {
+					this._storage[changedKey] = JSON.parse(JSON.stringify(changes[changedKey].newValue));
+				}
 			}
 			
 			this._storagePromise = browser.storage.sync.get(this._storage);
 		});
+	}
+	
+	async waitForInitialization() {
+		if (this._storagePromise) {
+			await this._storagePromise;
+			//this._storagePromise = null;
+		}
 	}
 	
 	get supportedColors() {

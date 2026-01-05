@@ -1,15 +1,20 @@
+import debugh from "/shared/debughelper.mjs";
 import settings from "../shared/settings.mjs";
 import db from "../shared/database.mjs";
 
 let previewImageTimer = null;
 let hasCapturePermission = false;
-
+	
 function initializeForms(archiveSettings, openSettings) {
 	archiveHiddenTabsCheckbox.checked = archiveSettings.archiveHiddenTabs;
 	archivePinnedTabsCheckbox.checked = archiveSettings.archivePinnedTabs;
 	noDuplicateUrlsCheckbox.checked = archiveSettings.noDuplicateUrls;
 	autoCloseCheckbox.checked = archiveSettings.autoCloseArchivedTabs;
-	archiveAllOnCloseCheckbox.checked = archiveSettings.archiveAllTabsOnBrowserClose;
+	archiveTabOnCloseCheckbox.checked = archiveSettings.archiveTabOnClose;
+	archiveAllTabsOnBrowserCloseCheckbox.checked = archiveSettings.archiveAllTabsOnBrowserClose;
+	archiveOnBrowserCloseArchivesHiddenTabsCheckbox.checked = archiveSettings.archiveOnBrowserCloseArchivesHiddenTabs;
+	archiveOnBrowserCloseArchivesPinnedTabsCheckbox.checked = archiveSettings.archiveOnBrowserCloseArchivesPinnedTabs;
+	archiveOnBrowserCloseClosesTabCheckbox.checked = archiveSettings.archiveOnBrowserCloseClosesTab;
 	
 	savePreviewImagesCheckbox.checked = archiveSettings.savePreviewImages;
 	previewImageFormatSelect.value = archiveSettings.previewImageFormat;
@@ -40,7 +45,11 @@ async function saveChanges() {
 	archiveSettings.archivePinnedTabs = archivePinnedTabsCheckbox.checked;
 	archiveSettings.noDuplicateUrls = noDuplicateUrlsCheckbox.checked;
 	archiveSettings.autoCloseArchivedTabs = autoCloseCheckbox.checked;
-	archiveSettings.archiveAllTabsOnBrowserClose = archiveAllOnCloseCheckbox.checked;
+	archiveSettings.archiveTabOnClose = archiveTabOnCloseCheckbox.checked;
+	archiveSettings.archiveAllTabsOnBrowserClose = archiveAllTabsOnBrowserCloseCheckbox.checked;
+	archiveSettings.archiveOnBrowserCloseArchivesHiddenTabs = archiveOnBrowserCloseArchivesHiddenTabsCheckbox.checked;
+	archiveSettings.archiveOnBrowserCloseArchivesPinnedTabs = archiveOnBrowserCloseArchivesPinnedTabsCheckbox.checked;
+	archiveSettings.archiveOnBrowserCloseClosesTab = archiveOnBrowserCloseClosesTabCheckbox.checked;
 	
 	archiveSettings.savePreviewImages = savePreviewImagesCheckbox.checked;
 	archiveSettings.previewImageFormat = previewImageFormatSelect.value;
@@ -64,6 +73,15 @@ function setLabelDisabled(label, disabled) {
 
 async function updateFormActivityStates() {
 	const archiveSettings = await settings.archiveSettings;
+	
+	const showOnBrowserCloseSettings = archiveSettings.archiveAllTabsOnBrowserClose;
+	
+	archiveOnBrowserCloseArchivesHiddenTabsCheckbox.disabled = !showOnBrowserCloseSettings;
+	setLabelDisabled(archiveOnBrowserCloseArchivesHiddenTabsLabel, !showOnBrowserCloseSettings);
+	archiveOnBrowserCloseArchivesPinnedTabsCheckbox.disabled = !showOnBrowserCloseSettings;
+	setLabelDisabled(archiveOnBrowserCloseArchivesPinnedTabsLabel, !showOnBrowserCloseSettings);
+	archiveOnBrowserCloseClosesTabCheckbox.disabled = !showOnBrowserCloseSettings;
+	setLabelDisabled(archiveOnBrowserCloseClosesTabLabel, !showOnBrowserCloseSettings);
 	
 	const showPreviewImageFormatSelection = archiveSettings.savePreviewImages;
 	const showPreviewImageQualitySelection = showPreviewImageFormatSelection && archiveSettings.previewImageFormat == "jpeg";
@@ -222,7 +240,7 @@ document.addEventListener("click", (e) => {
 
 	switch (e.target.dataset.action) {
 		case "reset-settings":
-			console.log("[PhanTabular] Resetting settings.");
+			debugh.log("Resetting settings.");
 			settings.reset().then(() => {
 				settings.archiveSettings.then((archiveSettings) => {
 					settings.openSettings.then((openSettings) => {
@@ -233,17 +251,17 @@ document.addEventListener("click", (e) => {
 			break;
 			
 		case "delete-archive":
-			console.log("[PhanTabular] Requesting deletion of archive.");
+			debugh.log("Requesting deletion of archive.");
 			confirmArchiveDeletionDialog.showModal();
 			break;
 			
 		case "cancel-archive-deletion":
-			console.log("[PhanTabular] Cancelling deletion of archive.");
+			debugh.log("Cancelling deletion of archive.");
 			confirmArchiveDeletionDialog.close();
 			break;
 			
 		case "confirm-archive-deletion":
-			console.log("[PhanTabular] Deleting archive.");
+			debugh.log("Deleting archive.");
 			
 			deletingArchiveDialog.showModal();
 			

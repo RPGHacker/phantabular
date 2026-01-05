@@ -1,3 +1,4 @@
+import debugh from "./debughelper.mjs";
 import Jexl from "../deps/jexl/jexl.bundle.js";
 
 export class RuleEvaluator {
@@ -69,7 +70,7 @@ export class RuleEvaluator {
 		try {
 			evalResult = await this._evaluateWithNewJexlInstance(rule, context);
 		} catch (error) {
-			console.error("Auto-catch rule evaluation failed: " + error);
+			debugh.error("Auto-catch rule evaluation failed: " + error);
 		}
 		
 		return evalResult;

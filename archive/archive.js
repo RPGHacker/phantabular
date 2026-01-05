@@ -1,5 +1,6 @@
-import db from "../shared/database.mjs";
+import debugh from "/shared/debughelper.mjs";
 import settings from "../shared/settings.mjs";
+import db from "../shared/database.mjs";
 import ruleeval from "../shared/rules.mjs";
 
 const minimumSpinnerDisplayTime = 250;
@@ -18,7 +19,7 @@ let currentlySelectedTabElements = [];
 tooltipLayer.style.opacity = 0;
 
 const groupsRootList = document.querySelector("#groups-root-list");
-
+	
 function escapeHTML(unescaped) {
 	const div = document.createElement("div");
 	div.textContent = unescaped;
@@ -359,7 +360,7 @@ async function applyCategorySettings() {
 	try {
 		await ruleeval.isRuleValid(rule);
 	} catch (error) {
-		console.error("Auto-catch rule validity check failed: " + error);
+		debugh.error("Auto-catch rule validity check failed: " + error);
 		ruleValidtyCheckFailedDialog.showModal();
 		autoCatchRuleError.textContent = error;
 		return false;
@@ -643,7 +644,7 @@ async function populateTabListGroup(group) {
 			// This is an unsorted tab list
 			queryFunction = queryAllTabs;
 		} else {
-			console.error("The following tab list is of an unknown type: " + group);
+			debugh.error("The following tab list is of an unknown type: " + group);
 		}
 		
 		if (!activeLiveQuerySubscriptions[group.id]) {
@@ -654,7 +655,7 @@ async function populateTabListGroup(group) {
 			const observable = db.newLiveQuery(queryFunctionWithArgument);
 			activeLiveQuerySubscriptions[group.id] = observable.subscribe({
 				next: (result) => incrementGroupVersion(group),
-				error: (error) => console.error(`Live query for group ${group.id} failed: ${error}`)
+				error: (error) => debugh.error(`Live query for group ${group.id} failed: ${error}`)
 			});
 			
 			// It seems creating the live query itself always results in it firing the callback once,
@@ -733,14 +734,14 @@ async function populateGroupListGroup(group) {
 			groupQueryFunction = querySessions;
 			getGroupPropertiesFunction = getSessionProperties;
 		} else {
-			console.error("The following group list is of an unknown type: " + group);
+			debugh.error("The following group list is of an unknown type: " + group);
 		}
 		
 		if (!activeLiveQuerySubscriptions[group.id]) {
 			const observable = db.newLiveQuery(groupQueryFunction);
 			activeLiveQuerySubscriptions[group.id] = observable.subscribe({
 				next: (result) => incrementGroupVersion(group),
-				error: (error) => console.error(`Live query for group ${group.id} failed: ${error}`)
+				error: (error) => debugh.error(`Live query for group ${group.id} failed: ${error}`)
 			});
 			
 			// It seems creating the live query itself always results in it firing the callback once,
@@ -1330,7 +1331,7 @@ document.addEventListener("click", (e) => {
 
 	switch (e.target.dataset.action) {
 		case "create-category":
-			console.log("[PhanTabular] Creating new category.");
+			debugh.log("Creating new category.");
 			createNewCategory();
 			break;
 			

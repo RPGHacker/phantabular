@@ -1,8 +1,9 @@
-import db from "../shared/database.mjs";
+import debugh from "../shared/debughelper.mjs";
 import settings from "../shared/settings.mjs";
+import db from "../shared/database.mjs";
 
 let hasCapturePermission = false;
-
+	
 async function updatePreviewImageCapturePermissions() {
 	let allPermissions = await browser.permissions.getAll();
 	
@@ -24,7 +25,19 @@ async function archiveTabs(tabs) {
 		await db.archiveTabs(tabs);
 		
 		if (archiveSettings.autoCloseArchivedTabs) {
-			const justTabIds = tabs.map((tab) => tab.id);
+			const justTabIds = tabs.map((tab) => tab.id);			
+			
+			// Before closing the tabs, update the cache to mark them as "closed through archival".
+			// This will prevent automatic archival from trying to archive them again, potentially
+			// resulting in harmful recursion.
+			const cacheEntries = await db.getCachedTabs(justTabIds);
+			
+			for (const cacheEntry of cacheEntries) {
+				cacheEntry.closedthrougharchival = true;
+			}
+			
+			await db.writeCachedTabs(cacheEntries);
+			
 			await browser.tabs.remove(justTabIds);
 		}
 		
@@ -59,7 +72,7 @@ document.addEventListener("click", async (e) => {
 
 	switch (e.target.dataset.action) {
 		case "archive-selected-tabs":
-			console.log("[PhanTabular] Archiving selected tabs.");
+			debugh.log("Archiving selected tabs.");
 			
 			tabQuery = {
 				highlighted: true,
@@ -72,7 +85,7 @@ document.addEventListener("click", async (e) => {
 			
 			break;
 		case "archive-tabs-in-current-window":
-			console.log("[PhanTabular] Archiving tabs in current window.");
+			debugh.log("Archiving tabs in current window.");
 			
 			tabQuery = {
 				currentWindow: true
@@ -82,7 +95,7 @@ document.addEventListener("click", async (e) => {
 			
 			break;
 		case "archive-tabs-in-all-windows":
-			console.log("[PhanTabular] Archiving tabs in all windows.");
+			debugh.log("Archiving tabs in all windows.");
 			
 			tabQuery = {
 			};
@@ -99,16 +112,16 @@ document.addEventListener("click", async (e) => {
 		
 	switch (e.target.dataset.action) {
 		case "view-archive":
-			console.log("[PhanTabular] Viewing archive.");
+			debugh.log("Viewing archive.");
 			browser.tabs.create({
-			  url: '../archive/archive.html'
+			url: '../archive/archive.html'
 			});
 			window.close();
 			break;
 		case "view-settings":
-			console.log("[PhanTabular] Viewing settings.");
+			debugh.log("Viewing settings.");
 			browser.tabs.create({
-			  url: '../settings/settings.html'
+			url: '../settings/settings.html'
 			});
 			window.close();
 			break;

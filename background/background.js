@@ -3,14 +3,19 @@ import settings from "/shared/settings.mjs";
 import db from "/shared/database.mjs";
 
 
-debugh.log("Initializng background script.");
+debugh.log("Initializing background script.");
 
 
 async function capturePreviewImage(tab) {
 	if (await db.hasPreviewImageCapturePermissions()) {
 		try {
 			return await db.capturePrewviewImage(tab);
-		} catch {}
+		} catch (error) {
+			debugh.error("Couldn't update preview image:", error);
+			debugh.errorVerbose("Tab details:", tab);
+		}
+	} else {		
+		debugh.error("Saving preview images requires the permission to access your data for all websites.");
 	}
 	
 	return null;
@@ -25,10 +30,12 @@ async function fillCacheEntry(cacheEntry, tab) {
 	cacheEntry.metadata = tab;
 	cacheEntry.closedthrougharchival = false;
 	
-	const previewImage = await capturePreviewImage(tab);
-	
-	if (previewImage) {
-		cacheEntry.previewimageurl = previewImage;
+	if (archiveSettings.savePreviewImages) {
+		const previewImage = await capturePreviewImage(tab);
+		
+		if (previewImage) {
+			cacheEntry.previewimageurl = previewImage;
+		}
 	}
 }
 
@@ -37,9 +44,21 @@ async function checkOpenTab(tab) {
 	debugh.logVerbose("Checking open tab with ID:", tab.id);
 	debugh.logVerbose("Tab details:", tab);
 		
-	const existingTabs = await db.getCachedTabs([tab.id]);
-		
-	const archiveSettings = await settings.archiveSettings;
+	const existingTabsPromise = db.getCachedTabs([tab.id]);
+	const archiveSettingsPromise = settings.archiveSettings;
+	
+	const existingTabs = await existingTabsPromise;
+	const archiveSettings = await archiveSettingsPromise;
+	const verboseMode = await debugh.verboseModeEnabled();
+	
+	if (verboseMode) {
+		if (existingTabs.length === 0 || !existingTabs[0]) {
+			debugh.logVerbose("Tab with ID", tab.id, "wasn't found in the cache.");
+		} else {
+			debugh.logVerbose("Retrieved tab with ID", tab.id, "from cache.");
+			debugh.logVerbose("Cached tab details:", existingTabs[0]);
+		}
+	}
 	
 	if (existingTabs.length === 0 || !existingTabs[0]) {
 		// This is a tab not in the cache yet and thus likely a newly created tab.
@@ -59,7 +78,7 @@ async function checkOpenTab(tab) {
 		debugh.log("Updating cache entry for tab with ID:", tab.id);
 		debugh.logVerbose("Tab details:", tab);
 		
-		if (archiveSettings.archiveAllTabsOnBrowserClose && (await debugh.verboseModeEnabled())) {
+		if (archiveSettings.archiveAllTabsOnBrowserClose && verboseMode) {
 			if (existingTabs[0].sessiondate === archiveSettings.currentSessionDate) {
 				debugh.logVerbose("Tab was ruled out for archival, because its session date", existingTabs[0].sessiondate, "matches the current session date.");
 			} else {
@@ -89,12 +108,55 @@ async function checkOpenTab(tab) {
 			await db.archiveTabs([tabToArchive], cacheEntry.sessiondate);
 			
 			if (archiveSettings.archiveOnBrowserCloseClosesTab) {
-				debugh.log("Closing: ", cacheEntry.id);
-				await browser.tabs.remove([cacheEntry.id]);
+				debugh.log("Closing:", cacheEntry.id);
+				// Let's have another try/catch here - just in case the tab has been closed in the meantime.
+				try {
+					await browser.tabs.remove([cacheEntry.id]);
+				} catch {}
+				await db.deleteCachedTabs([cacheEntry.id]);
+			}
+		} catch (error) {
+			debugh.error("Couldn't archive tab from previous session:", error);
+			debugh.errorVerbose("Tab details:", tab);
+			debugh.errorVerbose("Cached tab details:", cacheEntry);
+		}
+	}
+}
+
+async function checkCachedTab(cachedTab) {
+	const archiveSettingsPromise = settings.archiveSettings;
+	
+	// Rule out any tabs that are currently open. These SHOULD have been archived via the query above, so the fact they
+	// weren't most likely means some user settings are preventing these tabs from being archived. Basically, this is
+	// a shortcut around having to check every single archival condition again here.
+	let openTab = null;
+	
+	try {
+		openTab = await browser.tabs.get(cachedTab.id);
+	} catch {}
+	
+	const archiveSettings = await archiveSettingsPromise;
+	
+	if (!openTab) {
+		if (archiveSettings.archiveAllTabsOnBrowserClose) {
+			debugh.log("Archiving cached tab from previous session with ID:", cachedTab.metadata.id);				
+			
+			const tabToArchive = cachedTab.metadata;
+			
+			if (cachedTab.previewimageurl) {
+				tabToArchive.previewImage = cachedTab.previewimageurl;
 			}
 			
-			await db.deleteCachedTabs([cacheEntry.id]);
-		} catch {}
+			try {
+				await db.archiveTabs([tabToArchive], cachedTab.sessiondate);
+				await db.deleteCachedTabs([cachedTab.id]);
+			} catch {}
+		}
+	} else {
+		// If the tab DOES remain open, update the session date on the cached entry. All open tabs should now
+		// belong to the current session.
+		cachedTab.sessiondate = archiveSettings.currentSessionDate;			
+		await db.writeCachedTabs([cachedTab]);
 	}
 }
 
@@ -104,8 +166,31 @@ async function checkOpenTabs() {
 	debugh.logVerbose("Checking", tabs.length, "open tabs for archival.");
 	debugh.logVerbose("Tab details:", tabs);
 	
+	// These all operate on separate tabs, so they CAN all run in parallel... right?
+	const promisesToAwait = [];
 	for (const tab of tabs) {
-		await checkOpenTab(tab);
+		promisesToAwait.push(checkOpenTab(tab));
+	}
+	
+	for (const promiseToAwait of promisesToAwait) {
+		await promiseToAwait;
+	}
+}
+
+async function checkCachedTabs() {
+	const cachedTabs = await db.getAllCachedTabs();
+	
+	debugh.logVerbose(cachedTabs.length, "tabs in cache.");
+	debugh.logVerbose("Cached tab details:", cachedTabs);	
+	
+	// These all operate on separate cached tabs, so they CAN all run in parallel... right?
+	const promisesToAwait = [];
+	for (const cachedTab of cachedTabs) {
+		promisesToAwait.push(checkCachedTab(cachedTab));
+	}
+	
+	for (const promiseToAwait of promisesToAwait) {
+		await promiseToAwait;
 	}
 }
 
@@ -120,48 +205,14 @@ settings.archiveSettings.then(async (archiveSettings) => {
 	// Check for all tabs that are currently open. Either we just installed the extension and need to initialize the cache,
 	// or we just restored a browser session and need to check if there's any tabs we need to archive that we couldn't archive
 	// during the last session (because closing the browser prevents the onRemoved hook in here from running).
-	debugh.log("Checking for tabs that need archival.");
+	debugh.log("Checking for open tabs that need archival.");
 	await checkOpenTabs();
 	
 	// Also check if there's still any tabs remaining in the cache that aren't currently open. The most likely cause for this
 	// should be the user closing the browser and not having its "restore last session" setting enabled. The tabs couldn't be
-	// archived during the previous session, but the above query also didn't get them, because these tabs are no longer open.
-	const cachedTabs = await db.getAllCachedTabs();
-	debugh.logVerbose(cachedTabs.length, "tabs in cache.");
-	debugh.logVerbose("Cached tab details:", cachedTabs);
-	
-	for (const cachedTab of cachedTabs) {
-		// Rule out any tabs that are currently open. These SHOULD have been archived via the query above, so the fact they
-		// weren't most likely means some user settings are preventing these tabs from being archived. Basically, this is
-		// a shortcut around having to check every single archival condition again here.
-		let openTab = null;
-		
-		try {
-			openTab = await browser.tabs.get(cachedTab.id);
-		} catch {}
-		
-		if (!openTab) {
-			if (archiveSettings.archiveAllTabsOnBrowserClose) {
-				debugh.log("Archiving cached tab from previous session with ID:", cachedTab.metadata.id);				
-				
-				const tabToArchive = cachedTab.metadata;
-				
-				if (cachedTab.previewimageurl) {
-					tabToArchive.previewImage = cachedTab.previewimageurl;
-				}
-				
-				try {
-					await db.archiveTabs([tabToArchive], cachedTab.sessiondate);
-					await db.deleteCachedTabs([cachedTab.id]);
-				} catch {}
-			}
-		} else {
-			// If the tab DOES remain open, update the session date on the cached entry. All open tabs should now
-			// belong to the current session.
-			cachedTab.sessiondate = archiveSettings.currentSessionDate;			
-			await db.writeCachedTabs([cachedTab]);
-		}
-	}
+	// archived during the previous session, but the above query also didn't get them, because these tabs are no longer open.	
+	debugh.log("Checking for cached tabs that need archival.");
+	await checkCachedTabs();
 	
 	
 	// Now install our listeners so that any tabs created or closed during this session also update our cache.
@@ -229,11 +280,17 @@ settings.archiveSettings.then(async (archiveSettings) => {
 					
 					try {
 						await db.archiveTabs([tabToArchive]);
-					} catch {}
+					} catch (error) {
+						debugh.error("Couldn't archive tab on close:", error);
+						debugh.errorVerbose("Cached tab details:", cacheEntry);
+					}
 				}
 			}
 		}
 		
+		// Does this delete need to disappear if it's a window close and we have the "close tabs after archival" setting enabled?
+		// Maybe keeping the cache entry is the only way to prevent the browser from restoring the tab next time the window is opened.
+		// Then again, this might cause a needless double archival. Hmm...
 		await db.deleteCachedTabs([id]);
 	});
 	

@@ -157,6 +157,14 @@ export class PhanTabularDB extends Dexie {
 						entryToUpdate.sessions.push(session);
 					}
 				}
+				
+				// If the new entry doesn't have a preview image, but the old entry had one,
+				// also copy the preview image from the old entry so that we don't just wipe it needlessly.
+				// (Probably could apply this logic to more than just the preview image, but the preview image
+				// is the most likely thing to get lost from a discared tab).
+				if (!entryToUpdate.previewimageurl && existingArchivedTab.previewimageurl) {
+					entryToUpdate.previewimageurl = existingArchivedTab.previewimageurl;
+				}
 			}
 		}
 		

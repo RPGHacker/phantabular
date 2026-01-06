@@ -79,7 +79,10 @@ export class DebugHelper {
 		}
 	}
 	
-	verboseModeEnabled() {
+	async verboseModeEnabled() {
+		if (this._storagePromise) {
+			await this._storagePromise;
+		}
 		return this._storage.debugSettings.verboseMode;
 	}
 	
@@ -222,9 +225,9 @@ export { debugh as default };
 window.debugh = debugh
 		
 self.addEventListener("error", (event) => {
-	debugh.error(`Unhandled error at ${event.filename}:${event.lineno}:${event.colno}:`, event.message, "\n", event.error?.stack);
+	debugh.error(`Unhandled error at ${event.filename}:${event.lineno}:${event.colno}:`, event.message, "\nCallstack:\n", event.error?.stack);
 });
 
 self.addEventListener("unhandledrejection", (event) => {
-	debugh.error("Unhandled rejection:", event.reason, "\n", event.reason?.stack);
+	debugh.error("Unhandled rejection:", event.reason, "\nCallstack:\n", event.reason?.stack);
 });

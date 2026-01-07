@@ -196,7 +196,7 @@ function getSessionProperties(session) {
 	
 	let properties = {
 		name: new Date(session.creationdate).toLocaleDateString(undefined, dateOptions),
-		id: session.id,
+		id: session.creationdate,
 		color: "gray",
 		actions: `
 			<button data-action="delete-session" class="colorize-button image-button action-button"><img src="../icons/iconoir/edits/trash-solid.svg" style="height: 32px;" /></button>
@@ -221,7 +221,7 @@ async function queryCategories() {
 }
 
 async function queryTabsInSession(session) {
-	return sortedQuery(db.tabs.where("sessions").equals(session.id).toArray(), compareSortKeys);
+	return sortedQuery(db.tabs.where("sessions").equals(session.creationdate).toArray(), compareSortKeys);
 }
 
 async function queryTabsInCategory(category) {
@@ -398,15 +398,15 @@ async function confirmCategoryDeletion(categoryId, deleteContainedTabs) {
 }
 
 
-async function confirmSessionDeletion(sessionId, deleteContainedTabs) {
+async function confirmSessionDeletion(sessionDate, deleteContainedTabs) {
 	if (deleteContainedTabs) {
-		const tabsToDelete = await db.tabs.where("sessions").equals(sessionId).toArray();
+		const tabsToDelete = await db.tabs.where("sessions").equals(sessionDate).toArray();
 		
 		const justKeys = tabsToDelete.map((tab) => tab.id);
 		await db.deleteTabs(justKeys);
 	}
 	
-	await db.deleteSession(sessionId);
+	await db.deleteSession(sessionDate);
 	
 	incrementGroupVersion(document.querySelector("[data-issessionslist]"));
 }
@@ -520,8 +520,8 @@ function fillCategoryRuleFromTemplate() {
 }
 
 
-async function getSessionForId(id) {
-	return db.sessions.get({id: id});
+async function getSessionForDate(date) {
+	return db.sessions.get({creationdate: date});
 }
 
 async function getCategoryForId(id) {
@@ -638,7 +638,7 @@ async function populateTabListGroup(group) {
 		} else if (group.dataset.issession) {
 			// This is a session
 			queryFunction = queryTabsInSession;
-			queryArgument = await getSessionForId(parseInt(group.dataset.sessionid));
+			queryArgument = await getSessionForDate(parseInt(group.dataset.sessionid));
 			canRemove = true;
 		} else if (group.dataset.isunsortedtabs) {
 			// This is an unsorted tab list

@@ -54,7 +54,8 @@
 					<h2>Archival settings:</h2>
 					<div><input type="checkbox" id="archiveHiddenTabsCheckbox" /><label for="archiveHiddenTabsCheckbox">"Tabs in *" buttons also archive hidden tabs</label></div>
 					<div><input type="checkbox" id="archivePinnedTabsCheckbox" /><label for="archivePinnedTabsCheckbox">"Tabs in *" buttons also archive pinned tabs</label></div>
-					<div><input type="checkbox" id="noDuplicateUrlsCheckbox" /><label for="noDuplicateUrlsCheckbox">Never store duplicate URLs (when archiving a tab that already exists in the archive with an identical URL, that entry will be updated instead of creating a new one)</label></div>
+					<div><input type="checkbox" id="noDuplicateUrlsCheckbox" /><label for="noDuplicateUrlsCheckbox">Merge tabs with identical URLs (avoids multiple copies of the same tab within a single group)</label></div>
+					<div><input type="checkbox" id="onlyStoreLatestSessionCheckbox" /><label for="onlyStoreLatestSessionCheckbox">Only store the latest session of a tab (empty sessions will automatically be deleted once the last tab moves out of them)</label></div>
 					<div><input type="checkbox" id="autoCloseCheckbox" /><label for="autoCloseCheckbox">Archiving tabs via the popup automatically closes them</label></div>
 					
 					<div class="inner-section">

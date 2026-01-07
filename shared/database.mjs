@@ -11,41 +11,31 @@ export class PhanTabularDB extends Dexie {
 
 		this.version(1).stores({
 			categories: '++id, name', // non-indexed fields: color, rule, sortkey
-			sessions: '++id, creationdate', // non-indexed fields: sortkey
-			tabs: '++id, url, title, *categories, *sessions', // non-indexed fields: metadata, sortkey, previewimageurl (optional)
-			// The "cached tabs" table mainly exists to work around browser limitations. Currently there is no meaningful and reliable support
-			// in browsers for doing something with tabs and windows BEFORE they're closed, so there is no direct path to implementing our
-			// "archive all tabs on browser close" feature. However, we can keep a cache of all opened tabs as they're being created or updated,
-			// and then instead of archiving the tabs on browser close, we can archive them the next time the browser is opened and the respective
-			// tab is restored.
-			cachedtabs: '&id, sessiondate' // non-indexed fields: metadata, previewimageurl (optional), closedthrougharchival
+			sessions: '&creationdate', // non-indexed fields: sortkey
+			tabs: '++id, url, title, *categories, *sessions' // non-indexed fields: metadata, sortkey, previewimageurl (optional)
 		});
 	}
 
 	async getSession(sessionDate) {
-		const matchingSessions = await this.sessions.where("creationdate")
-			.equals(sessionDate)
-			.sortBy("creationdate");
-
-		if (matchingSessions.length > 0) {
-			return matchingSessions.pop();
-		}
-
-		return undefined;
+		return await this.sessions.get(sessionDate);
 	}
 
 	async createNewSession(sessionDate = Date.now()) {
-		debugh.log("Creating new session with date:", sessionDate);
+		debugh.log("Creating new session with date:", debugh.formatTimestamp(sessionDate));
 		
 		let newSession = {
 			creationdate: sessionDate,
 			sortkey: sessionDate
 		};
-		const newSessionId = await this.sessions.add(newSession);
-
-		newSession.id = newSessionId;
+		const newSessionPromise = this.sessions.add(newSession);
 		
-		debugh.log("Created new session with ID", newSession.id, "and date", sessionDate);
+		newSessionPromise.then(() => {
+			debugh.log("Created new session with date", debugh.formatTimestamp(sessionDate));
+		}).catch((error) => {			
+			debugh.error("Couldn't create session with date", debugh.formatTimestamp(sessionDate), "because the following error occured:", error);
+		});
+		
+		await newSessionPromise;
 
 		return newSession;
 	}
@@ -87,12 +77,14 @@ export class PhanTabularDB extends Dexie {
 		return categoriesWithAutoCatchRules;
 	}
 
-	async _addTabsToArchive(preprocessedTabDatas, sessionId) {
+	async _addTabsToArchive(preprocessedTabDatas) {
 		let justUrls = [];
 		let newTableEntries = [];
 		let urlsWithIndices = {};
 		
 		let currentDate = Date.now();
+		
+		const archiveSettings = await settings.archiveSettings;
 
 		// Convert our list of tabs into the correct format for the database.
 		let currentIndex = 0;
@@ -103,13 +95,27 @@ export class PhanTabularDB extends Dexie {
 				url: preprocessedTabData.tab.url,
 				title: preprocessedTabData.tab.title,
 				categories: preprocessedTabData.categories,
-				sessions: [ sessionId ],
+				sessions: preprocessedTabData.sessions,
 				metadata: preprocessedTabData.tab,
-				sortkey: { keyHigh: currentDate, keyMid: preprocessedTabData.tab.windowId, keyLow: preprocessedTabData.tab.id }
+				sortkey: { keyHigh: currentDate, keyMid: preprocessedTabData.tab.windowId, keyLow: preprocessedTabData.tab.index }
 			}
 			
 			if (preprocessedTabData.previewImage) {
 				newEntry.previewimageurl = preprocessedTabData.previewImage;
+			}
+			
+			// If we have "noDuplicateUrls" enabled, make sure we don't have the same URL
+			// in our selection multiple times. If we do, we need to remove either entry.
+			// We just use the "lastAccessed" flag to decide which entry to keep.
+			if (archiveSettings.noDuplicateUrls && typeof urlsWithIndices[newEntry.url] !== "undefined") {
+				const previousIndex = urlsWithIndices[newEntry.url];
+				const previousEntry = newTableEntries[previousIndex];
+				
+				if (newEntry.metadata.lastAccessed > previousEntry.metadata.lastAccessed) {
+					newTableEntries[previousIndex] = newEntry;
+				}
+				
+				continue;
 			}
 			
 			newTableEntries.push(newEntry);
@@ -117,17 +123,12 @@ export class PhanTabularDB extends Dexie {
 			urlsWithIndices[preprocessedTabData.tab.url] = currentIndex;
 			++currentIndex;
 		}
-		
-		const archiveSettings = await settings.archiveSettings;
 
-		// If the "no duplicate URLs" setting is enabled, check if we already have
-		// any of the tab URLs archived. If so, instead of storing a new entry in the
-		// database, we need to update the existing one.
-		/*
-		let sessionIdsToCheckForDeletion = [];
-		*/
+		// Some settings require us to update old entries instead of creating new ones.
+		// We take care of that here.
+		let sessionDatesToCheckForDeletion = [];
 		
-		if (archiveSettings.noDuplicateUrls) {
+		if (archiveSettings.noDuplicateUrls || archiveSettings.onlyStoreLatestSession) {
 			const existingArchivedTabs = await this.tabs.where("url")
 				.anyOf(justUrls)
 				.toArray();
@@ -138,23 +139,52 @@ export class PhanTabularDB extends Dexie {
 			// Update: Okay, I'm not sure what I was thinking there. Somehow in my head, I saw tabs
 			// as only having a single session assigned to them, but as we can plainly see down here,
 			// tabs have multiple sessions, so what I described here should never be able to happen.
-			/*
-			sessionIdsToCheckForDeletion = this._getAllSessionIdsFromTabs(existingArchivedTabs);
-			*/
+			// Update: Well, it can now, because the new "onlyStoreLatestSession" can now
+			// actually cause a tab to exit a session. Back on the table it goes!
+			sessionDatesToCheckForDeletion = this._getAllSessionDatesFromTabs(existingArchivedTabs);
+			// Also add the session dates of all tabs we're about to archive to the list. Technically,
+			// they COULD be older than any of the sessions already stored in the database.			
+			const sessionDatesFromNewEntries = this._getAllSessionDatesFromTabs(newTableEntries);
+			for (const sessionDateFromNewEntry of sessionDatesFromNewEntries) {
+				if (!sessionDatesToCheckForDeletion.includes(sessionDateFromNewEntry)) {
+					sessionDatesToCheckForDeletion.push(sessionDateFromNewEntry);
+				}
+			}
 				
-			for (const existingArchivedTab of existingArchivedTabs) {
+			for (const existingArchivedTab of existingArchivedTabs) {				
 				let entryToUpdate = newTableEntries[urlsWithIndices[existingArchivedTab.url]];
+								
+				debugh.logVerbose("Merging tab with URL", entryToUpdate.url, "into database entry", existingArchivedTab.id);
+				debugh.logVerbose("Tab details:", entryToUpdate, existingArchivedTab);
+				
 				entryToUpdate.id = existingArchivedTab.id;
 	
-				for (const cateogry of existingArchivedTab.categories) {
-					if (!entryToUpdate.categories.includes(cateogry)) {
-						entryToUpdate.categories.push(cateogry);
+				if (archiveSettings.onlyStoreLatestSession && !archiveSettings.noDuplicateUrls) {
+					const newestSessionOldEntry = Math.max(...existingArchivedTab.sessions);
+					const newestSessionNewEntry = Math.max(...entryToUpdate.sessions);
+					
+					if (newestSessionOldEntry > newestSessionNewEntry) {
+						entryToUpdate = existingArchivedTab;
+						entryToUpdate.sessions = [newestSessionOldEntry];
+					} else {
+						entryToUpdate.sessions = [newestSessionNewEntry];
 					}
-				}
-	
-				for (const session of existingArchivedTab.sessions) {
-					if (!entryToUpdate.sessions.includes(session)) {
-						entryToUpdate.sessions.push(session);
+				} else {
+					for (const cateogry of existingArchivedTab.categories) {
+						if (!entryToUpdate.categories.includes(cateogry)) {
+							entryToUpdate.categories.push(cateogry);
+						}
+					}
+		
+					for (const session of existingArchivedTab.sessions) {
+						if (!entryToUpdate.sessions.includes(session)) {
+							entryToUpdate.sessions.push(session);
+						}
+					}
+					
+					if (archiveSettings.onlyStoreLatestSession) {						
+						const newestSession = Math.max(...entryToUpdate.sessions);
+						entryToUpdate.sessions = [newestSession];
 					}
 				}
 				
@@ -165,6 +195,8 @@ export class PhanTabularDB extends Dexie {
 				if (!entryToUpdate.previewimageurl && existingArchivedTab.previewimageurl) {
 					entryToUpdate.previewimageurl = existingArchivedTab.previewimageurl;
 				}
+				
+				debugh.logVerbose("Merged tab details:", entryToUpdate);
 			}
 		}
 		
@@ -177,11 +209,12 @@ export class PhanTabularDB extends Dexie {
 		
 		// Check if any sessions are now empty as result of moving tabs
 		// and if so, automatically delete the respective session.
-		/*
-		for (const sessionIdToCheck of sessionIdsToCheckForDeletion) {
-			this.deleteSessionIfNoLongerNeeded(sessionIdToCheck);
+		if (sessionDatesToCheckForDeletion.length > 0) {
+			debugh.log("Checking for empty sessions to delete.");
+			for (const sessionDateToCheck of sessionDatesToCheckForDeletion) {
+				this.deleteSessionIfNoLongerNeeded(sessionDateToCheck);
+			}
 		}
-		*/
 	}
 
 	async hasPreviewImageCapturePermissions() {	
@@ -219,8 +252,10 @@ export class PhanTabularDB extends Dexie {
 	}
 
 	async archiveTabs(tabs, sessionDate = undefined) {
-		debugh.log("Archiving", tabs.length, "tabs into session with date:", sessionDate);
+		debugh.log("Archiving", tabs.length, "tabs into session with date:", debugh.formatTimestamp(sessionDate));
 		debugh.logVerbose("Tab details:", tabs);
+		
+		const currentDate = Date.now();
 		
 		const errors = [];
 		let hasCriticalErrors = false;
@@ -270,29 +305,9 @@ export class PhanTabularDB extends Dexie {
 				errors.push("Retrieving categories with auto-catch rules failed: " + error);
 			}
 		
-			// Retrieve or create the session that our tabs will go into.
-			let currentSession = null;
-			try {				
-				await this.transaction("rw", this.sessions, async (tx) => {				
-					if (!sessionDate) {
-						sessionDate = archiveSettings.currentSessionDate;
-					}
-					
-					currentSession = await this.getSession(sessionDate);
-				
-					if (!currentSession) {
-						currentSession = await this.createNewSession(sessionDate);
-					} else {
-						debugh.log("Retrieved session with ID", currentSession.id, "and date", currentSession.creationdate);
-					}
-				});
-			} catch (error) {
-				errors.push("Retrieving or creating session for tabs failed: " + error);
-				hasCriticalErrors = true;
-			}
-		
 			// Transform our list of tabs into the format that our DB helper expects.
-			let preprocessedTabDatas = [];
+			const preprocessedTabDatas = [];
+			const uniqueSessionDates = [];
 		
 			for (const tab of tabsToArchive) {
 				let categoriesToAdd = [];
@@ -313,12 +328,13 @@ export class PhanTabularDB extends Dexie {
 				
 				const newEntry = {
 					tab: tab,
-					categories: categoriesToAdd
+					categories: categoriesToAdd,
+					sessions: [sessionDate]
 				}
 				
 				if (savePreviewImages) {
 					if (tab.previewImage) {
-						// Don't generate a new preview image if we're already passing one in (for example, from a cached tab).
+						// Don't generate a new preview image if we're already passing one in (for example, from a cache).
 						newEntry.previewImage = tab.previewImage;
 					} else {
 						const previewImageOptions = {
@@ -338,12 +354,46 @@ export class PhanTabularDB extends Dexie {
 					}
 				}
 		
+				// If we didn't explicitly pass in a session date, get the one associated to the tab.
+				// Usually this is the window's session date, unless that for some reason hasn't been set yet
+				// or isn't available, in which case we just use the current date.
+				if (newEntry.sessions[0] === undefined) {
+					let sessionDate = currentDate;
+					try {
+						const windowData = await browser.sessions.getWindowValue(newEntry.tab.windowId, "phantabular");
+						sessionDate = windowData.sessionDate;
+					} catch {}
+					
+					newEntry.sessions = [sessionDate];
+					
+					if (!uniqueSessionDates.includes(sessionDate)) {
+						uniqueSessionDates.push(sessionDate);
+					}
+				}
+		
 				preprocessedTabDatas.push(newEntry);
+			}
+			
+			// Iterate all the unique session dates that we've used and check if the respective session already exists.
+			// If not, it needs to be created.
+			try {
+				await this.transaction("rw", this.sessions, async (tx) => {
+					for (const uniqueSessionDate of uniqueSessionDates) {
+						const existingSession = await this.getSession(uniqueSessionDate);
+						
+						if (!existingSession) {
+							await this.createNewSession(uniqueSessionDate);
+						}
+					}
+				});
+			} catch (error) {
+				errors.push("Retrieving or creating a session failed: " + error);
+				hasCriticalErrors = true;
 			}
 		
 			if (!hasCriticalErrors) {
 				try {
-					await this._addTabsToArchive(preprocessedTabDatas, currentSession.id);
+					await this._addTabsToArchive(preprocessedTabDatas);
 				} catch(error) {
 					errors.push("Adding tabs to archive failed: " + error);
 					hasCriticalErrors = true;
@@ -363,32 +413,33 @@ export class PhanTabularDB extends Dexie {
 		}
 	}
 	
-	async deleteSessionIfNoLongerNeeded(sessionId) {
-		this.tabs.where("sessions").equals(sessionId).toArray().then((tabs) => {
+	async deleteSessionIfNoLongerNeeded(sessionDate) {
+		debugh.logVerbose("Checking if session with date", debugh.formatTimestamp(sessionDate), "is empty and can be deleted");
+		this.tabs.where("sessions").equals(sessionDate).toArray().then((tabs) => {
 			if (tabs.length === 0) {
-				this.deleteSession(sessionId);
+				this.deleteSession(sessionDate);
 			}
 		}).catch((error) => {
-			debugh.error("Error while looking for empty sessions: " + error);
+			debugh.error("Error while looking for empty sessions:", error);
 		});
 	}
 	
-	_getAllSessionIdsFromTabs(tabs) {
-		const unqiueSessionIds = {};
+	_getAllSessionDatesFromTabs(tabs) {
+		const unqiueSessionDates = {};
 		
 		for (const tab of tabs) {
-			for (const sessionId of tab.sessions) {
-				unqiueSessionIds[sessionId] = sessionId;
+			for (const sessionDate of tab.sessions) {
+				unqiueSessionDates[sessionDate] = sessionDate;
 			}
 		}
 		
-		const sessionIds = [];
+		const sessionDates = [];
 		
-		for (const key in unqiueSessionIds) {
-			sessionIds.push(unqiueSessionIds[key]);
+		for (const key in unqiueSessionDates) {
+			sessionDates.push(unqiueSessionDates[key]);
 		}
 		
-		return sessionIds;
+		return sessionDates;
 	}
 	
 	async deleteTabs(ids) {
@@ -397,15 +448,18 @@ export class PhanTabularDB extends Dexie {
 		
 		const tabs = await this.tabs.bulkGet(ids);
 		
-		const sessionIds = this._getAllSessionIdsFromTabs(tabs);
+		const sessionDates = this._getAllSessionDatesFromTabs(tabs);
 		
 		const returnPromise = this.tabs.bulkDelete(ids);
 		
 		returnPromise.then(() => {
 			// Check if any sessions are now empty as result of deleting tabs,
 			// and if so, automatically delete the respective session.
-			for (const sessionId of sessionIds) {
-				this.deleteSessionIfNoLongerNeeded(sessionId);
+			if (sessionDates.length > 0) {
+				debugh.log("Checking for empty sessions to delete.");
+				for (const sessionDate of sessionDates) {
+					this.deleteSessionIfNoLongerNeeded(sessionDate);
+				}
 			}
 		});
 		
@@ -417,47 +471,18 @@ export class PhanTabularDB extends Dexie {
 		return this.categories.delete(id);
 	}
 	
-	async deleteSession(id) {
-		debugh.log("Deleting session with ID:", id);
-		return this.sessions.delete(id);
+	async deleteSession(date) {
+		debugh.log("Deleting session with date:", debugh.formatTimestamp(date));
+		return this.sessions.delete(date);
 	}
 	
 	async deleteArchive() {
 		debugh.log("Deleting entire archive.");
-		const returnValue = await this.transaction("rw", this.categories, this.sessions, this.tabs, this.cachedtabs, async (tx) => {
-			await this.categories.clear();
-			await this.sessions.clear();
-			await this.tabs.clear();
-			await this.cachedtabs.clear();
-		});
-		await browser.runtime.sendMessage({
-			type: "deleted-archive"
-		});
-		return returnValue;
+		return await this.delete({disableAutoOpen: false});
 	}
 	
 	newLiveQuery(query) {
 		return liveQuery(query);
-	}
-	
-	async getCachedTabs(ids) {
-		return await this.cachedtabs.bulkGet(ids);
-	}
-	
-	async getAllCachedTabs() {
-		return await this.cachedtabs.toArray();
-	}
-	
-	async writeCachedTabs(cachedTabs) {
-		debugh.log("Writing", cachedTabs.length, "tabs to cache.");
-		debugh.logVerbose("Cached tab details:", cachedTabs);
-		return await this.cachedtabs.bulkPut(cachedTabs);
-	}
-	
-	async deleteCachedTabs(ids) {
-		debugh.log("Deleting", ids.length, "cached tabs.");
-		debugh.logVerbose("IDs:", ids);
-		return await this.cachedtabs.bulkDelete(ids);
 	}
 }
 

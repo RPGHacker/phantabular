@@ -26,18 +26,6 @@ async function archiveTabs(tabs) {
 		
 		if (archiveSettings.autoCloseArchivedTabs) {
 			const justTabIds = tabs.map((tab) => tab.id);			
-			
-			// Before closing the tabs, update the cache to mark them as "closed through archival".
-			// This will prevent automatic archival from trying to archive them again, potentially
-			// resulting in harmful recursion.
-			const cacheEntries = await db.getCachedTabs(justTabIds);
-			
-			for (const cacheEntry of cacheEntries) {
-				cacheEntry.closedthrougharchival = true;
-			}
-			
-			await db.writeCachedTabs(cacheEntries);
-			
 			await browser.tabs.remove(justTabIds);
 		}
 		

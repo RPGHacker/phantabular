@@ -25,6 +25,7 @@ export class Settings {
 				archiveHiddenTabs: false,
 				archivePinnedTabs: false,
 				noDuplicateUrls: false,
+				onlyStoreLatestSession: false,
 				autoCloseArchivedTabs: true,
 				
 				savePreviewImages: false,
@@ -36,10 +37,7 @@ export class Settings {
 				archiveAllTabsOnBrowserClose: false,
 				archiveOnBrowserCloseArchivesHiddenTabs: false,
 				archiveOnBrowserCloseArchivesPinnedTabs: false,
-				archiveOnBrowserCloseClosesTab: false,
-				
-				// Should be overwritten by the extension only.
-				currentSessionDate: Date.now()
+				archiveOnBrowserCloseClosesTab: false
 			},
 			openSettings: {
 				deleteTabsUponOpen: false,

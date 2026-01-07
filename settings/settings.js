@@ -9,6 +9,7 @@ function initializeForms(archiveSettings, openSettings) {
 	archiveHiddenTabsCheckbox.checked = archiveSettings.archiveHiddenTabs;
 	archivePinnedTabsCheckbox.checked = archiveSettings.archivePinnedTabs;
 	noDuplicateUrlsCheckbox.checked = archiveSettings.noDuplicateUrls;
+	onlyStoreLatestSessionCheckbox.checked = archiveSettings.onlyStoreLatestSession;
 	autoCloseCheckbox.checked = archiveSettings.autoCloseArchivedTabs;
 	archiveTabOnCloseCheckbox.checked = archiveSettings.archiveTabOnClose;
 	archiveAllTabsOnBrowserCloseCheckbox.checked = archiveSettings.archiveAllTabsOnBrowserClose;
@@ -44,6 +45,7 @@ async function saveChanges() {
 	archiveSettings.archiveHiddenTabs = archiveHiddenTabsCheckbox.checked;
 	archiveSettings.archivePinnedTabs = archivePinnedTabsCheckbox.checked;
 	archiveSettings.noDuplicateUrls = noDuplicateUrlsCheckbox.checked;
+	archiveSettings.onlyStoreLatestSession = onlyStoreLatestSessionCheckbox.checked;
 	archiveSettings.autoCloseArchivedTabs = autoCloseCheckbox.checked;
 	archiveSettings.archiveTabOnClose = archiveTabOnCloseCheckbox.checked;
 	archiveSettings.archiveAllTabsOnBrowserClose = archiveAllTabsOnBrowserCloseCheckbox.checked;

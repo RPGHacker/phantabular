@@ -36,6 +36,7 @@ export class DebugHelper {
 			hour: "2-digit",
 			minute: "2-digit",
 			second: "2-digit",
+			fractionalSecondDigits: 3
 		};
 		
 		this._defaultStorage = {
@@ -220,10 +221,10 @@ export class DebugHelper {
 	}
 	
 	_generateLogArgs(...args) {
-		const defaultStyle = "display: inline-block; margin-right: 0px;";
-		const initialFormattingString = "%c";
+		const defaultStyle = "display: inline; margin: 0px; white-space: pre;";
+		const initialFormattingString = "";
 		let formattingString = initialFormattingString;
-		const params = [defaultStyle];
+		const params = [];
 		
 		for (const arg of args) {
 			if (formattingString !== initialFormattingString) {
@@ -232,15 +233,15 @@ export class DebugHelper {
 			
 			switch (this._getBespokeType(arg)) {
 				case "TimeStamp":
-					formattingString += "%c%s%c";
+					formattingString += "%c%o";
 					const readableDate = new Date(arg.unixTimeStamp).toLocaleDateString(undefined, this._dateOptions);
-					params.push("color: aquamarine; display: inline-block; margin-right: 0px;");
+					params.push("color: aquamarine; display: inline; margin: 0px; white-space: pre;");
 					params.push(`[${arg.unixTimeStamp} | ${readableDate}]`);
-					params.push(defaultStyle);
 					break;
 					
 				default:
-					formattingString += "%o";
+					formattingString += "%c%o";
+					params.push(defaultStyle);
 					params.push(arg);
 					break;
 				

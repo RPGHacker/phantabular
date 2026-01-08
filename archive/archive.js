@@ -68,25 +68,47 @@ function createSpinnerAnimation(container) {
 		</div>
 	`);
 	
+	const conainerId = container.parentElement.id;
+    var observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.attributeName === 'data-activequerycount') {
+          debugh.log("Active query count of", conainerId, container.parentElement, "changed to", container.querySelector(".spinner-root").dataset.activequerycount);
+        }
+      });
+    });
+    observer.observe(container.querySelector(".spinner-root"), {
+      attributes: true, childList: false, characterData: false
+    });
+	
 	return container.querySelector(".spinner-root");
+}
+
+function updateSpinnerVisibility(spinnerElement, activeQueryCount) {	
+	if (activeQueryCount === 0) {
+		spinnerElement.hidden = true;
+	} else {		
+		spinnerElement.hidden = false;
+	}
 }
 
 function showSpinnerAnimation(container) {
 	const spinnerElement = container.querySelector(".spinner-root");
+    debugh.log("Showing: Setting active query count of", container.id, "to", parseInt(spinnerElement.dataset.activequerycount) + 1);
 	
-	spinnerElement.hidden = false;
-	spinnerElement.dataset.activequerycount = parseInt(spinnerElement.dataset.activequerycount) + 1;
+	const activeQueryCount = parseInt(spinnerElement.dataset.activequerycount) + 1;
+	spinnerElement.dataset.activequerycount = activeQueryCount;
+	
+	updateSpinnerVisibility(spinnerElement, activeQueryCount);
 }
 
 function hideSpinnerAnimation(container) {
 	const spinnerElement = container.querySelector(".spinner-root");
+    debugh.log("Hiding: Setting active query count of", container.id, "to", parseInt(spinnerElement.dataset.activequerycount) - 1);
 	
 	const activeQueryCount = parseInt(spinnerElement.dataset.activequerycount) - 1;
 	spinnerElement.dataset.activequerycount = activeQueryCount;
 	
-	if (activeQueryCount === 0) {
-		spinnerElement.hidden = true;
-	}
+	updateSpinnerVisibility(spinnerElement, activeQueryCount);
 }
 
 function createTabsList(container) {

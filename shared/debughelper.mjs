@@ -15,12 +15,73 @@
 	
 	Replay stored log datas:
 	debugh.replayStoredLogDatas();
+	
+	Enable storing call stacks in stored log datas.
+	debugh.setStoreCallStacks(true);
+	
+	Enable printing either the current call stack or the call stack stored in log datas.
+	debugh.setPrintCallStacks(true);
 */
 
 export class TimeStamp {
 	constructor(unixTimeStamp) {
 		this._type = "TimeStamp";
 		this.unixTimeStamp = unixTimeStamp;
+	}
+}
+
+export class CallStack {
+	constructor(callStack) {
+		this._type = "CallStack";
+		this.callStack = callStack;
+		if (callStack !== undefined) {
+			this.callStack = callStack.map((entry) => {
+				let functionName = "<unknown>";
+				let fullPath = "<unknown>";
+				let fileName = "<unknown>";
+				let lineNo = "?";
+				let columnNo = "?";
+				
+				// NOTE: The format of the call stack is very engine-dependent, so if we ever
+				// port this extension to another browser, this function likely needs additional paths.
+				// This current implementation is only confirmed to work in vanilla Firefox.
+				const functionAndFile = entry.split("@");
+				functionName = functionAndFile[0];
+				
+				if (functionAndFile.length > 1) {
+					const fileAndLocation = functionAndFile[1].split(":");
+					
+					if (fileAndLocation.length > 1 && !isNaN(parseInt(fileAndLocation.at(-1)))) {
+						const firstNumber = parseInt(fileAndLocation.pop());
+											
+						if (fileAndLocation.length > 1 && !isNaN(parseInt(fileAndLocation.at(-1)))) {
+							const secondNumber = parseInt(fileAndLocation.pop());
+							lineNo = secondNumber;
+							columnNo = firstNumber;
+						} else {
+							lineNo = firstNumber;
+						}
+					}
+					
+					fullPath = fileAndLocation.join(":");
+					
+					const splitPath = fullPath.split("/");
+					
+					// Probably won't work if the URL refers to some website instead of a file name,
+					// but shouldn't be relevant for this extension.
+					fileName = splitPath.at(-1);
+				}
+				
+				return {
+					func: functionName,
+					fileName: fileName,
+					fullPath: fullPath,
+					lineNo: lineNo,
+					columnNo: columnNo,
+					fullStackEntry: entry
+				};
+			});
+		}
 	}
 }
 
@@ -45,7 +106,9 @@ export class DebugHelper {
 				verboseMode: false,
 				storedLogDataEnabled: false,
 				storedLogData: [],
-				maxNumStoredLogDatas: 200
+				maxNumStoredLogDatas: 200,
+				storeCallStacks: false,
+				printCallStacks: false
 			}
 		};
 		this._storage = JSON.parse(JSON.stringify(this._defaultStorage));
@@ -121,6 +184,16 @@ export class DebugHelper {
 		this._updateStorage();
 	}
 	
+	setStoreCallStacks(enabled) {
+		this._storage.debugSettings.storeCallStacks = enabled;
+		this._updateStorage();
+	}
+	
+	setPrintCallStacks(enabled) {
+		this._storage.debugSettings.printCallStacks = enabled;
+		this._updateStorage();
+	}
+	
 	clearStoredLogDatas() {
 		this._storage.debugSettings.storedLogData = [];
 		this._updateStorage();
@@ -142,6 +215,12 @@ export class DebugHelper {
 		for (const storedLogData of this._storage.debugSettings.storedLogData) {
 			const readableDate = new Date(storedLogData.timeStamp).toLocaleDateString(undefined, this._dateOptions);
 			console[storedLogData.logFunction](...this._generateLogArgs(this.formatTimestamp(storedLogData.timeStamp), ...storedLogData.args));
+			
+			if (storedLogData.callStack != undefined && this._storage.debugSettings.printCallStacks) {
+				console.groupCollapsed("Callstack:");
+				console[storedLogData.logFunction](...this._generateLogArgs(storedLogData.callStack));
+				console.groupEnd();
+			}
 		}
 		
 		console.log("----------------------------------------------------");
@@ -154,28 +233,28 @@ export class DebugHelper {
 	
 	
 	log(...args) {		
-		this._nativeLog("log", "normal", this._logPrefix, ...args);
+		this._nativeLog("log", "normal", this._generateCallStackIfEnabled(3), this._logPrefix, ...args);
 	}
 	
 	error(...args) {		
-		this._nativeLog("error", "normal", this._logPrefix, ...args);
+		this._nativeLog("error", "normal", this._generateCallStackIfEnabled(3), this._logPrefix, ...args);
 	}
 	
 	warn(...args) {		
-		this._nativeLog("warn", "normal", this._logPrefix, ...args);
+		this._nativeLog("warn", "normal", this._generateCallStackIfEnabled(3), this._logPrefix, ...args);
 	}
 	
 	
 	logVerbose(...args) {		
-		this._nativeLog("log", "verbose", this._logPrefix, "(Verbose)", ...args);
+		this._nativeLog("log", "verbose", this._generateCallStackIfEnabled(3), this._logPrefix, "(Verbose)", ...args);
 	}
 	
 	errorVerbose(...args) {		
-		this._nativeLog("error", "verbose", this._logPrefix, "(Verbose)", ...args);
+		this._nativeLog("error", "verbose", this._generateCallStackIfEnabled(3), this._logPrefix, "(Verbose)", ...args);
 	}
 	
 	warnVerbose(...args) {		
-		this._nativeLog("warn", "verbose", this._logPrefix, "(Verbose)", ...args);
+		this._nativeLog("warn", "verbose", this._generateCallStackIfEnabled(3), this._logPrefix, "(Verbose)", ...args);
 	}
 	
 	// Taken from: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/typeof
@@ -222,6 +301,9 @@ export class DebugHelper {
 	
 	_generateLogArgs(...args) {
 		const defaultStyle = "display: inline; margin: 0px; white-space: pre;";
+		const timeStampStyle = "color: aquamarine; display: inline; margin: 0px; white-space: pre;";
+		const callStackStyle = "color: lemonchiffon; display: inline; margin: 0px; white-space: pre;";
+		
 		const initialFormattingString = "";
 		let formattingString = initialFormattingString;
 		const params = [];
@@ -235,8 +317,45 @@ export class DebugHelper {
 				case "TimeStamp":
 					formattingString += "%c%o";
 					const readableDate = new Date(arg.unixTimeStamp).toLocaleDateString(undefined, this._dateOptions);
-					params.push("color: aquamarine; display: inline; margin: 0px; white-space: pre;");
+					params.push(timeStampStyle);
 					params.push(`[${arg.unixTimeStamp} | ${readableDate}]`);
+					break;
+					
+				case "CallStack":
+					if (arg.callStack !== undefined) {
+						//formattingString += "%c%o";
+						//params.push(callStackStyle);
+						//params.push("\nCallstack:");
+						
+						const printableCallStack = [];
+						let longestFunctionLength = 0;
+						
+						for (const entry of arg.callStack) {
+							longestFunctionLength = Math.max(longestFunctionLength, entry.func.length + 1);
+							printableCallStack.push({
+								func: `${entry.func}:`,
+								location: `${entry.fileName}:${entry.lineNo}:${entry.columnNo}`
+							});
+						}
+						
+						for (const entry of printableCallStack) {
+							while (entry.func.length < longestFunctionLength) {
+								entry.func += " ";
+							}
+						}
+						
+						//formattingString += " %c%o";
+						//params.push(callStackStyle);
+						//params.push(printableCallStack);
+						
+						let entryIndex = 0;
+						for (const entry of printableCallStack) {
+							formattingString += " %c%o";
+							params.push(callStackStyle);
+							params.push((entryIndex === 0 ? "" : "\n ") + " " + entry.func + "    " + entry.location);
+							++entryIndex;
+						}
+					}
 					break;
 					
 				default:
@@ -251,9 +370,9 @@ export class DebugHelper {
 		return [formattingString, ...params];
 	}
 	
-	_nativeLog(logFunction, logType, ...args) {
+	_nativeLog(logFunction, logType, callStack, ...args) {
 		if (this._storagePromise) {
-			this._writeToBuffer(logFunction, logType, ...args);
+			this._writeToBuffer(logFunction, logType, callStack, ...args);
 			return;
 		}
 		
@@ -264,6 +383,12 @@ export class DebugHelper {
 		
 		console[logFunction](...this._generateLogArgs(...args));
 		
+		if (callStack !== undefined && this._storage.debugSettings.printCallstacks) {
+			console.groupCollapsed("Callstack:");
+			console[logFunction](...this._generateLogArgs(callStack));
+			console.groupEnd();
+		}
+		
 		if (this._storage.debugSettings.storedLogDataEnabled) {
 			if (this._storage.debugSettings.storedLogData.length >= this._storage.debugSettings.maxNumStoredLogDatas) {
 				this._storage.debugSettings.storedLogData.splice(0, this._storage.debugSettings.storedLogData.length - this._storage.debugSettings.maxNumStoredLogDatas);
@@ -272,6 +397,7 @@ export class DebugHelper {
 			this._storage.debugSettings.storedLogData.push({
 				logFunction: logFunction,
 				timeStamp: Date.now(),
+				callStack: (this._storage.debugSettings.storeCallstacks ? callStack : undefined),
 				args: JSON.parse(JSON.stringify([...args]))
 			});
 			
@@ -279,7 +405,7 @@ export class DebugHelper {
 		}
 	}
 	
-	_writeToBuffer(logFunction, logType, ...args) {
+	_writeToBuffer(logFunction, logType, callStack, ...args) {
 		if (!this._storagePromise) {
 			throw("Trying to store log data in initialization buffer after initialization has already resolved.");
 		}
@@ -287,6 +413,7 @@ export class DebugHelper {
 		this._bufferDuringInitialization.push({
 			logFunction: logFunction,
 			logType: logType,
+			callStack: callStack,
 			args: JSON.parse(JSON.stringify([...args]))
 		});
 	}
@@ -294,10 +421,24 @@ export class DebugHelper {
 	_flushBuffer() {
 		for (const bufferedData of this._bufferDuringInitialization) {
 			// Should work, because this._storagePromise gets nulled before this function is called.
-			this._nativeLog(bufferedData.logFunction, bufferedData.logType, ...bufferedData.args);
+			this._nativeLog(bufferedData.logFunction, bufferedData.logType, bufferedData.callStack, ...bufferedData.args);
 		}
 		
 		this._bufferDuringInitialization = null;
+	}
+	
+	generateCallStack(levelsToPop = 1) {
+		const callStack = new Error().stack.split("\n");
+		callStack.splice(0, Math.min(levelsToPop, callStack.length - 1));
+		return new CallStack(callStack);
+	}
+	
+	_generateCallStackIfEnabled(levelsToPop = 2) {
+		if (this._storagePromise || this._storage.debugSettings.storeCallStacks || this._storage.debugSettings.printCallStacks) {
+			return this.generateCallStack(levelsToPop);
+		}
+		
+		return new undefined;
 	}
 }
 

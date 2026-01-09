@@ -308,6 +308,10 @@ export class PhanTabularDB extends Dexie {
 			// Transform our list of tabs into the format that our DB helper expects.
 			const preprocessedTabDatas = [];
 			const uniqueSessionDates = [];
+			
+			if (sessionDate !== undefined) {
+				uniqueSessionDates.push(sessionDate);
+			}
 		
 			for (const tab of tabsToArchive) {
 				let categoriesToAdd = [];
@@ -378,11 +382,17 @@ export class PhanTabularDB extends Dexie {
 			// If not, it needs to be created.
 			try {
 				await this.transaction("rw", this.sessions, async (tx) => {
+					debugh.logVerbose("Checking if", uniqueSessionDates.length, "sessions already exist:");
+					debugh.logVerbose("Session details:", uniqueSessionDates.map((date) => {return debugh.formatTimestamp(date);}));
 					for (const uniqueSessionDate of uniqueSessionDates) {
+						debugh.logVerbose("Checking session:", debugh.formatTimestamp(uniqueSessionDate));
 						const existingSession = await this.getSession(uniqueSessionDate);
 						
 						if (!existingSession) {
+							debugh.logVerbose("Creating new session", debugh.formatTimestamp(uniqueSessionDate), "because it wasn't found.");
 							await this.createNewSession(uniqueSessionDate);
+						} else {
+							debugh.logVerbose("Not creating new session", debugh.formatTimestamp(uniqueSessionDate), "because it was found in the database:", existingSession);
 						}
 					}
 				});

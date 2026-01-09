@@ -77,14 +77,12 @@ export class PhanTabularDB extends Dexie {
 		return categoriesWithAutoCatchRules;
 	}
 
-	async _addTabsToArchive(preprocessedTabDatas) {
+	async _addTabsToArchive(preprocessedTabDatas, archiveSettings) {
 		let justUrls = [];
 		let newTableEntries = [];
 		let urlsWithIndices = {};
 		
 		let currentDate = Date.now();
-		
-		const archiveSettings = await settings.archiveSettings;
 
 		// Convert our list of tabs into the correct format for the database.
 		let currentIndex = 0;
@@ -107,7 +105,8 @@ export class PhanTabularDB extends Dexie {
 			// If we have "noDuplicateUrls" enabled, make sure we don't have the same URL
 			// in our selection multiple times. If we do, we need to remove either entry.
 			// We just use the "lastAccessed" flag to decide which entry to keep.
-			if (archiveSettings.noDuplicateUrls && typeof urlsWithIndices[newEntry.url] !== "undefined") {
+			// Update: Also do this for "onlyStoreLatestSession".
+			if ((archiveSettings.noDuplicateUrls || archiveSettings.onlyStoreLatestSession) && typeof urlsWithIndices[newEntry.url] !== "undefined") {
 				const previousIndex = urlsWithIndices[newEntry.url];
 				const previousEntry = newTableEntries[previousIndex];
 				
@@ -127,6 +126,7 @@ export class PhanTabularDB extends Dexie {
 		// Some settings require us to update old entries instead of creating new ones.
 		// We take care of that here.
 		let sessionDatesToCheckForDeletion = [];
+		const entryIdsToDelete = [];
 		
 		if (archiveSettings.noDuplicateUrls || archiveSettings.onlyStoreLatestSession) {
 			const existingArchivedTabs = await this.tabs.where("url")
@@ -157,6 +157,7 @@ export class PhanTabularDB extends Dexie {
 				debugh.logVerbose("Merging tab with URL", entryToUpdate.url, "into database entry", existingArchivedTab.id);
 				debugh.logVerbose("Tab details:", entryToUpdate, existingArchivedTab);
 				
+				const previousEntryToUpdateId = entryToUpdate.id;
 				entryToUpdate.id = existingArchivedTab.id;
 	
 				if (archiveSettings.onlyStoreLatestSession && !archiveSettings.noDuplicateUrls) {
@@ -168,6 +169,13 @@ export class PhanTabularDB extends Dexie {
 						entryToUpdate.sessions = [newestSessionOldEntry];
 					} else {
 						entryToUpdate.sessions = [newestSessionNewEntry];
+					}
+					
+					// If entryToUpdate already had an ID assigned to it, the same URL must have occured multiple
+					// times within existingArchivedTabs, so we must collapse all existing entries into one.
+					// The simplest solution for this is to delete the previous entry.
+					if (previousEntryToUpdateId !== undefined) {
+						entryIdsToDelete.push(previousEntryToUpdateId);
 					}
 				} else {
 					for (const cateogry of existingArchivedTab.categories) {
@@ -203,18 +211,27 @@ export class PhanTabularDB extends Dexie {
 		// Wrapping everything into a transaction here, just to make it easier to handle error cases.
 		// The caller might want to close tabs on success, so with the transaction we only ever have
 		// to close all tabs or none.
-		await this.transaction("rw", this.tabs, async (tx) => {
+		await this.transaction("rw", this.tabs, this.sessions, async (tx) => {
 			await this.tabs.bulkPut(newTableEntries);
-		});
-		
-		// Check if any sessions are now empty as result of moving tabs
-		// and if so, automatically delete the respective session.
-		if (sessionDatesToCheckForDeletion.length > 0) {
-			debugh.log("Checking for empty sessions to delete.");
-			for (const sessionDateToCheck of sessionDatesToCheckForDeletion) {
-				this.deleteSessionIfNoLongerNeeded(sessionDateToCheck);
+			if (entryIdsToDelete.length > 0) {
+				await this.deleteTabs(entryIdsToDelete);
 			}
-		}
+		
+			// Check if any sessions are now empty as result of moving tabs
+			// and if so, automatically delete the respective session.
+			const deletionPromisesToAwait = [];
+			
+			if (sessionDatesToCheckForDeletion.length > 0) {
+				debugh.log("Checking for empty sessions to delete.");
+				for (const sessionDateToCheck of sessionDatesToCheckForDeletion) {
+					deletionPromisesToAwait.push(this.deleteSessionIfNoLongerNeeded(sessionDateToCheck));
+				}
+			}
+			
+			for (const deletionPromiseToAwait of deletionPromisesToAwait) {
+				await deletionPromisesToAwait;
+			}
+		});
 	}
 
 	async hasPreviewImageCapturePermissions() {	
@@ -403,7 +420,7 @@ export class PhanTabularDB extends Dexie {
 		
 			if (!hasCriticalErrors) {
 				try {
-					await this._addTabsToArchive(preprocessedTabDatas);
+					await this._addTabsToArchive(preprocessedTabDatas, archiveSettings);
 				} catch(error) {
 					errors.push("Adding tabs to archive failed: " + error);
 					hasCriticalErrors = true;

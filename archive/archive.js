@@ -68,19 +68,7 @@ function createSpinnerAnimation(container) {
 		</div>
 	`);
 	
-	const conainerId = container.parentElement.id;
-    var observer = new MutationObserver(function(mutations) {
-      mutations.forEach(function(mutation) {
-        if (mutation.attributeName === 'data-activequerycount') {
-          debugh.log("Active query count of", conainerId, container.parentElement, "changed to", container.querySelector(".spinner-root").dataset.activequerycount);
-        }
-      });
-    });
-    observer.observe(container.querySelector(".spinner-root"), {
-      attributes: true, childList: false, characterData: false
-    });
-	
-	return container.querySelector(".spinner-root");
+	return container.closest(".group-box").querySelector(":scope > .group-content-setup-root > .spinner-root");
 }
 
 function updateSpinnerVisibility(spinnerElement, activeQueryCount) {	
@@ -92,8 +80,7 @@ function updateSpinnerVisibility(spinnerElement, activeQueryCount) {
 }
 
 function showSpinnerAnimation(container) {
-	const spinnerElement = container.querySelector(".spinner-root");
-    debugh.log("Showing: Setting active query count of", container.id, "to", parseInt(spinnerElement.dataset.activequerycount) + 1);
+	const spinnerElement = container.closest(".group-box").querySelector(":scope > .group-content-setup-root > .spinner-root");
 	
 	const activeQueryCount = parseInt(spinnerElement.dataset.activequerycount) + 1;
 	spinnerElement.dataset.activequerycount = activeQueryCount;
@@ -102,8 +89,7 @@ function showSpinnerAnimation(container) {
 }
 
 function hideSpinnerAnimation(container) {
-	const spinnerElement = container.querySelector(".spinner-root");
-    debugh.log("Hiding: Setting active query count of", container.id, "to", parseInt(spinnerElement.dataset.activequerycount) - 1);
+	const spinnerElement = container.closest(".group-box").querySelector(":scope > .group-content-setup-root > .spinner-root");
 	
 	const activeQueryCount = parseInt(spinnerElement.dataset.activequerycount) - 1;
 	spinnerElement.dataset.activequerycount = activeQueryCount;

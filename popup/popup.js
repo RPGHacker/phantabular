@@ -25,7 +25,8 @@ async function archiveTabs(tabs) {
 		await db.archiveTabs(tabs);
 		
 		if (archiveSettings.autoCloseArchivedTabs) {
-			const justTabIds = tabs.map((tab) => tab.id);			
+			const justTabIds = tabs.map((tab) => tab.id);
+			// TODO: Special handling if this would close the last tab of the window.
 			await browser.tabs.remove(justTabIds);
 		}
 		

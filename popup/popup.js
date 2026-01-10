@@ -35,16 +35,6 @@ async function archiveTabs(tabs) {
 	spinnerRoot.hidden = true;
 }
 
-function applyTabFilters(tabQuery, archiveSettings) {
-	if (!archiveSettings.archiveHiddenTabs) {
-		tabQuery.hidden = false;
-	}
-	
-	if (!archiveSettings.archivePinnedTabs) {
-		tabQuery.pinned = false;
-	}
-}
-
 document.addEventListener("click", async (e) => {
 	if (e.target.tagName !== "BUTTON" || !e.target.closest("#popup-content")) {
 		return;
@@ -75,16 +65,12 @@ document.addEventListener("click", async (e) => {
 				currentWindow: true
 			};
 			
-			applyTabFilters(tabQuery, archiveSettings);
-			
 			break;
 		case "archive-tabs-in-all-windows":
 			debugh.log("Archiving tabs in all windows.");
 			
 			tabQuery = {
 			};
-			
-			applyTabFilters(tabQuery, archiveSettings);
 			
 			break;
 	}

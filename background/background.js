@@ -45,13 +45,7 @@ async function checkOpenWindow(tabsToArchive, outWindowData, openWindow) {
 				windowTabs = await browser.tabs.query({windowId: openWindow.id});
 			}
 			
-			for (const windowTab of windowTabs) {
-				if ((!archiveSettings.archiveHiddenTabs && windowTab.hidden)
-					|| (!archiveSettings.archivePinnedTabs && windowTab.pinned)
-				) {
-					continue;
-				}
-				
+			for (const windowTab of windowTabs) {				
 				tabsToArchive.push(windowTab);
 			}
 			

@@ -294,20 +294,22 @@ export class PhanTabularDB extends Dexie {
 		let tabsToArchive = [];
 	
 		// Sort out tabs that are part of the selection, but we don't want to archive.
-		// NOTE: Now handled by caller instead, because there's situations where we don't want to apply these settings.
-		tabsToArchive = tabs;
-		/*
 		for (const tab of tabs){
-			if ((tab.hidden && !archiveSettings.archiveHiddenTabs)
-				|| (tab.pinned && !archiveSettings.archivePinnedTabs))
+			if (tab.hidden && !archiveSettings.archiveHiddenTabs) {
+				debugh.logVerbose("Not archiving tab", tab.id, "because it's hidden and the settings prevent archiving hidden tabs.");
+				debugh.logVerbose("Tab details:", tab);
+				continue;
+			}
+			
+			if (tab.pinned && !archiveSettings.archivePinnedTabs)
 			{
+				debugh.logVerbose("Not archiving tab", tab.id, "because it's pinned and the settings prevent archiving pinned tabs.");
+				debugh.logVerbose("Tab details:", tab);
 				continue;
 			}
 	
-			debugh.log("Archiving: " + tab.url);
 			tabsToArchive.push(tab);
 		};
-		*/
 	
 		if (tabsToArchive.length === 0) {
 			errors.push("No archivable tabs in selection.");

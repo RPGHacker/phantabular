@@ -383,7 +383,7 @@ export class DebugHelper {
 		
 		console[logFunction](...this._generateLogArgs(...args));
 		
-		if (callStack !== undefined && this._storage.debugSettings.printCallstacks) {
+		if (callStack !== undefined && this._storage.debugSettings.printCallStacks) {
 			console.groupCollapsed("Callstack:");
 			console[logFunction](...this._generateLogArgs(callStack));
 			console.groupEnd();
@@ -397,7 +397,7 @@ export class DebugHelper {
 			this._storage.debugSettings.storedLogData.push({
 				logFunction: logFunction,
 				timeStamp: Date.now(),
-				callStack: (this._storage.debugSettings.storeCallstacks ? callStack : undefined),
+				callStack: (this._storage.debugSettings.storeCallStacks ? callStack : undefined),
 				args: JSON.parse(JSON.stringify([...args]))
 			});
 			
@@ -438,7 +438,7 @@ export class DebugHelper {
 			return this.generateCallStack(levelsToPop);
 		}
 		
-		return new undefined;
+		return undefined;
 	}
 }
 

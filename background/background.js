@@ -17,8 +17,50 @@ async function archiveTabs(tabs, windowData) {
 		await db.archiveTabs(tabs, windowData.sessionDate);
 		
 		if (archiveSettings.autoCloseArchivedTabs) {
+			// Get a list of how many tabs we're closing in each window.
+			const windowInfos = {};
+			for (const tab of tabs) {
+				if (typeof windowInfos[tab.windowId] === "undefined") {
+					windowInfos[tab.windowId] = {
+						windowId: tab.windowId,
+						closingTabCount: 0,
+						willBeClosed: false
+					};
+				}
+				
+				windowInfos[tab.windowId].closingTabCount++;
+			}
+			
+			// Check if we're closing all tabs of a window - if so, it means the
+			// window would be closed as a result.
+			const promisesToAwait = [];
+			for (const windowId in windowInfos) {
+				const windowInfo = windowInfos[windowId];
+				const newPromise = browser.tabs.query({windowId: windowInfo.windowId}).then((tabs) => {
+					windowInfo.willBeClosed = (windowInfo.closingTabCount >= tabs.length);
+				});
+				promisesToAwait.push(newPromise);
+			}
+			
+			for (const promiseToAwait of promisesToAwait) {
+				await promiseToAwait;
+			}
+			
+			// If a window would be closed as a result of us closing tabs, create a new tab
+			// in that window to prevent it from being closed. Otherwise, it could create a destructive
+			// close loop where a user's window always immediately closes after being opened.
+			for (const windowId in windowInfos) {
+				const windowInfo = windowInfos[windowId];
+				if (windowInfo.willBeClosed) {
+					browser.tabs.create({
+						windowId: windowInfo.windowId,
+						url: '../archive/archive.html'
+					});
+				}
+			}
+			
+			// Finally close our tabs.
 			const justTabIds = tabs.map((tab) => tab.id);
-			// TODO: Special handling if this would close the last tab of the window.
 			await browser.tabs.remove(justTabIds);
 		}
 	} catch (error) {

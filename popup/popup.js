@@ -22,13 +22,8 @@ async function archiveTabs(tabs) {
 	const archiveSettings = await settings.archiveSettings;
 	
 	try {
-		await db.archiveTabs(tabs);
-		
-		if (archiveSettings.autoCloseArchivedTabs) {
-			const justTabIds = tabs.map((tab) => tab.id);
-			// TODO: Special handling if this would close the last tab of the window.
-			await browser.tabs.remove(justTabIds);
-		}
+		const archivedTabs = await db.archiveTabs(tabs);
+		db.doPostArchivalClose(archivedTabs);
 		
 		// A little timeout to prevent the spinner from disappearing so fast it looks glitchy.
 		await new Promise(r => setTimeout(r, 250));

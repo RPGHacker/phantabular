@@ -108,7 +108,7 @@ export class DebugHelper {
 				storedLogData: [],
 				maxNumStoredLogDatas: 200,
 				storeCallStacks: false,
-				printCallStacks: false
+				printCallStacks: false,
 			}
 		};
 		this._storage = JSON.parse(JSON.stringify(this._defaultStorage));
@@ -118,6 +118,7 @@ export class DebugHelper {
 		this._storagePromise.then((storage) => {
 			this._storage = storage;
 			this._patchMissingSettings(this._storage, this._defaultStorage);
+			// TODO: Also remove settings that no longer exist.
 			// Needs to be nulled before calling _flushBuffer().
 			this._storagePromise = null;
 			this._flushBuffer();
@@ -134,13 +135,6 @@ export class DebugHelper {
 				}
 			}
 		});
-	}
-	
-	async waitForInitialization() {
-		if (this._storagePromise) {
-			await this._storagePromise;
-			this._storagePromise = null;
-		}
 	}
 	
 	_patchMissingSettings(target, source) {

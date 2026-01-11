@@ -16,14 +16,17 @@ browser.permissions.onRemoved.addListener(updatePreviewImageCapturePermissions);
 updatePreviewImageCapturePermissions();
 
 
-async function archiveTabs(tabs) {
+async function archiveTabs(tabs, origin) {
 	spinnerRoot.hidden = false;
 	
 	const archiveSettings = await settings.archiveSettings;
 	
 	try {
-		const archivedTabs = await db.archiveTabs(tabs);
-		db.doPostArchivalClose(archivedTabs);
+		const archivedTabs = await db.archiveTabs(tabs, origin);
+		
+		if (archiveSettings.autoCloseArchivedTabsFromPopup) {
+			db.doPostArchivalClose(archivedTabs, origin);
+		}
 		
 		// A little timeout to prevent the spinner from disappearing so fast it looks glitchy.
 		await new Promise(r => setTimeout(r, 250));
@@ -43,6 +46,7 @@ document.addEventListener("click", async (e) => {
 	const archiveSettings = await settings.archiveSettings;
 	
 	let tabQuery = null;
+	let origin = "popup";
 
 	switch (e.target.dataset.action) {
 		case "archive-selected-tabs":
@@ -53,9 +57,7 @@ document.addEventListener("click", async (e) => {
 				currentWindow: true
 			};
 			
-			// Intentionally no filters applied here. Selecting hidden tabs should be impossible, anyways,
-			// and selecting a pinned tab for archival seems like a deliberate action that shouldn't be
-			// blocked by a setting.
+			origin = "popup-manual-selection";
 			
 			break;
 		case "archive-tabs-in-current-window":
@@ -76,7 +78,9 @@ document.addEventListener("click", async (e) => {
 	}
 	
 	if (tabQuery !== null) {
-		await browser.tabs.query(tabQuery).then(archiveTabs);		
+		await browser.tabs.query(tabQuery).then((tabs) => {
+			archiveTabs(tabs, origin);
+		});
 		return;
 	}
 		

@@ -51,23 +51,33 @@
 				<h1>Settings</h1>
 				
 				<div id="archive-settings" class="settings-section colorize-section">
-					<h2>Archival settings:</h2>
-					<div><input type="checkbox" id="archiveHiddenTabsCheckbox" /><label for="archiveHiddenTabsCheckbox">"Tabs in *" buttons also archive hidden tabs</label></div>
-					<div><input type="checkbox" id="archivePinnedTabsCheckbox" /><label for="archivePinnedTabsCheckbox">"Tabs in *" buttons also archive pinned tabs</label></div>
+					<h2>Archival settings:</h2>					
 					<div><input type="checkbox" id="noDuplicateUrlsCheckbox" /><label for="noDuplicateUrlsCheckbox">Merge tabs with identical URLs (avoids multiple copies of the same tab within a single group)</label></div>
 					<div><input type="checkbox" id="onlyStoreLatestSessionCheckbox" /><label for="onlyStoreLatestSessionCheckbox">Only store the latest session of a tab (empty sessions will automatically be deleted once the last tab moves out of them)</label></div>
-					<div><input type="checkbox" id="autoCloseCheckbox" /><label for="autoCloseCheckbox">Archiving tabs via the popup automatically closes them</label></div>
 					
 					<div class="inner-section">
-						<h3>Close behavior:</h3>
-						<div><input type="checkbox" id="archiveTabOnCloseCheckbox" /><label for="archiveTabOnCloseCheckbox">Closing a tab automatically archives it</label></div>
-						<div><input type="checkbox" id="archiveAllTabsOnBrowserCloseCheckbox" /><label for="archiveAllTabsOnBrowserCloseCheckbox">Closing a browser window automatically archives all tabs within it</label></div>
-						<ul class="dependent-settings">
-							<li><input type="checkbox" id="archiveOnBrowserCloseArchivesHiddenTabsCheckbox" disabled /><label id="archiveOnBrowserCloseArchivesHiddenTabsLabel" for="archiveOnBrowserCloseArchivesHiddenTabsCheckbox" disabled>Also archive hidden tabs</label></li>
-							<li><input type="checkbox" id="archiveOnBrowserCloseArchivesPinnedTabsCheckbox" disabled /><label id="archiveOnBrowserCloseArchivesPinnedTabsLabel" for="archiveOnBrowserCloseArchivesPinnedTabsCheckbox" disabled>Also archive pinned tabs</label></li>
-							<li><input type="checkbox" id="archiveOnBrowserCloseClosesTabCheckbox" disabled /><label id="archiveOnBrowserCloseClosesTabLabel" for="archiveOnBrowserCloseClosesTabCheckbox" disabled>Also close the tabs archived this way</label></li>
-						<ul>
+						<h3>Popup:</h3>
+						<div><input type="checkbox" id="autoCloseArchivedTabsFromPopupCheckbox" /><label for="autoCloseArchivedTabsFromPopupCheckbox">Archiving tabs via the popup automatically closes them</label></div>
+						<div><input type="checkbox" id="archiveHiddenTabsFromPopupCheckbox" /><label for="archiveHiddenTabsFromPopupCheckbox">The popup archives hidden tabs</label></div>
+						<div><input type="checkbox" id="closeHiddenTabsFromPopupCheckbox" /><label id="closeHiddenTabsFromPopupLabel" for="closeHiddenTabsFromPopupCheckbox">Hidden tabs archived this way are also closed</label></div>
+						<div><input type="checkbox" id="archivePinnedTabsFromPopupCheckbox" /><label for="archivePinnedTabsFromPopupCheckbox">The popup archives pinned tabs</label></div>
+						<div><label class="note" for="archivePinnedTabsFromPopupCheckbox">NOTE: The "Selected Tab(s)" button can always archive pinned tabs.</label></div>
+						<div><input type="checkbox" id="closePinnedTabsFromPopupCheckbox" /><label id="closePinnedTabsFromPopupLabel" for="closePinnedTabsFromPopupCheckbox">Pinned tabs archived this way are also closed</label></div>
 					</div>
+					
+					<div class="inner-section">
+						<h3>Session restore:</h3>
+						<div><input type="checkbox" id="archiveAllTabsOnSessionRestoreCheckbox" /><label for="archiveAllTabsOnSessionRestoreCheckbox">Restoring a session automatically archives all open tabs within it</label></div>
+						<div><label class="note" for="archiveAllTabsOnSessionRestoreCheckbox">NOTE: Set the browser to automatically restore tabs from the previous session in order to achieve automatic archival.</label></div>
+						<div><label class="note" for="archiveAllTabsOnSessionRestoreCheckbox">NOTE: Installing a new version of the extension will also trigger this effect and archive all tabs. Since the browser can update extensions automatically in the background, this might lead to your tabs being archived seemingly at random sometimes. (Namely whenever an update of the extension releases).</label></div>
+						<div><input type="checkbox" id="autoCloseArchivedTabsFromSessionRestoreCheckbox" /><label id="autoCloseArchivedTabsFromSessionRestoreLabel" for="autoCloseArchivedTabsFromSessionRestoreCheckbox">Archiving tabs via session restore automatically closes them</label></div>
+						<div><label id="autoCloseArchivedTabsFromSessionRestoreNoteLabel" class="note" for="autoCloseArchivedTabsFromSessionRestoreCheckbox">NOTE: Enable this to automatically start with a clean browser session every time the browser is started.</label></div>
+						<div><input type="checkbox" id="archiveHiddenTabsFromSessionRestoreCheckbox" /><label id="archiveHiddenTabsFromSessionRestoreLabel" for="archiveHiddenTabsFromSessionRestoreCheckbox">Session restore archives hidden tabs</label></div>
+						<div><input type="checkbox" id="closeHiddenTabsFromSessionRestoreCheckbox" /><label id="closeHiddenTabsFromSessionRestoreLabel" for="closeHiddenTabsFromSessionRestoreCheckbox">Hidden tabs archived this way are also closed</label></div>
+						<div><input type="checkbox" id="archivePinnedTabsFromSessionRestoreCheckbox" /><label id="archivePinnedTabsFromSessionRestoreLabel" for="archivePinnedTabsFromSessionRestoreCheckbox">Session restore archives pinned tabs</label></div>
+						<div><input type="checkbox" id="closePinnedTabsFromSessionRestoreCheckbox" /><label id="closePinnedTabsFromSessionRestoreLabel" for="closePinnedTabsFromSessionRestoreCheckbox">Hidden tabs archived this way are also closed</label></div>
+					</div>
+					
 					<div class="inner-section">
 						<h3>Preview images:</h3>
 						<div><input type="checkbox" id="savePreviewImagesCheckbox" /><label for="savePreviewImagesCheckbox">Save preview images of tabs contents (requires additional storage space and RAM, archiving tabs takes longer)</label></div>
@@ -93,8 +103,10 @@
 								<label id="previewImageScalePercentLabel" for="previewImageScaleNumber" disabled>%</label>
 							</div>
 						</div>
-						<div><label>Estimated preview image size:</label> <label id="previewImageSizeEstimateLabel">0 bytes</label></div>
-						<div>NOTE: The actual image size for any given tab may vary, depending on several factors such as visible viewport area, zoom level and the content being captured.</div>
+						<div>
+							<label>Estimated preview image size:</label> <label id="previewImageSizeEstimateLabel">0 bytes</label>
+							<label class="note">NOTE: The actual image size for any given tab may vary, depending on several factors such as visible viewport area, zoom level and the content being captured.</label>
+						</div>
 						<details id="previewImageRoot" class="capture-preview-container">
 							<summary>Preview:</summary>
 							<div id="previewImageSource" class="capture-preview-source">

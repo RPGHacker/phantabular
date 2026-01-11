@@ -20,35 +20,46 @@ export class Settings {
 		Object.freeze(this._supportedColors);
 		
 		this._storage = {};
-		this._defaultSettings = {
+		this._defaultStorage = {
 			archiveSettings: {
-				archiveHiddenTabs: false,
-				archivePinnedTabs: false,
 				noDuplicateUrls: false,
 				onlyStoreLatestSession: false,
-				autoCloseArchivedTabs: true,
+				
+				autoCloseArchivedTabsFromPopup: true,
+				archiveHiddenTabsFromPopup: false,
+				closeHiddenTabsFromPopup: false,
+				archivePinnedTabsFrompPopup: false,
+				closePinnedTabsFromPopup: false,
+				
+				archiveAllTabsOnSessionRestore: false,
+				autoCloseArchivedTabsFromSessionRestore: true,
+				archiveHiddenTabsFromSessionRestore: false,
+				closeHiddenTabsFromSessionRestore: false,
+				archivePinnedTabsFromSessionRestore: false,
+				closePinnedTabsFromSessionRestore: false,
 				
 				savePreviewImages: false,
 				previewImageFormat: "jpeg",
 				previewImageQuality: 92,
 				previewImageScale: 0.25,
-				
-				archiveTabOnClose: false,
-				archiveAllTabsOnBrowserClose: false,
-				archiveOnBrowserCloseArchivesHiddenTabs: false,
-				archiveOnBrowserCloseArchivesPinnedTabs: false,
-				archiveOnBrowserCloseClosesTab: false
 			},
 			openSettings: {
 				deleteTabsUponOpen: false,
 				tabOpenPosition: "nextToActiveTab",
-				confirmTabDeletion: true
+				confirmTabDeletion: true,
 			}
 		};
 		
-		this._storage.currentSettings = JSON.parse(JSON.stringify(this._defaultSettings));
+		this._storage = JSON.parse(JSON.stringify(this._defaultStorage));
 		
 		this._storagePromise = browser.storage.sync.get(this._storage);
+		
+		this._storagePromise.then((storage) => {
+			this._storage = storage;
+			this._patchMissingSettings(this._storage, this._defaultStorage);
+			// TODO: Also remove settings that no longer exist.
+			this._storagePromise = null;
+		});
 		
 		browser.storage.sync.onChanged.addListener((changes) => {
 			debugh.log("Detected changed settings in sync storage.");
@@ -56,17 +67,25 @@ export class Settings {
 			for (const changedKey in changes) {
 				if (this._storage[changedKey]) {
 					this._storage[changedKey] = JSON.parse(JSON.stringify(changes[changedKey].newValue));
+					this._patchMissingSettings(this._storage[changedKey], this._defaultStorage[changedKey]);
 				}
 			}
-			
-			this._storagePromise = browser.storage.sync.get(this._storage);
 		});
 	}
 	
-	async waitForInitialization() {
-		if (this._storagePromise) {
-			await this._storagePromise;
-			//this._storagePromise = null;
+	_patchMissingSettings(target, source) {
+		for (const key in source) {
+			if (typeof target[key] === "object") {
+				if (typeof target[key] === "undefined") {
+					target[key] = JSON.parse(JSON.stringify(source[key]));
+				} else {
+					this._patchMissingSettings(target[key], source[key]);
+				}
+			} else {
+				if (typeof target[key] === "undefined") {
+					target[key] = source[key];
+				}
+			}
 		}
 	}
 	
@@ -76,19 +95,21 @@ export class Settings {
 	
 	get archiveSettings() {	
 		return (async () => {
-			try {
-				this._storage = await this._storagePromise;
-			} catch(e) {}
-			return this._storage.currentSettings.archiveSettings;
+			if (this._storagePromise !== null) {
+				await this._storagePromise;
+			}
+			
+			return this._storage.archiveSettings;
 		})();
 	}
 	
 	get openSettings() {	
 		return (async () => {
-			try {
-				this._storage = await this._storagePromise;
-			} catch(e) {}
-			return this._storage.currentSettings.openSettings;
+			if (this._storagePromise !== null) {
+				await this._storagePromise;
+			}
+			
+			return this._storage.openSettings;
 		})();
 	}
 	
@@ -97,7 +118,7 @@ export class Settings {
 	}
 	
 	async reset() {
-		this._storage.currentSettings = JSON.parse(JSON.stringify(this._defaultSettings));
+		this._storage = JSON.parse(JSON.stringify(this._defaultStorage));
 		
 		return this.update();
 	}

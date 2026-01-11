@@ -14,8 +14,12 @@ async function archiveTabs(tabs, windowData) {
 	const archiveSettings = await settings.archiveSettings;
 	
 	try {
-		const archivedTabs = await db.archiveTabs(tabs, windowData.sessionDate);
-		db.doPostArchivalClose(archivedTabs);
+		const origin = "session-restore";
+		const archivedTabs = await db.archiveTabs(tabs, origin, windowData.sessionDate);
+		
+		if (archiveSettings.autoCloseArchivedTabsFromSessionRestore) {
+			db.doPostArchivalClose(archivedTabs, origin);
+		}
 	} catch (error) {
 		debugh.error("Failed to archive tabs on session restore:", error);
 	}
@@ -38,7 +42,7 @@ async function checkOpenWindow(tabsToArchive, outWindowData, openWindow) {
 		const archiveSettings = await settings.archiveSettings;
 		
 		// TODO: Replace by proper setting!
-		if (archiveSettings.archiveAllTabsOnBrowserClose) {
+		if (archiveSettings.archiveAllTabsOnSessionRestore) {
 			let windowTabs = openWindow.tabs;
 			
 			if (!windowTabs) {

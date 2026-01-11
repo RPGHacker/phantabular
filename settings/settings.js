@@ -6,16 +6,21 @@ let previewImageTimer = null;
 let hasCapturePermission = false;
 	
 function initializeForms(archiveSettings, openSettings) {
-	archiveHiddenTabsCheckbox.checked = archiveSettings.archiveHiddenTabs;
-	archivePinnedTabsCheckbox.checked = archiveSettings.archivePinnedTabs;
 	noDuplicateUrlsCheckbox.checked = archiveSettings.noDuplicateUrls;
 	onlyStoreLatestSessionCheckbox.checked = archiveSettings.onlyStoreLatestSession;
-	autoCloseCheckbox.checked = archiveSettings.autoCloseArchivedTabs;
-	archiveTabOnCloseCheckbox.checked = archiveSettings.archiveTabOnClose;
-	archiveAllTabsOnBrowserCloseCheckbox.checked = archiveSettings.archiveAllTabsOnBrowserClose;
-	archiveOnBrowserCloseArchivesHiddenTabsCheckbox.checked = archiveSettings.archiveOnBrowserCloseArchivesHiddenTabs;
-	archiveOnBrowserCloseArchivesPinnedTabsCheckbox.checked = archiveSettings.archiveOnBrowserCloseArchivesPinnedTabs;
-	archiveOnBrowserCloseClosesTabCheckbox.checked = archiveSettings.archiveOnBrowserCloseClosesTab;
+	
+	autoCloseArchivedTabsFromPopupCheckbox.checked = archiveSettings.autoCloseArchivedTabsFromPopup;
+	archiveHiddenTabsFromPopupCheckbox.checked = archiveSettings.archiveHiddenTabsFromPopup;
+	closeHiddenTabsFromPopupCheckbox.checked = archiveSettings.closeHiddenTabsFromPopup;
+	archivePinnedTabsFromPopupCheckbox.checked = archiveSettings.archivePinnedTabsFromPopup;
+	closePinnedTabsFromPopupCheckbox.checked = archiveSettings.closePinnedTabsFromPopup;
+	
+	archiveAllTabsOnSessionRestoreCheckbox.checked = archiveSettings.archiveAllTabsOnSessionRestore;
+	autoCloseArchivedTabsFromSessionRestoreCheckbox.checked = archiveSettings.autoCloseArchivedTabsFromSessionRestore;
+	archiveHiddenTabsFromSessionRestoreCheckbox.checked = archiveSettings.archiveHiddenTabsFromSessionRestore;
+	closeHiddenTabsFromSessionRestoreCheckbox.checked = archiveSettings.closeHiddenTabsFromSessionRestore;
+	archivePinnedTabsFromSessionRestoreCheckbox.checked = archiveSettings.archivePinnedTabsFromSessionRestore;
+	closePinnedTabsFromSessionRestoreCheckbox.checked = archiveSettings.closePinnedTabsFromSessionRestore;
 	
 	savePreviewImagesCheckbox.checked = archiveSettings.savePreviewImages;
 	previewImageFormatSelect.value = archiveSettings.previewImageFormat;
@@ -42,16 +47,21 @@ async function saveChanges() {
 	const archiveSettings = await settings.archiveSettings;
 	const openSettings = await settings.openSettings;
 	
-	archiveSettings.archiveHiddenTabs = archiveHiddenTabsCheckbox.checked;
-	archiveSettings.archivePinnedTabs = archivePinnedTabsCheckbox.checked;
 	archiveSettings.noDuplicateUrls = noDuplicateUrlsCheckbox.checked;
 	archiveSettings.onlyStoreLatestSession = onlyStoreLatestSessionCheckbox.checked;
-	archiveSettings.autoCloseArchivedTabs = autoCloseCheckbox.checked;
-	archiveSettings.archiveTabOnClose = archiveTabOnCloseCheckbox.checked;
-	archiveSettings.archiveAllTabsOnBrowserClose = archiveAllTabsOnBrowserCloseCheckbox.checked;
-	archiveSettings.archiveOnBrowserCloseArchivesHiddenTabs = archiveOnBrowserCloseArchivesHiddenTabsCheckbox.checked;
-	archiveSettings.archiveOnBrowserCloseArchivesPinnedTabs = archiveOnBrowserCloseArchivesPinnedTabsCheckbox.checked;
-	archiveSettings.archiveOnBrowserCloseClosesTab = archiveOnBrowserCloseClosesTabCheckbox.checked;
+	
+	archiveSettings.autoCloseArchivedTabsFromPopup = autoCloseArchivedTabsFromPopupCheckbox.checked;
+	archiveSettings.archiveHiddenTabsFromPopup = archiveHiddenTabsFromPopupCheckbox.checked;
+	archiveSettings.closeHiddenTabsFromPopup = closeHiddenTabsFromPopupCheckbox.checked;
+	archiveSettings.archivePinnedTabsFromPopup = archivePinnedTabsFromPopupCheckbox.checked;
+	archiveSettings.closePinnedTabsFromPopup = closePinnedTabsFromPopupCheckbox.checked;
+	
+	archiveSettings.archiveAllTabsOnSessionRestore = archiveAllTabsOnSessionRestoreCheckbox.checked;
+	archiveSettings.autoCloseArchivedTabsFromSessionRestore = autoCloseArchivedTabsFromSessionRestoreCheckbox.checked;
+	archiveSettings.archiveHiddenTabsFromSessionRestore = archiveHiddenTabsFromSessionRestoreCheckbox.checked;
+	archiveSettings.closeHiddenTabsFromSessionRestore = closeHiddenTabsFromSessionRestoreCheckbox.checked;
+	archiveSettings.archivePinnedTabsFromSessionRestore = archivePinnedTabsFromSessionRestoreCheckbox.checked;
+	archiveSettings.closePinnedTabsFromSessionRestore = closePinnedTabsFromSessionRestoreCheckbox.checked;
 	
 	archiveSettings.savePreviewImages = savePreviewImagesCheckbox.checked;
 	archiveSettings.previewImageFormat = previewImageFormatSelect.value;
@@ -75,15 +85,32 @@ function setLabelDisabled(label, disabled) {
 
 async function updateFormActivityStates() {
 	const archiveSettings = await settings.archiveSettings;
+
+	const showSessionRestoreSettings = archiveSettings.archiveAllTabsOnSessionRestore;
 	
-	const showOnBrowserCloseSettings = archiveSettings.archiveAllTabsOnBrowserClose;
+	const showCloseHiddenTabsFromPopup = archiveSettings.autoCloseArchivedTabsFromPopup && archiveSettings.archiveHiddenTabsFromPopup;
+	const showClosePinnedTabsFromPopup = archiveSettings.autoCloseArchivedTabsFromPopup && archiveSettings.archivePinnedTabsFromPopup;
 	
-	archiveOnBrowserCloseArchivesHiddenTabsCheckbox.disabled = !showOnBrowserCloseSettings;
-	setLabelDisabled(archiveOnBrowserCloseArchivesHiddenTabsLabel, !showOnBrowserCloseSettings);
-	archiveOnBrowserCloseArchivesPinnedTabsCheckbox.disabled = !showOnBrowserCloseSettings;
-	setLabelDisabled(archiveOnBrowserCloseArchivesPinnedTabsLabel, !showOnBrowserCloseSettings);
-	archiveOnBrowserCloseClosesTabCheckbox.disabled = !showOnBrowserCloseSettings;
-	setLabelDisabled(archiveOnBrowserCloseClosesTabLabel, !showOnBrowserCloseSettings);
+	const showCloseHiddenTabsFromSessionRestore = showSessionRestoreSettings && archiveSettings.autoCloseArchivedTabsFromSessionRestore && archiveSettings.archiveHiddenTabsFromSessionRestore;
+	const showClosePinnedTabsFromSessionRestore = showSessionRestoreSettings && archiveSettings.autoCloseArchivedTabsFromSessionRestore && archiveSettings.archivePinnedTabsFromSessionRestore;
+	
+	setLabelDisabled(autoCloseArchivedTabsFromSessionRestoreLabel, !showSessionRestoreSettings);
+	setLabelDisabled(autoCloseArchivedTabsFromSessionRestoreNoteLabel, !showSessionRestoreSettings);
+	autoCloseArchivedTabsFromSessionRestoreCheckbox.disabled = !showSessionRestoreSettings;
+	setLabelDisabled(archiveHiddenTabsFromSessionRestoreLabel, !showSessionRestoreSettings);
+	archiveHiddenTabsFromSessionRestoreCheckbox.disabled = !showSessionRestoreSettings;
+	setLabelDisabled(archivePinnedTabsFromSessionRestoreLabel, !showSessionRestoreSettings);
+	archivePinnedTabsFromSessionRestoreCheckbox.disabled = !showSessionRestoreSettings;
+	
+	setLabelDisabled(closeHiddenTabsFromPopupLabel, !showCloseHiddenTabsFromPopup);
+	closeHiddenTabsFromPopupCheckbox.disabled = !showCloseHiddenTabsFromPopup;
+	setLabelDisabled(closePinnedTabsFromPopupLabel, !showClosePinnedTabsFromPopup);
+	closePinnedTabsFromPopupCheckbox.disabled = !showClosePinnedTabsFromPopup;
+	
+	setLabelDisabled(closeHiddenTabsFromSessionRestoreLabel, !showCloseHiddenTabsFromSessionRestore);
+	closeHiddenTabsFromSessionRestoreCheckbox.disabled = !showCloseHiddenTabsFromSessionRestore;
+	setLabelDisabled(closePinnedTabsFromSessionRestoreLabel, !showClosePinnedTabsFromSessionRestore);
+	closePinnedTabsFromSessionRestoreCheckbox.disabled = !showClosePinnedTabsFromSessionRestore;
 	
 	const showPreviewImageFormatSelection = archiveSettings.savePreviewImages;
 	const showPreviewImageQualitySelection = showPreviewImageFormatSelection && archiveSettings.previewImageFormat == "jpeg";

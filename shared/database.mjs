@@ -268,7 +268,7 @@ export class PhanTabularDB extends Dexie {
 		return await browser.tabs.captureTab(tab.id, previewImageOptions);
 	}
 
-	async archiveTabs(tabs, sessionDate = undefined) {
+	async archiveTabs(tabs, origin, sessionDate = undefined) {
 		debugh.log("Archiving", tabs.length, "tabs into session with date:", debugh.formatTimestamp(sessionDate));
 		debugh.logVerbose("Tab details:", tabs);
 		
@@ -295,17 +295,32 @@ export class PhanTabularDB extends Dexie {
 	
 		// Sort out tabs that are part of the selection, but we don't want to archive.
 		for (const tab of tabs){
-			if (tab.hidden && !archiveSettings.archiveHiddenTabs) {
-				debugh.logVerbose("Not archiving tab", tab.id, "because it's hidden and the settings prevent archiving hidden tabs.");
-				debugh.logVerbose("Tab details:", tab);
-				continue;
-			}
-			
-			if (tab.pinned && !archiveSettings.archivePinnedTabs)
-			{
-				debugh.logVerbose("Not archiving tab", tab.id, "because it's pinned and the settings prevent archiving pinned tabs.");
-				debugh.logVerbose("Tab details:", tab);
-				continue;
+			if (origin === "popup") {
+				if (tab.hidden && !archiveSettings.archiveHiddenTabsFromPopup) {
+					debugh.logVerbose("Not archiving tab", tab.id, "because it's hidden and the settings prevent archiving hidden tabs.");
+					debugh.logVerbose("Tab details:", tab);
+					continue;
+				}
+				
+				if (tab.pinned && !archiveSettings.archivePinnedTabsFromPopup)
+				{
+					debugh.logVerbose("Not archiving tab", tab.id, "because it's pinned and the settings prevent archiving pinned tabs.");
+					debugh.logVerbose("Tab details:", tab);
+					continue;
+				}
+			} else if (origin === "session-restore") {
+				if (tab.hidden && !archiveSettings.archiveHiddenTabsFromSessionRestore) {
+					debugh.logVerbose("Not archiving tab", tab.id, "because it's hidden and the settings prevent archiving hidden tabs.");
+					debugh.logVerbose("Tab details:", tab);
+					continue;
+				}
+				
+				if (tab.pinned && !archiveSettings.archivePinnedTabsFromSessionRestore)
+				{
+					debugh.logVerbose("Not archiving tab", tab.id, "because it's pinned and the settings prevent archiving pinned tabs.");
+					debugh.logVerbose("Tab details:", tab);
+					continue;
+				}
 			}
 	
 			tabsToArchive.push(tab);
@@ -401,7 +416,7 @@ export class PhanTabularDB extends Dexie {
 			// If not, it needs to be created.
 			try {
 				await this.transaction("rw", this.sessions, async (tx) => {
-					debugh.logVerbose("Checking if", uniqueSessionDates.length, "sessions already exist:");
+					debugh.logVerbose("Checking if", uniqueSessionDates.length, "sessions already exists:");
 					debugh.logVerbose("Session details:", uniqueSessionDates.map((date) => {return debugh.formatTimestamp(date);}));
 					for (const uniqueSessionDate of uniqueSessionDates) {
 						debugh.logVerbose("Checking session:", debugh.formatTimestamp(uniqueSessionDate));
@@ -445,13 +460,40 @@ export class PhanTabularDB extends Dexie {
 	}
 	
 	// Maybe this function doesn't really belong into database.mjs, but whatever for now.
-	async doPostArchivalClose(tabs) {		
-		const archiveSettings = await settings.archiveSettings;		
+	async doPostArchivalClose(tabs, origin) {
+		const archiveSettings = await settings.archiveSettings;
 		
-		if (archiveSettings.autoCloseArchivedTabs) {
+		let filterOutHiddenTabs = true;
+		let filterOutPinnedTabs = true;
+		let autoCloseTabs = false;
+		
+		if (origin === "popup" || origin === "popup-manual-selection") {
+			filterOutHiddenTabs = !archiveSettings.closeHiddenTabsFromPopup;
+			filterOutPinnedTabs = !archiveSettings.closePinnedTabsFromPopup;
+			autoCloseTabs = archiveSettings.autoCloseArchivedTabsFromPopup;
+		} else if (origin === "session-restore") {
+			filterOutHiddenTabs = !archiveSettings.closeHiddenTabsFromSessionRestore;
+			filterOutPinnedTabs = !archiveSettings.closePinnedTabsFromSessionRestore;
+			autoCloseTabs = archiveSettings.autoCloseArchivedTabsFromSessionRestore;
+		}
+		
+		if (autoCloseTabs) {
+			debugh.log("Just archived", tabs.length, "tabs. Checking which of them to close.");
+			debugh.logVerbose("Tab details:", tabs);
+			
 			// Get a list of how many tabs we're closing in each window.
 			const windowInfos = {};
+			const tabsToClose = [];
+			
 			for (const tab of tabs) {
+				if ((tab.hidden && filterOutHiddenTabs)
+					|| (tab.pinned && filterOutPinnedTabs)
+				) {					
+					debugh.logVerbose("Not closing tab", tab.id, "because the settings prevent it.");
+					debugh.logVerbose("Tab details:", tab);
+					continue;
+				}
+				
 				if (typeof windowInfos[tab.windowId] === "undefined") {
 					windowInfos[tab.windowId] = {
 						windowId: tab.windowId,
@@ -461,6 +503,7 @@ export class PhanTabularDB extends Dexie {
 				}
 				
 				windowInfos[tab.windowId].closingTabCount++;
+				tabsToClose.push(tab);
 			}
 			
 			// Check if we're closing all tabs of a window - if so, it means the
@@ -491,8 +534,11 @@ export class PhanTabularDB extends Dexie {
 				}
 			}
 			
+			debugh.log("About to close", tabsToClose.length, "tabs.");
+			debugh.logVerbose("Tab details:", tabsToClose);
+			
 			// Finally close our tabs.
-			const justTabIds = tabs.map((tab) => tab.id);
+			const justTabIds = tabsToClose.map((tab) => tab.id);
 			await browser.tabs.remove(justTabIds);
 		}
 	}

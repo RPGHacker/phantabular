@@ -149,3 +149,9 @@ ul.dependent-settings > li::marker {
 	content: "";
 }
 
+/* Stylings for notes */
+.note {
+	display: block;
+	margin-left: 24px;
+}
+

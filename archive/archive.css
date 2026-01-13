@@ -90,6 +90,7 @@ details > summary .summary-badge {
 	justify-content: flex-start;
 	background-color: var(--total-count-badge-background-color);
 	border-radius: 20px;
+	color: var(--oc-gray-0);
 }
 
 details > summary .summary-title {

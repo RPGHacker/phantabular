@@ -36,7 +36,7 @@ function createGroup(container, className, id, displayName, actionsContent, inse
 						<span class="summary-open-marker"></span>
 					</span>
 					<span class="summary-dynamics">
-						<span class="summary-badge">0</span>
+						<span class="summary-badge has-tooltip" data-tooltiptype="badge">0</span>
 						<span class="summary-title">${displayName}</span>
 						<span class="summary-actions">${actionsContent}</span>
 					</span>
@@ -216,7 +216,10 @@ const groupFunctionLookup = {
 			const sessions = await groupFunctionPrimitives.sessions().toArray();
 			const sessionCreationDates = sessions.map((session) => {return session.creationdate});
 			const uniqueTabCount = await db.tabs.where("sessions").anyOf(sessionCreationDates).count();
-			return `${sessions.length}｜${uniqueTabCount}`;
+			return {
+				groupCount: sessions.length,
+				uniqueTabCount: uniqueTabCount
+			};
 		},
 	},
 	
@@ -228,7 +231,10 @@ const groupFunctionLookup = {
 			const categories = await groupFunctionPrimitives.categories().toArray();
 			const categoryIds = categories.map((category) => {return category.id});
 			const uniqueTabCount = await db.tabs.where("categories").anyOf(categoryIds).count();
-			return `${categories.length}｜${uniqueTabCount}`;
+			return {
+				groupCount: categories.length,
+				uniqueTabCount: uniqueTabCount
+			};
 		},
 	},
 	
@@ -237,7 +243,10 @@ const groupFunctionLookup = {
 			return sortedQuery(groupFunctionPrimitives.unsortedTabs().toArray(), compareSortKeys);
 		},
 		queryTabCount: async (_) => {
-			return groupFunctionPrimitives.unsortedTabs().count();
+			const uniqueTabCount = await groupFunctionPrimitives.unsortedTabs().count();
+			return {
+				uniqueTabCount: uniqueTabCount
+			};
 		},
 	},
 	
@@ -246,7 +255,10 @@ const groupFunctionLookup = {
 			return sortedQuery(groupFunctionPrimitives.tabsInSession(creationdate).toArray(), compareSortKeys);
 		},
 		queryTabCount: async (creationdate) => {
-			return groupFunctionPrimitives.tabsInSession(creationdate).count();
+			const uniqueTabCount = await groupFunctionPrimitives.tabsInSession(creationdate).count();
+			return {
+				uniqueTabCount: uniqueTabCount
+			};
 		},
 	},
 	
@@ -255,15 +267,39 @@ const groupFunctionLookup = {
 			return sortedQuery(groupFunctionPrimitives.tabsInCategory(id).toArray(), compareSortKeys);
 		},
 		queryTabCount: async (id) => {
-			return groupFunctionPrimitives.tabsInCategory(id).count();
+			const uniqueTabCount = await groupFunctionPrimitives.tabsInCategory(id).count();
+			return {
+				uniqueTabCount: uniqueTabCount
+			};
 		},
 	},
 }
 
 
-function updateBadge(group, count) {
+function updateBadge(group, badgeData) {
 	const badgeSummaryElement = group.querySelector(":scope > summary .summary-badge");
-	badgeSummaryElement.textContent = count;
+		
+	badgeSummaryElement.dataset.hasgroups = false;
+	badgeSummaryElement.dataset.hasuniquetabs = false;
+	
+	let newBadgeText = "";
+	
+	if (badgeData.groupCount !== undefined) {
+		newBadgeText += `${badgeData.groupCount}`;
+		badgeSummaryElement.dataset.hasgroups = true;
+		badgeSummaryElement.dataset.groupcount = badgeData.groupCount;
+	}
+	
+	if (badgeData.uniqueTabCount !== undefined) {
+		if (newBadgeText !== "") {
+			newBadgeText += "｜";
+		}
+		newBadgeText += `${badgeData.uniqueTabCount}`;
+		badgeSummaryElement.dataset.hasuniquetabs = true;
+		badgeSummaryElement.dataset.uniquetabcount = badgeData.uniqueTabCount;
+	}
+	
+	badgeSummaryElement.textContent = newBadgeText;
 }
 
 function initializeEntryCountLiveQuery(group, groupFunctions, queryCountArgument) {
@@ -415,6 +451,28 @@ function updateShowTooltip(mousePos, mouseTarget) {
 						</div>
 					`);
 				} catch {}
+				break;
+				
+			case "badge":
+				let tooltipText = "";
+				
+				if (tooltipElement.dataset.hasgroups === "true") {
+					tooltipText += `
+						<div>
+							${tooltipElement.dataset.groupcount} groups
+						</div>
+					`;
+				}
+				
+				if (tooltipElement.dataset.hasuniquetabs === "true") {
+					tooltipText += `
+						<div>
+							${tooltipElement.dataset.uniquetabcount} unique tabs
+						</div>
+					`;
+				}
+				
+				tooltipLayer.insertAdjacentHTML("afterbegin", tooltipText);
 				break;
 				
 			default:

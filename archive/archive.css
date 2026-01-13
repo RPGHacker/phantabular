@@ -88,7 +88,7 @@ details > summary .summary-badge {
 	margin: 1px 5px 0px 0px;
 	padding: 0px 5px 0px 5px;
 	justify-content: flex-start;
-	background-color: red;
+	background-color: var(--total-count-badge-background-color);
 	border-radius: 20px;
 }
 

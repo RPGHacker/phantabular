@@ -85,6 +85,8 @@ pre > code {
 	--table-row-secondary-bg-color:         light-dark(var(--oc-gray-2), var(--oc-gray-8));
 	
 	--code-bg-color:                        light-dark(var(--oc-gray-3), var(--oc-gray-7));
+	
+	--total-count-badge-background-color:   light-dark(var(--oc-gray-2), var(--oc-gray-8));
 }
 
 /* Override the default colors defined above based on user choice */
@@ -106,6 +108,8 @@ pre > code {
 	--table-row-secondary-bg-color:         light-dark(var(--oc-red-2), var(--oc-red-8));
 	
 	--code-bg-color:                        light-dark(var(--oc-red-3), var(--oc-red-7));
+	
+	--total-count-badge-background-color:   light-dark(var(--oc-red-2), var(--oc-red-8));
 }
 
 .colorize-pink {
@@ -126,6 +130,8 @@ pre > code {
 	--table-row-secondary-bg-color:         light-dark(var(--oc-pink-2), var(--oc-pink-8));
 	
 	--code-bg-color:                        light-dark(var(--oc-pink-3), var(--oc-pink-7));
+	
+	--total-count-badge-background-color:   light-dark(var(--oc-pink-2), var(--oc-pink-8));
 }
 
 .colorize-grape {
@@ -146,6 +152,8 @@ pre > code {
 	--table-row-secondary-bg-color:         light-dark(var(--oc-grape-2), var(--oc-grape-8));
 	
 	--code-bg-color:                        light-dark(var(--oc-grape-3), var(--oc-grape-7));
+	
+	--total-count-badge-background-color:   light-dark(var(--oc-grape-2), var(--oc-grape-8));
 }
 
 .colorize-violet {
@@ -166,6 +174,8 @@ pre > code {
 	--table-row-secondary-bg-color:         light-dark(var(--oc-violet-2), var(--oc-violet-8));
 	
 	--code-bg-color:                        light-dark(var(--oc-violet-3), var(--oc-violet-7));
+	
+	--total-count-badge-background-color:   light-dark(var(--oc-violet-2), var(--oc-violet-8));
 }
 
 .colorize-indigo {
@@ -186,6 +196,8 @@ pre > code {
 	--table-row-secondary-bg-color:         light-dark(var(--oc-indigo-2), var(--oc-indigo-8));
 	
 	--code-bg-color:                        light-dark(var(--oc-indigo-3), var(--oc-indigo-7));
+	
+	--total-count-badge-background-color:   light-dark(var(--oc-indigo-2), var(--oc-indigo-8));
 }
 
 .colorize-blue {
@@ -206,6 +218,8 @@ pre > code {
 	--table-row-secondary-bg-color:         light-dark(var(--oc-blue-2), var(--oc-blue-8));
 	
 	--code-bg-color:                        light-dark(var(--oc-blue-3), var(--oc-blue-7));
+	
+	--total-count-badge-background-color:   light-dark(var(--oc-blue-2), var(--oc-blue-8));
 }
 
 .colorize-cyan {
@@ -226,6 +240,8 @@ pre > code {
 	--table-row-secondary-bg-color:         light-dark(var(--oc-cyan-2), var(--oc-cyan-8));
 	
 	--code-bg-color:                        light-dark(var(--oc-cyan-3), var(--oc-cyan-7));
+	
+	--total-count-badge-background-color:   light-dark(var(--oc-cyan-2), var(--oc-cyan-8));
 }
 
 .colorize-teal {
@@ -246,6 +262,8 @@ pre > code {
 	--table-row-secondary-bg-color:         light-dark(var(--oc-teal-2), var(--oc-teal-8));
 	
 	--code-bg-color:                        light-dark(var(--oc-teal-3), var(--oc-teal-7));
+	
+	--total-count-badge-background-color:   light-dark(var(--oc-teal-2), var(--oc-teal-8));
 }
 
 .colorize-green {
@@ -266,6 +284,8 @@ pre > code {
 	--table-row-secondary-bg-color:         light-dark(var(--oc-green-2), var(--oc-green-8));
 	
 	--code-bg-color:                        light-dark(var(--oc-green-3), var(--oc-green-7));
+	
+	--total-count-badge-background-color:   light-dark(var(--oc-green-2), var(--oc-green-8));
 }
 
 .colorize-lime {
@@ -286,6 +306,8 @@ pre > code {
 	--table-row-secondary-bg-color:         light-dark(var(--oc-lime-2), var(--oc-lime-8));
 	
 	--code-bg-color:                        light-dark(var(--oc-lime-3), var(--oc-lime-7));
+	
+	--total-count-badge-background-color:   light-dark(var(--oc-lime-2), var(--oc-lime-8));
 }
 
 .colorize-yellow {
@@ -306,6 +328,8 @@ pre > code {
 	--table-row-secondary-bg-color:         light-dark(var(--oc-yellow-2), var(--oc-yellow-8));
 	
 	--code-bg-color:                        light-dark(var(--oc-yellow-3), var(--oc-yellow-7));
+	
+	--total-count-badge-background-color:   light-dark(var(--oc-yellow-2), var(--oc-yellow-8));
 }
 
 .colorize-orange {
@@ -326,6 +350,8 @@ pre > code {
 	--table-row-secondary-bg-color:         light-dark(var(--oc-orange-2), var(--oc-orange-8));
 	
 	--code-bg-color:                        light-dark(var(--oc-orange-3), var(--oc-orange-7));
+	
+	--total-count-badge-background-color:   light-dark(var(--oc-orange-2), var(--oc-orange-8));
 }
 
 @media (prefers-color-scheme: dark) {

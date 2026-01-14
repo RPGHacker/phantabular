@@ -17,6 +17,15 @@ let currentlyDraggedElements = [];
 let currentTabSelectionParent = null;
 let currentlySelectedTabElements = [];
 
+const tooltipData = {
+	tooltipTimer: null,
+	lastMousePos: null,
+	lastMouseTarget: null
+}
+
+let filterTimer = null;
+
+
 tooltipLayer.style.opacity = 0;
 
 const groupsRootList = document.querySelector("#groups-root-list");
@@ -384,12 +393,6 @@ async function createNewCategory() {
 }
 
 
-const tooltipData = {
-	tooltipTimer: null,
-	lastMousePos: null,
-	lastMouseTarget: null
-}
-
 function repositionTooltipLayer() {
 	if (tooltipData.lastMousePos === null) {
 		return;
@@ -589,6 +592,21 @@ function initializeColorSelector(container) {
 initializeColorSelector(categoryColorSelector);
 
 
+async function applySearchFilter() {
+	if (filterText.value === "") {
+		filterSpinnerRoot.hidden = true;
+	} else {	
+		filterSpinnerRoot.hidden = false;
+	}
+}
+
+function updateSearchByFilter() {
+	clearTimeout(filterTimer);
+
+	filterTimer = setTimeout(applySearchFilter, 500);
+}
+
+
 function escapeStringContents(input, escapableChars = ["\\", '"'], escapeChar = "\\") {
 	let escaped = "";
 	for (const char of input) {
@@ -754,6 +772,14 @@ document.addEventListener("change", (e) => {
 			categoryRuleStringRoot.hidden = !optionsUsingTextField.includes(e.target.value);
 			categoryRegexRuleCaptureGroupsRoot.hidden = !optionsUsingCaptureGrous.includes(e.target.value);
 		}
+	} else if (e.target === filterText) {
+		updateSearchByFilter();
+	}
+});
+
+document.addEventListener("input", (e) => {
+	if (e.target === filterText) {
+		updateSearchByFilter();
 	}
 });
 

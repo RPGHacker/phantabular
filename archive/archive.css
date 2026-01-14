@@ -347,6 +347,44 @@ button.action-button {
 }
 
 
+.filter-root {
+	max-width: 500px;
+}
+
+.filter-spinner-root {
+	pointer-events: none;
+}
+
+.filter-spinner-container {
+	display: flex;
+	justify-content: right;
+	padding: 5px;
+}
+
+.filter-spinner-animation {
+	width: fit-content;
+	display: flex;
+}
+
+.filter-spinner {
+	width: 20px;
+	height: 20px;
+	border: 3px dotted var(--spinner-color);
+	border-radius: 50%;
+	border-top-color: var(--spinner-fill-color);
+	animation: filter-spin 2s linear infinite;
+}
+
+@keyframes filter-spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+
 /* Stylings for color selectors */
 .color-selector-menu .color-selector-root {
 	display: inline-block;

@@ -224,7 +224,17 @@
 				
 				<div class="filter-root">
 					<label for="filterText">Filter:</label>
-					<input type="text" id="filterText" placeholder="Filter..." />
+					<div class="filter-root overlapping-content">
+						<input type="text" id="filterText" placeholder="Filter...">
+						</input>
+						<div id="filterSpinnerRoot" class="filter-spinner-root" data-activequerycount="0" hidden>
+							<div class="filter-spinner-container">
+								<div class="filter-spinner-animation">
+									<div class="filter-spinner"></div>
+								</div>
+							</div>
+						</div>
+					</div>
 				</div>
 					
 				<div id="groups-root-list" >

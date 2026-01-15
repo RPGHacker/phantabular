@@ -24,6 +24,7 @@ const tooltipData = {
 }
 
 let filterTimer = null;
+let filterPromise = null;
 
 
 tooltipLayer.style.opacity = 0;
@@ -593,17 +594,54 @@ initializeColorSelector(categoryColorSelector);
 
 
 async function applySearchFilter() {
+	filterSpinnerRoot.hidden = false;
+		
 	if (filterText.value === "") {
-		filterSpinnerRoot.hidden = true;
-	} else {	
-		filterSpinnerRoot.hidden = false;
+		// TODO
+	} else {		
+		const filterStrings = filterText.value.split(" ").map((filterString) => { return filterString.toLowerCase()});
+		const matchingTabs = await db.tabs.toCollection().filter((tab) => {
+		
+			const lowerCaseUrl = tab.url.toLowerCase();
+			const lowerCaseTitle = tab.title.toLowerCase();
+			for (const filterString of filterStrings) {
+				if (lowerCaseUrl.includes(filterString) || lowerCaseTitle.includes(filterString)) {
+					continue;
+				}
+				
+				return false;
+			}
+			
+			return true;
+		}).toArray();
+		
+		debugh.log(matchingTabs);
 	}
+		
+	await new Promise(r => setTimeout(r, minimumSpinnerDisplayTime));
+	
+	filterSpinnerRoot.hidden = true;
+	
+	filterPromise = null;
 }
 
 function updateSearchByFilter() {
-	clearTimeout(filterTimer);
-
-	filterTimer = setTimeout(applySearchFilter, 500);
+	const previousFilterText = filterText.value;
+	
+	clearTimeout(filterTimer);	
+	filterTimer = setTimeout(async () => {	
+		if (filterPromise != null) {
+			await filterPromise;
+			filterPromise = null;
+		}
+		
+		// This probably means we've changed the filter string before this
+		// filter had the chance to be applied. Just cancel this one.
+		if (previousFilterText != filterText.value) {
+			return;
+		}
+		filterPromise = applySearchFilter();
+	}, 500);
 }
 
 
@@ -773,7 +811,8 @@ document.addEventListener("change", (e) => {
 			categoryRegexRuleCaptureGroupsRoot.hidden = !optionsUsingCaptureGrous.includes(e.target.value);
 		}
 	} else if (e.target === filterText) {
-		updateSearchByFilter();
+		// We'll only do this on input, so that exiting the search filter doesn't activate this.
+		//updateSearchByFilter();
 	}
 });
 

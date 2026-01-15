@@ -283,6 +283,17 @@ const groupFunctionLookup = {
 			};
 		},
 	},
+	
+	searchResults: {
+		query: async (_) => {
+			return [];
+		},
+		queryTabCount: async (_) => {
+			return {
+				uniqueTabCount: 13
+			};
+		},
+	},
 }
 
 
@@ -317,7 +328,7 @@ function initializeEntryCountLiveQuery(group, groupFunctions, queryCountArgument
 		return groupFunctions.queryTabCount(queryCountArgument);
 	}
 		
-	if (!activeLiveQueryCountSubscriptions[group.id]) {		
+	if (!activeLiveQueryCountSubscriptions[group.id]) {
 		const observable = db.newLiveQuery(queryCountFunctionWithArgument);
 		activeLiveQueryCountSubscriptions[group.id] = observable.subscribe({
 			next: (result) => { updateBadge(group, result); },
@@ -334,7 +345,8 @@ function initializeEntryCountLiveQuery(group, groupFunctions, queryCountArgument
 const rootGroups = {
 	categories: createGroup(groupsRootList, "root-details group-box colorize-cyan", "categoriesGroup", "Categories", ""),
 	sessions: createGroup(groupsRootList, "root-details group-box colorize-cyan", "sessionsGroup", "Sessions", ""),
-	unsortedTabs: createGroup(groupsRootList, "root-details group-box colorize-cyan", "unsortedTabsGroup", "Unsorted Tabs", "")
+	unsortedTabs: createGroup(groupsRootList, "root-details group-box colorize-cyan", "unsortedTabsGroup", "Unsorted Tabs", ""),
+	searchResults: createGroup(groupsRootList, "root-details group-box colorize-red", "searchResultsGroup", "Search Results", ""),
 }
 
 function getCategoryProperties(category) {
@@ -377,10 +389,14 @@ function getSessionProperties(session) {
 initializeGroupAsTabListContainer(rootGroups.unsortedTabs, "unsortedtabs");
 initializeGroupAsChildGroupListContainer(rootGroups.sessions, "sessions");
 initializeGroupAsChildGroupListContainer(rootGroups.categories, "categories");
+initializeGroupAsChildGroupListContainer(rootGroups.searchResults, "searchresults");
 
 initializeEntryCountLiveQuery(rootGroups.unsortedTabs, groupFunctionLookup.unsortedTabs, undefined);
 initializeEntryCountLiveQuery(rootGroups.sessions, groupFunctionLookup.sessions, undefined);
 initializeEntryCountLiveQuery(rootGroups.categories, groupFunctionLookup.categories, undefined);
+initializeEntryCountLiveQuery(rootGroups.searchResults, groupFunctionLookup.searchResults, undefined);
+
+rootGroups.searchResults.hidden = true;
 
 rootGroups.categories.querySelector(".group-contents").insertAdjacentHTML("afterbegin", `
 	<button data-action="create-category" class="colorize-button">&#xff0b;</button>
@@ -598,10 +614,13 @@ async function applySearchFilter() {
 		
 	if (filterText.value === "") {
 		// TODO
+		rootGroups.searchResults.hidden = true;
+		rootGroups.sessions.hidden = false;
+		rootGroups.categories.hidden = false;
+		rootGroups.unsortedTabs.hidden = false;
 	} else {		
 		const filterStrings = filterText.value.split(" ").map((filterString) => { return filterString.toLowerCase()});
-		const matchingTabs = await db.tabs.toCollection().filter((tab) => {
-		
+		const queryPrimitive = db.tabs.toCollection().filter((tab) => {		
 			const lowerCaseUrl = tab.url.toLowerCase();
 			const lowerCaseTitle = tab.title.toLowerCase();
 			for (const filterString of filterStrings) {
@@ -613,9 +632,57 @@ async function applySearchFilter() {
 			}
 			
 			return true;
-		}).toArray();
+		});
+		
+		async function queryFunction() {
+			return queryPrimitive.toArray();
+		}
+		
+		async function queryCountFunction() {
+			const uniqueTabCount = await queryPrimitive.count();
+			
+			return {
+				groupCount: 0,
+				uniqueTabCount: uniqueTabCount
+			};
+		}
+		
+		const group = rootGroups.searchResults;
+		
+		if (activeLiveQuerySubscriptions[group.id]) {
+			activeLiveQuerySubscriptions[group.id].unsubscribe();
+			activeLiveQuerySubscriptions[group.id] = undefined;
+		}
+		
+		if (activeLiveQueryCountSubscriptions[group.id]) {
+			activeLiveQueryCountSubscriptions[group.id].unsubscribe();
+			activeLiveQueryCountSubscriptions[group.id] = undefined;
+		}
+		
+		{
+			const observable = db.newLiveQuery(queryFunction);
+			activeLiveQuerySubscriptions[group.id] = observable.subscribe({
+				next: (result) => incrementGroupVersion(rootGroups.searchResults),
+				error: (error) => debugh.error(`Live query for group ${group.id} failed: ${error}`)
+			});
+		}
+		
+		{
+			const observable = db.newLiveQuery(queryCountFunction);
+			activeLiveQueryCountSubscriptions[group.id] = observable.subscribe({
+				next: (result) => { updateBadge(group, result); },
+				error: (error) => debugh.error(`Live query for group ${group.id} entry count failed: ${error}`)
+			});
+		}
+		
+		const matchingTabs = await queryFunction();
 		
 		debugh.log(matchingTabs);
+	
+		rootGroups.searchResults.hidden = false;
+		rootGroups.sessions.hidden = true;
+		rootGroups.categories.hidden = true;
+		rootGroups.unsortedTabs.hidden = true;
 	}
 		
 	await new Promise(r => setTimeout(r, minimumSpinnerDisplayTime));
@@ -866,6 +933,9 @@ async function populateTabListGroup(group) {
 		} else if (group.dataset.isunsortedtabs) {
 			// This is an unsorted tab list
 			accessor = "unsortedTabs";
+		} else if (group.dataset.issearchresults) {
+			// This is the "search results" group
+			accessor = "searchResults";
 		} else {
 			debugh.error("The following tab list is of an unknown type: " + group);
 		}
@@ -964,6 +1034,10 @@ async function populateGroupListGroup(group) {
 			innerAccessor = "tabsInSession";
 			queryCountIdAccessor = "sessionid";
 			getGroupPropertiesFunction = getSessionProperties;
+		} else if (group.dataset.issearchresultslist) {
+			idPrefix = "searchresults";
+			accessor = "searchResults";
+			innerAccessor = "tabsInSearchResults";
 		} else {
 			debugh.error("The following group list is of an unknown type: " + group);
 		}

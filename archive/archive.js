@@ -7,6 +7,7 @@ const minimumSpinnerDisplayTime = 250;
 
 const activeLiveQuerySubscriptions = {};
 const activeLiveQueryCountSubscriptions = {};
+const queryCountFunctions = {};
 const activeMutationObservers = {};
 
 const windowIdRemaps = {};
@@ -25,6 +26,9 @@ const tooltipData = {
 
 let filterTimer = null;
 let filterPromise = null;
+let filterStrings = [];
+
+const openGroups = {};
 
 
 tooltipLayer.style.opacity = 0;
@@ -153,6 +157,7 @@ function createGroupsList(container) {
 						if (activeLiveQueryCountSubscriptions[group.id]) {
 							activeLiveQueryCountSubscriptions[group.id].unsubscribe();
 							activeLiveQueryCountSubscriptions[group.id] = undefined;
+							queryCountFunctions[group.id] = undefined;
 						}
 					}
 				}
@@ -195,6 +200,87 @@ async function sortedQuery(originalQuery, sortFunction) {
 	return queryResult.sort(sortFunction);
 }
 
+
+function applyTabFilter(tab, filterStrings) {
+	const lowerCaseUrl = tab.url.toLowerCase();
+	const lowerCaseTitle = tab.title.toLowerCase();
+	for (const filterString of filterStrings) {
+		if (lowerCaseUrl.includes(filterString) || lowerCaseTitle.includes(filterString)) {
+			continue;
+		}
+		
+		return false;
+	}
+	
+	return true;
+}	
+	
+function filterTabs(tabPrimitive, queryArgument, filterStrings) {
+	const queryPrimitive = tabPrimitive(queryArgument).filter((tab) => {
+		return applyTabFilter(tab, filterStrings);
+	});
+	
+	return queryPrimitive;
+}
+
+function filterSessions(groupPrimitive, tabPrimitive, filterStrings) {
+	async function runQuery() {
+		const matchingTabs = await filterTabs(tabPrimitive, undefined, filterStrings).toArray();
+		
+		const uniqueSessionDates = [];
+		
+		for (const tab of matchingTabs) {
+			for (const sessionDate of tab.sessions) {
+				if (!uniqueSessionDates.includes(sessionDate)) {
+					uniqueSessionDates.push(sessionDate);
+				}
+			}
+		}
+		
+		return await groupPrimitive().where("creationdate").anyOf(uniqueSessionDates).toArray();
+	}
+	
+	// Pretend we're a Dexie collection, for compatibility.
+	return {
+		async toArray() {
+			return await runQuery();
+		},
+		
+		async count() {
+			return (await runQuery()).length;
+		}
+	};
+}
+
+function filterCategories(groupPrimitive, tabPrimitive, filterStrings) {
+	async function runQuery() {
+		const matchingTabs = await filterTabs(tabPrimitive, undefined, filterStrings).toArray();
+		
+		const uniqueCategoryIds = [];
+		
+		for (const tab of matchingTabs) {
+			for (const categoryId of tab.categories) {
+				if (!uniqueCategoryIds.includes(categoryId)) {
+					uniqueCategoryIds.push(categoryId);
+				}
+			}
+		}
+		
+		return await groupPrimitive().where("id").anyOf(uniqueCategoryIds).toArray();
+	}
+	
+	// Pretend we're a Dexie collection, for compatibility.
+	return {
+		async toArray() {
+			return await runQuery();
+		},
+		
+		async count() {
+			return (await runQuery()).length;
+		}
+	};
+}
+
 const groupFunctionPrimitives = {
 	sessions: () => {
 		return db.sessions;
@@ -217,13 +303,55 @@ const groupFunctionPrimitives = {
 	},
 }
 
+const groupFunctionPrimitivesWithFilters = {
+	sessions: () => {
+		if (filterStrings.length === 0) {
+			return groupFunctionPrimitives.sessions();
+		}
+		
+		return filterSessions(groupFunctionPrimitives.sessions, groupFunctionPrimitives.unsortedTabs, filterStrings);
+	},
+	
+	categories: () => {
+		if (filterStrings.length === 0) {
+			return groupFunctionPrimitives.categories();
+		}
+		
+		return filterCategories(groupFunctionPrimitives.categories, groupFunctionPrimitives.unsortedTabs, filterStrings);
+	},
+	
+	unsortedTabs: (_) => {
+		if (filterStrings.length === 0) {
+			return groupFunctionPrimitives.unsortedTabs(_);
+		}
+		
+		return filterTabs(groupFunctionPrimitives.unsortedTabs, _, filterStrings);
+	},
+	
+	tabsInSession: (creationdate) => {
+		if (filterStrings.length === 0) {
+			return groupFunctionPrimitives.tabsInSession(creationdate);
+		}
+		
+		return filterTabs(groupFunctionPrimitives.tabsInSession, creationdate, filterStrings);
+	},
+	
+	tabsInCategory: (id) => {
+		if (filterStrings.length === 0) {
+			return groupFunctionPrimitives.tabsInCategory(id);
+		}
+		
+		return filterTabs(groupFunctionPrimitives.tabsInCategory, id, filterStrings);
+	},
+}
+
 const groupFunctionLookup = {
 	sessions: {
 		query: async () => {
-			return sortedQuery(groupFunctionPrimitives.sessions().toArray(), compareSortKeysReversed);
+			return sortedQuery(groupFunctionPrimitivesWithFilters.sessions().toArray(), compareSortKeysReversed);
 		},
 		queryTabCount: async () => {
-			const sessions = await groupFunctionPrimitives.sessions().toArray();
+			const sessions = await groupFunctionPrimitivesWithFilters.sessions().toArray();
 			const sessionCreationDates = sessions.map((session) => {return session.creationdate});
 			const uniqueTabCount = await db.tabs.where("sessions").anyOf(sessionCreationDates).count();
 			return {
@@ -235,10 +363,10 @@ const groupFunctionLookup = {
 	
 	categories: {
 		query: async () => {
-			return sortedQuery(groupFunctionPrimitives.categories().toArray(), compareSortKeysReversed);
+			return sortedQuery(groupFunctionPrimitivesWithFilters.categories().toArray(), compareSortKeysReversed);
 		},
 		queryTabCount: async () => {
-			const categories = await groupFunctionPrimitives.categories().toArray();
+			const categories = await groupFunctionPrimitivesWithFilters.categories().toArray();
 			const categoryIds = categories.map((category) => {return category.id});
 			const uniqueTabCount = await db.tabs.where("categories").anyOf(categoryIds).count();
 			return {
@@ -250,10 +378,10 @@ const groupFunctionLookup = {
 	
 	unsortedTabs: {
 		query: async (_) => {
-			return sortedQuery(groupFunctionPrimitives.unsortedTabs().toArray(), compareSortKeys);
+			return sortedQuery(groupFunctionPrimitivesWithFilters.unsortedTabs().toArray(), compareSortKeys);
 		},
 		queryTabCount: async (_) => {
-			const uniqueTabCount = await groupFunctionPrimitives.unsortedTabs().count();
+			const uniqueTabCount = await groupFunctionPrimitivesWithFilters.unsortedTabs().count();
 			return {
 				uniqueTabCount: uniqueTabCount
 			};
@@ -262,10 +390,10 @@ const groupFunctionLookup = {
 	
 	tabsInSession: {
 		query: async (creationdate) => {
-			return sortedQuery(groupFunctionPrimitives.tabsInSession(creationdate).toArray(), compareSortKeys);
+			return sortedQuery(groupFunctionPrimitivesWithFilters.tabsInSession(creationdate).toArray(), compareSortKeys);
 		},
 		queryTabCount: async (creationdate) => {
-			const uniqueTabCount = await groupFunctionPrimitives.tabsInSession(creationdate).count();
+			const uniqueTabCount = await groupFunctionPrimitivesWithFilters.tabsInSession(creationdate).count();
 			return {
 				uniqueTabCount: uniqueTabCount
 			};
@@ -274,23 +402,12 @@ const groupFunctionLookup = {
 	
 	tabsInCategory: {
 		query: async (id) => {
-			return sortedQuery(groupFunctionPrimitives.tabsInCategory(id).toArray(), compareSortKeys);
+			return sortedQuery(groupFunctionPrimitivesWithFilters.tabsInCategory(id).toArray(), compareSortKeys);
 		},
 		queryTabCount: async (id) => {
-			const uniqueTabCount = await groupFunctionPrimitives.tabsInCategory(id).count();
+			const uniqueTabCount = await groupFunctionPrimitivesWithFilters.tabsInCategory(id).count();
 			return {
 				uniqueTabCount: uniqueTabCount
-			};
-		},
-	},
-	
-	searchResults: {
-		query: async (_) => {
-			return [];
-		},
-		queryTabCount: async (_) => {
-			return {
-				uniqueTabCount: 13
 			};
 		},
 	},
@@ -334,19 +451,27 @@ function initializeEntryCountLiveQuery(group, groupFunctions, queryCountArgument
 			next: (result) => { updateBadge(group, result); },
 			error: (error) => debugh.error(`Live query for group ${group.id} entry count failed: ${error}`)
 		});
-	}
 	
-	// Sometimes, the live query automatically fires after initialization,
-	// but it seems that's not always the case, so we also start a manual
-	// query here.
-	queryCountFunctionWithArgument().then((result) => { updateBadge(group, result); });
+		function runQuery() {
+			queryCountFunctionWithArgument().then((result) => { updateBadge(group, result); });
+		}
+		
+		// This allows us to manually re-run tab count queries if needed, which is
+		// necessary whenever the search filter changes, because that won't usually
+		// trigger live queries.
+		queryCountFunctions[group.id] = runQuery;
+	
+		// Sometimes, the live query automatically fires after initialization,
+		// but it seems that's not always the case, so we also start a manual
+		// query here.	
+		runQuery();
+	}
 }
 
 const rootGroups = {
 	categories: createGroup(groupsRootList, "root-details group-box colorize-cyan", "categoriesGroup", "Categories", ""),
 	sessions: createGroup(groupsRootList, "root-details group-box colorize-cyan", "sessionsGroup", "Sessions", ""),
 	unsortedTabs: createGroup(groupsRootList, "root-details group-box colorize-cyan", "unsortedTabsGroup", "Unsorted Tabs", ""),
-	searchResults: createGroup(groupsRootList, "root-details group-box colorize-red", "searchResultsGroup", "Search Results", ""),
 }
 
 function getCategoryProperties(category) {
@@ -389,14 +514,10 @@ function getSessionProperties(session) {
 initializeGroupAsTabListContainer(rootGroups.unsortedTabs, "unsortedtabs");
 initializeGroupAsChildGroupListContainer(rootGroups.sessions, "sessions");
 initializeGroupAsChildGroupListContainer(rootGroups.categories, "categories");
-initializeGroupAsChildGroupListContainer(rootGroups.searchResults, "searchresults");
 
 initializeEntryCountLiveQuery(rootGroups.unsortedTabs, groupFunctionLookup.unsortedTabs, undefined);
 initializeEntryCountLiveQuery(rootGroups.sessions, groupFunctionLookup.sessions, undefined);
 initializeEntryCountLiveQuery(rootGroups.categories, groupFunctionLookup.categories, undefined);
-initializeEntryCountLiveQuery(rootGroups.searchResults, groupFunctionLookup.searchResults, undefined);
-
-rootGroups.searchResults.hidden = true;
 
 rootGroups.categories.querySelector(".group-contents").insertAdjacentHTML("afterbegin", `
 	<button data-action="create-category" class="colorize-button">&#xff0b;</button>
@@ -611,78 +732,18 @@ initializeColorSelector(categoryColorSelector);
 
 async function applySearchFilter() {
 	filterSpinnerRoot.hidden = false;
-		
-	if (filterText.value === "") {
-		// TODO
-		rootGroups.searchResults.hidden = true;
-		rootGroups.sessions.hidden = false;
-		rootGroups.categories.hidden = false;
-		rootGroups.unsortedTabs.hidden = false;
-	} else {		
-		const filterStrings = filterText.value.split(" ").map((filterString) => { return filterString.toLowerCase()});
-		const queryPrimitive = db.tabs.toCollection().filter((tab) => {		
-			const lowerCaseUrl = tab.url.toLowerCase();
-			const lowerCaseTitle = tab.title.toLowerCase();
-			for (const filterString of filterStrings) {
-				if (lowerCaseUrl.includes(filterString) || lowerCaseTitle.includes(filterString)) {
-					continue;
-				}
-				
-				return false;
-			}
-			
-			return true;
-		});
-		
-		async function queryFunction() {
-			return queryPrimitive.toArray();
-		}
-		
-		async function queryCountFunction() {
-			const uniqueTabCount = await queryPrimitive.count();
-			
-			return {
-				groupCount: 0,
-				uniqueTabCount: uniqueTabCount
-			};
-		}
-		
-		const group = rootGroups.searchResults;
-		
-		if (activeLiveQuerySubscriptions[group.id]) {
-			activeLiveQuerySubscriptions[group.id].unsubscribe();
-			activeLiveQuerySubscriptions[group.id] = undefined;
-		}
-		
-		if (activeLiveQueryCountSubscriptions[group.id]) {
-			activeLiveQueryCountSubscriptions[group.id].unsubscribe();
-			activeLiveQueryCountSubscriptions[group.id] = undefined;
-		}
-		
-		{
-			const observable = db.newLiveQuery(queryFunction);
-			activeLiveQuerySubscriptions[group.id] = observable.subscribe({
-				next: (result) => incrementGroupVersion(rootGroups.searchResults),
-				error: (error) => debugh.error(`Live query for group ${group.id} failed: ${error}`)
-			});
-		}
-		
-		{
-			const observable = db.newLiveQuery(queryCountFunction);
-			activeLiveQueryCountSubscriptions[group.id] = observable.subscribe({
-				next: (result) => { updateBadge(group, result); },
-				error: (error) => debugh.error(`Live query for group ${group.id} entry count failed: ${error}`)
-			});
-		}
-		
-		const matchingTabs = await queryFunction();
-		
-		debugh.log(matchingTabs);
 	
-		rootGroups.searchResults.hidden = false;
-		rootGroups.sessions.hidden = true;
-		rootGroups.categories.hidden = true;
-		rootGroups.unsortedTabs.hidden = true;
+	if (!/\S/.test(filterText.value)) {
+		// Filter text is all whitespace.
+		filterStrings = [];
+	} else {
+		filterStrings = filterText.value.split(" ").map((filterString) => { return filterString.toLowerCase()});
+	}
+	
+	for (const groupKey in rootGroups) {
+		const group = rootGroups[groupKey];
+		incrementGroupVersion(group);
+		queryCountFunctions[group.id]();
 	}
 		
 	await new Promise(r => setTimeout(r, minimumSpinnerDisplayTime));
@@ -933,9 +994,6 @@ async function populateTabListGroup(group) {
 		} else if (group.dataset.isunsortedtabs) {
 			// This is an unsorted tab list
 			accessor = "unsortedTabs";
-		} else if (group.dataset.issearchresults) {
-			// This is the "search results" group
-			accessor = "searchResults";
 		} else {
 			debugh.error("The following tab list is of an unknown type: " + group);
 		}
@@ -1034,10 +1092,6 @@ async function populateGroupListGroup(group) {
 			innerAccessor = "tabsInSession";
 			queryCountIdAccessor = "sessionid";
 			getGroupPropertiesFunction = getSessionProperties;
-		} else if (group.dataset.issearchresultslist) {
-			idPrefix = "searchresults";
-			accessor = "searchResults";
-			innerAccessor = "tabsInSearchResults";
 		} else {
 			debugh.error("The following group list is of an unknown type: " + group);
 		}
@@ -1086,13 +1140,17 @@ async function populateGroupListGroup(group) {
 					
 					const queryCountArgument = parseInt(innerGroup.dataset[queryCountIdAccessor]);
 					initializeEntryCountLiveQuery(innerGroup, innerGroupFunctions, queryCountArgument);
+					
+					if (openGroups[innerGroup.id]) {
+						innerGroup.open = true;
+					}
 				}
 			});
 		});
 	}
 }
 
-async function populateGroup(group) {
+async function populateGroup(group) {	
 	if (!group.open) {
 		return;
 	}
@@ -1111,7 +1169,14 @@ function incrementGroupVersion(group) {
 
 document.addEventListener("toggle", async (e) => {
 	if (e.target.tagName === "DETAILS") {
-		populateGroup(e.target);
+		const group = e.target;
+		
+		openGroups[group.id] = group.open;
+		if (!openGroups[group.id]) {
+			delete openGroups[group.id];
+		}
+		
+		populateGroup(group);
 	}
 }, true);
 

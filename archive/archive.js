@@ -134,7 +134,36 @@ function initializeGroupAsTabListContainer(group, type) {
 	const tabsList = createTabsList(groupContents);
 }
 
-function createGroupsList(container) {
+function processGroupsListMutations(mutations) {	
+	for (let mutation of mutations) {
+		if (mutation.type === "childList") {
+			for (let removedNode of mutation.removedNodes) {
+				if (removedNode.nodeType == Node.ELEMENT_NODE) {
+					const group = removedNode;
+					
+					if (activeLiveQuerySubscriptions[group.id]) {
+						activeLiveQuerySubscriptions[group.id].unsubscribe();
+						activeLiveQuerySubscriptions[group.id] = undefined;
+					}
+					
+					if (activeLiveQueryCountSubscriptions[group.id]) {
+						activeLiveQueryCountSubscriptions[group.id].unsubscribe();
+						activeLiveQueryCountSubscriptions[group.id] = undefined;
+						queryCountFunctions[group.id] = undefined;
+					}
+				}
+			}
+		}
+	}
+}
+
+function flushMutationsQueue(group) {
+	if (activeMutationObservers[group.id]) {
+		processGroupsListMutations(activeMutationObservers[group.id].takeRecords());
+	}
+}
+
+function createGroupsList(container, groupId) {
 	container.insertAdjacentHTML("beforeend", `
 		<div class="groups-list">
 		</div>
@@ -142,30 +171,11 @@ function createGroupsList(container) {
 	
 	const groupsList = container.querySelector(".groups-list");
 	
-	activeMutationObservers[container.id] = new MutationObserver((mutations, observer) => {
-		for (let mutation of mutations) {
-			if (mutation.type === "childList") {
-				for (let removedNode of mutation.removedNodes) {
-					if (removedNode.nodeType == Node.ELEMENT_NODE) {
-						const group = removedNode;
-						
-						if (activeLiveQuerySubscriptions[group.id]) {
-							activeLiveQuerySubscriptions[group.id].unsubscribe();
-							activeLiveQuerySubscriptions[group.id] = undefined;
-						}
-						
-						if (activeLiveQueryCountSubscriptions[group.id]) {
-							activeLiveQueryCountSubscriptions[group.id].unsubscribe();
-							activeLiveQueryCountSubscriptions[group.id] = undefined;
-							queryCountFunctions[group.id] = undefined;
-						}
-					}
-				}
-			}
-		}
+	activeMutationObservers[groupId] = new MutationObserver((mutations, observer) => {
+		processGroupsListMutations(mutations);
 	});
 	
-	activeMutationObservers[container.id].observe(groupsList, { childList: true });
+	activeMutationObservers[groupId].observe(groupsList, { childList: true });
 	
 	return groupsList;
 }
@@ -191,7 +201,7 @@ function initializeGroupAsChildGroupListContainer(group, type) {
 	const groupContents = group.querySelector(".group-contents");
 	
 	const spinnerElement = createSpinnerAnimation(groupContentSetupRoot);
-	const groupsList = createGroupsList(groupContents);
+	const groupsList = createGroupsList(groupContents, group.id);
 }
 
 
@@ -1039,6 +1049,7 @@ async function populateTabListGroup(group) {
 				
 				const tabsList = group.querySelector(".tabs-list");
 				tabsList.textContent = "";
+				flushMutationsQueue(group);
 				
 				let dropTargetIndex = 0;
 				for (const tab of tabs) {
@@ -1134,6 +1145,7 @@ async function populateGroupListGroup(group) {
 				
 				let innerGroupsList = group.querySelector(".groups-list");
 				innerGroupsList.textContent = "";
+				flushMutationsQueue(group);
 				
 				for (const innerGroupData of innerGroupDatas) {
 					const innerGroup = initializeInnerGroup(innerGroupsList, innerGroupData, idPrefix, getGroupPropertiesFunction);

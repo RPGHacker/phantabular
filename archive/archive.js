@@ -140,8 +140,8 @@ function initializeGroupAsTabListContainer(group, type) {
 		for (let idx = 0; idx < previousGroupEntryCounts[group.id]; ++idx) {
 			tabsList.insertAdjacentHTML("beforeend", `
 				<li class="tab-entry colorize-gray">
-				<span class="fav-icon-list-item" data-validimage="false"><img src="undefined" class="fav-icon-small"/></span>
-				<span class="title"></span>
+					<span class="fav-icon-list-item" data-validimage="false"><img src="undefined" class="fav-icon-small"/></span>
+					<span class="title"></span>
 				</li>
 			`);
 		}

@@ -291,6 +291,16 @@ function filterCategories(groupPrimitive, tabPrimitive, filterStrings) {
 	};
 }
 
+function areFilterStringsSet() {
+	return (filterStrings.length !== 0);
+}
+
+function clearFilterStrings() {
+	filterStrings = [];
+	filterText.value = "";
+	updateSearchByFilter();
+}
+
 const groupFunctionPrimitives = {
 	sessions: () => {
 		return db.sessions;
@@ -315,7 +325,7 @@ const groupFunctionPrimitives = {
 
 const groupFunctionPrimitivesWithFilters = {
 	sessions: () => {
-		if (filterStrings.length === 0) {
+		if (!areFilterStringsSet()) {
 			return groupFunctionPrimitives.sessions();
 		}
 		
@@ -323,7 +333,7 @@ const groupFunctionPrimitivesWithFilters = {
 	},
 	
 	categories: () => {
-		if (filterStrings.length === 0) {
+		if (!areFilterStringsSet()) {
 			return groupFunctionPrimitives.categories();
 		}
 		
@@ -331,7 +341,7 @@ const groupFunctionPrimitivesWithFilters = {
 	},
 	
 	unsortedTabs: (_) => {
-		if (filterStrings.length === 0) {
+		if (!areFilterStringsSet()) {
 			return groupFunctionPrimitives.unsortedTabs(_);
 		}
 		
@@ -339,7 +349,7 @@ const groupFunctionPrimitivesWithFilters = {
 	},
 	
 	tabsInSession: (creationdate) => {
-		if (filterStrings.length === 0) {
+		if (!areFilterStringsSet()) {
 			return groupFunctionPrimitives.tabsInSession(creationdate);
 		}
 		
@@ -347,7 +357,7 @@ const groupFunctionPrimitivesWithFilters = {
 	},
 	
 	tabsInCategory: (id) => {
-		if (filterStrings.length === 0) {
+		if (!areFilterStringsSet()) {
 			return groupFunctionPrimitives.tabsInCategory(id);
 		}
 		
@@ -361,12 +371,14 @@ const groupFunctionLookup = {
 			return sortedQuery(groupFunctionPrimitivesWithFilters.sessions().toArray(), compareSortKeysReversed);
 		},
 		queryTabCount: async () => {
+			const isFilteredResult = areFilterStringsSet();
 			const sessions = await groupFunctionPrimitivesWithFilters.sessions().toArray();
 			const sessionCreationDates = sessions.map((session) => {return session.creationdate});
 			const uniqueTabCount = await db.tabs.where("sessions").anyOf(sessionCreationDates).count();
 			return {
 				groupCount: sessions.length,
-				uniqueTabCount: uniqueTabCount
+				uniqueTabCount: uniqueTabCount,
+				isFilteredResult: isFilteredResult
 			};
 		},
 	},
@@ -376,12 +388,14 @@ const groupFunctionLookup = {
 			return sortedQuery(groupFunctionPrimitivesWithFilters.categories().toArray(), compareSortKeysReversed);
 		},
 		queryTabCount: async () => {
+			const isFilteredResult = areFilterStringsSet();
 			const categories = await groupFunctionPrimitivesWithFilters.categories().toArray();
 			const categoryIds = categories.map((category) => {return category.id});
 			const uniqueTabCount = await db.tabs.where("categories").anyOf(categoryIds).count();
 			return {
 				groupCount: categories.length,
-				uniqueTabCount: uniqueTabCount
+				uniqueTabCount: uniqueTabCount,
+				isFilteredResult: isFilteredResult
 			};
 		},
 	},
@@ -391,9 +405,11 @@ const groupFunctionLookup = {
 			return sortedQuery(groupFunctionPrimitivesWithFilters.unsortedTabs().toArray(), compareSortKeys);
 		},
 		queryTabCount: async (_) => {
+			const isFilteredResult = areFilterStringsSet();
 			const uniqueTabCount = await groupFunctionPrimitivesWithFilters.unsortedTabs().count();
 			return {
-				uniqueTabCount: uniqueTabCount
+				uniqueTabCount: uniqueTabCount,
+				isFilteredResult: isFilteredResult
 			};
 		},
 	},
@@ -403,9 +419,11 @@ const groupFunctionLookup = {
 			return sortedQuery(groupFunctionPrimitivesWithFilters.tabsInSession(creationdate).toArray(), compareSortKeys);
 		},
 		queryTabCount: async (creationdate) => {
+			const isFilteredResult = areFilterStringsSet();
 			const uniqueTabCount = await groupFunctionPrimitivesWithFilters.tabsInSession(creationdate).count();
 			return {
-				uniqueTabCount: uniqueTabCount
+				uniqueTabCount: uniqueTabCount,
+				isFilteredResult: isFilteredResult
 			};
 		},
 	},
@@ -415,9 +433,11 @@ const groupFunctionLookup = {
 			return sortedQuery(groupFunctionPrimitivesWithFilters.tabsInCategory(id).toArray(), compareSortKeys);
 		},
 		queryTabCount: async (id) => {
+			const isFilteredResult = areFilterStringsSet();
 			const uniqueTabCount = await groupFunctionPrimitivesWithFilters.tabsInCategory(id).count();
 			return {
-				uniqueTabCount: uniqueTabCount
+				uniqueTabCount: uniqueTabCount,
+				isFilteredResult: isFilteredResult
 			};
 		},
 	},
@@ -446,6 +466,8 @@ function updateBadge(group, badgeData) {
 		badgeSummaryElement.dataset.hasuniquetabs = true;
 		badgeSummaryElement.dataset.uniquetabcount = badgeData.uniqueTabCount;
 	}
+	
+	badgeSummaryElement.dataset.isfiltered = badgeData.isFilteredResult;
 	
 	badgeSummaryElement.textContent = newBadgeText;
 }
@@ -535,6 +557,8 @@ rootGroups.categories.querySelector(".group-contents").insertAdjacentHTML("after
 
 
 async function createNewCategory() {
+	clearFilterStrings();
+	
 	const newCategory = await db.createNewCategory();
 
 	incrementGroupVersion(document.querySelector("[data-iscategorieslist]"));

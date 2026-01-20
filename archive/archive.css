@@ -93,6 +93,10 @@ details > summary .summary-badge {
 	color: var(--oc-gray-0);
 }
 
+details > summary .summary-badge[data-isfiltered=true] {
+	background-color: var(--filtered-count-badge-background-color);
+}
+
 details > summary .summary-title {
 	display: block; 
 	min-width: 0;

@@ -48,23 +48,25 @@ pre > code {
 
 /* Define default colors when not specifying a color manually */
 :root {
-	--group-details-summary-text-color:     light-dark(var(--oc-gray-9), var(--oc-gray-0));
+	--group-details-summary-text-color:      light-dark(var(--oc-gray-9), var(--oc-gray-0));
 	
-	--group-details-content-text-color:     light-dark(var(--oc-gray-9), var(--oc-gray-0));
+	--group-details-content-text-color:      light-dark(var(--oc-gray-9), var(--oc-gray-0));
 	
-	--section-text-color:                   light-dark(var(--oc-gray-9), var(--oc-gray-0));
+	--section-text-color:                    light-dark(var(--oc-gray-9), var(--oc-gray-0));
 	
-	--button-text-color:                    light-dark(var(--oc-gray-9), var(--oc-gray-0));
-	--button-shadow-color:                  light-dark(var(--oc-gray-6), var(--oc-gray-8));
-	--button-hover-shadow-color:            light-dark(var(--oc-gray-5), var(--oc-gray-7));
+	--button-text-color:                     light-dark(var(--oc-gray-9), var(--oc-gray-0));
+	--button-shadow-color:                   light-dark(var(--oc-gray-6), var(--oc-gray-8));
+	--button-hover-shadow-color:             light-dark(var(--oc-gray-5), var(--oc-gray-7));
 	
-	--spinner-color:                        light-dark(var(--oc-gray-6), var(--oc-gray-5));
-	--spinner-fill-color:                   light-dark(var(--oc-blue-6), var(--oc-blue-5));
+	--spinner-color:                         light-dark(var(--oc-gray-6), var(--oc-gray-5));
+	--spinner-fill-color:                    light-dark(var(--oc-blue-6), var(--oc-blue-5));
 	
-	--table-text-color:                     light-dark(var(--oc-gray-9), var(--oc-gray-0));
+	--table-text-color:                      light-dark(var(--oc-gray-9), var(--oc-gray-0));
 	
-	--link-text-color:                      light-dark(var(--oc-gray-6), var(--oc-gray-5));
-	--link-text-hover-color:                light-dark(var(--oc-gray-5), var(--oc-gray-4));
+	--link-text-color:                       light-dark(var(--oc-gray-6), var(--oc-gray-5));
+	--link-text-hover-color:                 light-dark(var(--oc-gray-5), var(--oc-gray-4));
+	
+	--filtered-count-badge-background-color: light-dark(var(--oc-red-7), var(--oc-red-9));
 }
 
 :root, .colorize-root-default, .colorize-gray {

@@ -29,6 +29,7 @@ let filterPromise = null;
 let filterStrings = [];
 
 const openGroups = {};
+const previousGroupEntryCounts = {};
 
 
 tooltipLayer.style.opacity = 0;
@@ -132,6 +133,19 @@ function initializeGroupAsTabListContainer(group, type) {
 	
 	const spinnerElement = createSpinnerAnimation(groupContentSetupRoot);
 	const tabsList = createTabsList(groupContents);
+	
+	// If a group with this ID has existed before, fill it with dummy elements
+	// so that its size stays stable until its filled with actual content.
+	if (previousGroupEntryCounts[group.id]) {
+		for (let idx = 0; idx < previousGroupEntryCounts[group.id]; ++idx) {
+			tabsList.insertAdjacentHTML("beforeend", `
+				<li class="tab-entry colorize-gray">
+				<span class="fav-icon-list-item" data-validimage="false"><img src="undefined" class="fav-icon-small"/></span>
+				<span class="title"></span>
+				</li>
+			`);
+		}
+	}
 }
 
 function processGroupsListMutations(mutations) {	
@@ -1095,6 +1109,8 @@ async function populateTabListGroup(group) {
 					
 					++dropTargetIndex;
 				}
+				
+				previousGroupEntryCounts[group.id] = tabs.length;
 				
 				createTabsListForDragAndDrop(group, tabsList);
 			});

@@ -6,8 +6,8 @@
 	"description": "Automatically archives open tabs into categories based on customizable patterns.",
 
 	"icons": {
-		"48": "icons/phantabular-48.png",
-		"96": "icons/phantabular-96.png"
+		"48": "icons/phantabular.svg",
+		"96": "icons/phantabular.svg"
 	},
 	
 	"permissions": ["activeTab", "sessions", "tabGroups", "tabHide", "tabs", "storage", "unlimitedStorage", "cookies"],
@@ -21,7 +21,7 @@
 	},
 
 	"browser_action": {
-		"default_icon": "icons/phantabular-32.png",
+		"default_icon": "icons/phantabular.svg",
 		"default_title": "PhanTabular",
 		"default_popup": "popup/popup.html"
 	},

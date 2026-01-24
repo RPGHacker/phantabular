@@ -1,6 +1,6 @@
 html,
 body {
-	width: 250px;
+	width: 275px;
 	/* Having only the padding in body > div doesn't seem to work for bottom padding, though... */
 	padding-bottom: 8px;
 }

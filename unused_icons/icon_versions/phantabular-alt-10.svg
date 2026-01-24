@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<style>.title-text {
+      font: bold 1.5px sans-serif;
+		}
+    .logo-text {
+      font: bold 13px sans-serif;
+		}</style>
+	<defs>
+		<g id="favIcon">
+			<rect width="1.5" height="1.5" fill="#7e7e7e" stroke-width=".2" x="1" y=".75" stroke-linejoin="bevel" rx=".25" ry=".25"/>
+		</g>
+		<g id="baseTab">
+			<rect width="16" height="3" fill="#495057" stroke="#000" stroke-width=".2" stroke-linejoin="bevel" rx=".25" ry=".25"/>
+			<use href="#favIcon"/>
+		</g>
+		<g id="shortBaseTab">
+			<rect width="13.36" height="3" fill="#495057" stroke="#000" stroke-width=".2" stroke-linejoin="bevel" rx=".25" ry=".25"/>
+			<use href="#favIcon"/>
+		</g>
+		<g id="bentTab">
+			<path fill="#495057" stroke="#000" stroke-width=".2" d="M.25 0 8 0A1 1 0 018 8L1.75 8Q1.5 8 1.5 7.75L1.5 5.25Q1.5 5 1.75 5L8 5A1 1 0 008 3L.25 3Q0 3 0 2.75L0 .25Q0 0 .25 0Z"/>
+			<use href="#favIcon"/>
+		</g>
+	</defs>
+	<g id="background">
+		<rect width="15.5" height="15.5" x=".25" y=".25" fill="#c5f6fa" stroke-linejoin="bevel" rx=".75" ry=".75" stroke-width=".5" stroke="#3bc9db"/>
+		<rect width="15.5" height="2.75" x=".25" y=".5" fill="#3bc9db" stroke-width=".1" stroke="#3bc9db"/>
+	</g>
+	<g id="letterP">
+		<use href="#baseTab" transform="translate(2.3 13.65) scale(.55) rotate(-90)"/>
+		<use href="#bentTab" transform="translate(.77 5.35) scale(.55)"/>
+	</g>
+	<g id="letterT">
+		<use href="#baseTab" transform="translate(10.775 13.65) scale(.55) rotate(-90)"/>
+		<use href="#shortBaseTab" transform="translate(7.9 5.35) scale(.55)"/>
+	</g>
+</svg>

@@ -100,6 +100,8 @@ details > summary .summary-badge[data-isfiltered=true] {
 details > summary .summary-title {
 	display: block; 
 	min-width: 0;
+	/* This is a workaround for a layout problem that I don't fully understand. Basically, category names longer than the viewport currently break the layout big time. */
+	max-width: calc(100vw - 120px);
 	flex: auto;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -150,6 +152,8 @@ details.root-details .groups-list {
 	flex-wrap: wrap;
 	align-items: self-start;
 	gap: 5px;
+	/* Centers groups in the container - currently commented out, because it breaks with long category names. */
+	/* justify-content: space-between; */
 }
 
 details.root-details .groups-list > * {
@@ -161,7 +165,8 @@ details.root-details .groups-list > * {
 	*/
 	/* display: flex; */
 	margin: 0px;
-	flex: auto;
+	/* Currently causes action buttons to modify the size of groups, so staying out. */
+	/* flex: auto; */
 }
 
 /* Stylings of "group" detail boxes (aka inner group boxes) */

@@ -369,7 +369,8 @@ pre > code {
 
 /* Stylings for group boxes */
 details.group-box > summary {
-	background-color: var(--group-details-summary-bg-color);
+	--group-box-border-color: var(--group-details-summary-bg-color);
+	background-color: var(--group-box-border-color);
 	color: var(--group-details-summary-text-color);
 }
 
@@ -378,7 +379,7 @@ details.group-box > summary * {
 }
 
 details.group-box > summary:hover {
-	background-color: var(--group-details-summary-hover-bg-color);
+	--group-box-border-color: var(--group-details-summary-hover-bg-color);
 }
 
 details.group-box::details-content {

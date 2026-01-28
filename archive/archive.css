@@ -57,6 +57,7 @@ details > summary .summary-contents {
 	min-width: 0;
 	align-items: center;
 	justify-content: flex-start;
+	user-select: none;
 }
 
 details > summary .summary-contents * {
@@ -97,11 +98,16 @@ details > summary .summary-badge[data-isfiltered=true] {
 	background-color: var(--filtered-count-badge-background-color);
 }
 
-details > summary .summary-title {
+details > summary .summary-overlap {
+	flex: auto;
+	pointer-events: none;
+}
+
+details > summary .summary-overlap > .summary-title {
 	display: block; 
 	min-width: 0;
-	/* This is a workaround for a layout problem that I don't fully understand. Basically, category names longer than the viewport currently break the layout big time. */
-	max-width: calc(100vw - 120px);
+	max-width: 100%;
+	min-height: 1lh;
 	flex: auto;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -109,15 +115,28 @@ details > summary .summary-title {
 	justify-content: flex-start;
 }
 
-details > summary .summary-actions {
-	display: none;
+details > summary .summary-overlap > .summary-actions {
+	display: flex;
+	gap: 0.5rem;
+	visibility: hidden;
+	width: fit-content;
+	height: 100%;
+	padding-left: 24px;
+	justify-self: right;
+	pointer-events: all;
+	background-color: var(--group-box-border-color);
+	background: linear-gradient(
+		to right,
+		transparent 0px,
+		var(--group-box-border-color) 16px,
+		var(--group-box-border-color) 100%
+	);
 }
 
-details > summary:hover .summary-actions, details > summary:focus .summary-actions, details > summary[data-hasfocus=true] .summary-actions {
-	display: flex;
-	flex: none;
-	gap: 0.5rem;
-	justify-content: flex-end;
+details > summary:hover .summary-overlap > .summary-actions,
+details > summary:focus .summary-overlap > .summary-actions,
+details > summary[data-hasfocus=true] .summary-overlap > .summary-actions {
+	visibility: visible;
 }
 
 details > summary .summary-actions button {
@@ -165,8 +184,6 @@ details.root-details .groups-list > * {
 	*/
 	/* display: flex; */
 	margin: 0px;
-	/* Currently causes action buttons to modify the size of groups, so staying out. */
-	/* flex: auto; */
 }
 
 /* Stylings of "group" detail boxes (aka inner group boxes) */
@@ -186,7 +203,8 @@ ul.tabs-list, ul.tabs-list-for-drag-and-drop {
 }
 
 ul.tabs-list > li, ul.tabs-list-for-drag-and-drop > li {
-	background-color: light-dark(var(--oc-gray-2), var(--oc-gray-7));	
+	--tab-entry-background-color: light-dark(var(--oc-gray-2), var(--oc-gray-7));
+	background-color: var(--tab-entry-background-color);
     border: 1px solid #ccc;
 	padding: 5px;
 	margin: -1px 0px 0px 0px;
@@ -194,19 +212,19 @@ ul.tabs-list > li, ul.tabs-list-for-drag-and-drop > li {
 }
 
 ul.tabs-list-for-drag-and-drop > li.drop-footer {
-	background-color: light-dark(var(--oc-gray-3), var(--oc-gray-8));
+	--tab-entry-background-color: light-dark(var(--oc-gray-3), var(--oc-gray-8));
 }
 
 ul.tabs-list > li:hover {
-	background-color: light-dark(var(--oc-gray-1), var(--oc-gray-6));
+	--tab-entry-background-color: light-dark(var(--oc-gray-1), var(--oc-gray-6));
 }
 
 ul.tabs-list > li[data-isselected=true] {
-	background-color: light-dark(var(--oc-indigo-3), var(--oc-indigo-7));
+	--tab-entry-background-color: light-dark(var(--oc-indigo-3), var(--oc-indigo-7));
 }
 
 ul.tabs-list > li[data-isselected=true]:hover {
-	background-color: light-dark(var(--oc-indigo-2), var(--oc-indigo-6));
+	--tab-entry-background-color: light-dark(var(--oc-indigo-2), var(--oc-indigo-6));
 }
 
 /* Stylings for the content of groups */
@@ -241,7 +259,7 @@ ul.tabs-list > li[data-isselected=true]:hover {
 }
 
 .group-contents > ul.tabs-list-for-drag-and-drop > li[data-dragtarget=true] {
-	background-color: light-dark(var(--oc-indigo-2), var(--oc-indigo-6));
+	--tab-entry-background-color: light-dark(var(--oc-indigo-2), var(--oc-indigo-6));
 }
 
 
@@ -262,26 +280,44 @@ ul.tabs-list > li[data-isselected=true]:hover {
 	pointer-events: none;
 }
 
-.tab-entry > .title {
-	display: block; 
-	min-width: 0;
-	min-height: 1lh;
-	flex: 1 1 auto;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+.tab-entry > .overlap {
+	flex: auto;
 	pointer-events: none;
 }
 
-.tab-entry .actions {
-	display: none;
+.tab-entry > .overlap > .title {
+	display: block; 
+	min-width: 0;
+	max-width: 100%;
+	min-height: 1lh;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	justify-self: start;
 }
 
-.tab-entry:hover .actions, .tab-entry:focus .actions, .tab-entry[data-hasfocus=true] .actions {
-	display: inline-flex;
-	flex: none;
+.tab-entry > .overlap > .actions {
+	display: flex;
 	gap: 0.5rem;
-	justify-content: flex-end;
+	visibility: hidden;
+	width: fit-content;
+	height: 100%;
+	padding-left: 32px;
+	justify-self: end;
+	pointer-events: all;
+	background-color: var(--tab-entry-background-color);
+	background: linear-gradient(
+		to right,
+		transparent 0px,
+		var(--tab-entry-background-color) 16px,
+		var(--tab-entry-background-color) 100%
+	);
+}
+
+.tab-entry:hover > .overlap > .actions,
+.tab-entry:focus > .overlap > .actions,
+.tab-entry[data-hasfocus=true] > .overlap > .actions {
+	visibility: visible;
 }
 
 
@@ -314,8 +350,6 @@ button.action-button {
 	right: 0px;
 	bottom: 0px;
 	left: 0px;
-	/* background-color: gray; */
-	/* opacity: 25%; */
 	background-color: var(--group-details-content-bg-color);
 	opacity: 75%;
 	z-index: 20;

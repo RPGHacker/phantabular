@@ -52,8 +52,10 @@ function createGroup(container, className, id, displayName, actionsContent, inse
 					</span>
 					<span class="summary-dynamics">
 						<span class="summary-badge has-tooltip" data-tooltiptype="badge">0</span>
-						<span class="summary-title">${displayName}</span>
-						<span class="summary-actions">${actionsContent}</span>
+						<span class="summary-overlap overlapping-content">
+							<span class="summary-title">${displayName}</span>
+							<span class="summary-actions">${actionsContent}</span>
+						</span>
 					</span>
 				</span>
 			</summary>
@@ -141,7 +143,9 @@ function initializeGroupAsTabListContainer(group, type) {
 			tabsList.insertAdjacentHTML("beforeend", `
 				<li class="tab-entry colorize-gray">
 					<span class="fav-icon-list-item" data-validimage="false"><img src="undefined" class="fav-icon-small"/></span>
-					<span class="title"></span>
+					<span class="overlap overlapping-content">
+						<span class="title"></span>
+					</span>
 				</li>
 			`);
 		}
@@ -181,6 +185,8 @@ function createGroupsList(container, groupId) {
 	container.insertAdjacentHTML("beforeend", `
 		<div class="groups-list">
 		</div>
+		<div class="groups-list-for-drag-and-drop">
+		</div>
 	`);
 	
 	const groupsList = container.querySelector(".groups-list");
@@ -201,6 +207,7 @@ function initializeInnerGroup(outerGroup, groupData, idPrefix, getGroupPropertie
 
 	const innerGroup = createGroup(outerGroup, "group-details group-box colorize-" + groupProperties.color, idPrefix + "-" + idSuffix, groupProperties.name, groupProperties.actions, insertLocation);
 	innerGroup.setAttribute("data-" + idPrefix + "id", idSuffix);
+	innerGroup.setAttribute("draggable", groupProperties.draggable);
 	
 	initializeGroupAsTabListContainer(innerGroup, idPrefix);
 	
@@ -525,6 +532,7 @@ function getCategoryProperties(category) {
 		name: category.name,
 		id: category.id,
 		color: category.color,
+		draggable: true,
 		actions: `
 			<button data-action="edit-category-settings" class="colorize-button image-button action-button"><img src="../icons/iconoir/edits/settings-solid-fixed-light.svg" class="only-in-light-theme" style="height: 32px;" /><img src="../icons/iconoir/edits/settings-solid-fixed-dark.svg" class="only-in-dark-theme" style="height: 32px;" /></button>
 			<button data-action="delete-category" class="colorize-button image-button action-button"><img src="../icons/iconoir/edits/trash-solid.svg" style="height: 32px;" /></button>
@@ -549,6 +557,7 @@ function getSessionProperties(session) {
 		name: new Date(session.creationdate).toLocaleDateString(undefined, dateOptions),
 		id: session.creationdate,
 		color: "gray",
+		draggable: false,
 		actions: `
 			<button data-action="delete-session" class="colorize-button image-button action-button"><img src="../icons/iconoir/edits/trash-solid.svg" style="height: 32px;" /></button>
 		`
@@ -1013,7 +1022,9 @@ function createTabsListForDragAndDrop(group, tabsList) {
 	tabsListForDragAndDrop.insertAdjacentHTML("beforeend", `
 		<li class="tab-entry colorize-gray drop-footer" data-tabid="-1" tabindex="0" data-focuscount="0" data-hasfocus="false" data-droptargetindex="${dropTargetIndex}">
 			<span class="fav-icon-list-item" data-validimage="false"><img src="" class="fav-icon-small"/></span>
-			<span class="title"><center>&#x2191;</center></span>
+			<span class="overlap overlapping-content">
+				<span class="title"><center>&#x2191;</center></span>
+			</span>
 		</li>
 	`);
 }
@@ -1094,11 +1105,13 @@ async function populateTabListGroup(group) {
 					tabsList.insertAdjacentHTML("beforeend", `
 						<li class="tab-entry has-tooltip colorize-gray" data-tabid="${tab.id}" tabindex="0" data-focuscount="0" data-hasfocus="false" data-droptargetindex="${dropTargetIndex}" draggable="true">
 							<span class="fav-icon-list-item" data-validimage="${tab.metadata.favIconUrl !== undefined}"><img src="${tab.metadata.favIconUrl}" class="fav-icon-small"/></span>
-							<span class="title">${escapeHTML(tab.title)}</span>
-							<span class="actions">
-								<button class="colorize-button image-button action-button" data-action="open-tab"><img src="../icons/iconoir/edits/open-in-browser-dark.svg" class="only-in-dark-theme" style="height: 24px;" /><img src="../icons/iconoir/edits/open-in-browser-light.svg" class="only-in-light-theme" style="height: 24px;" /></button>
-								<button class="colorize-button image-button action-button" data-action="delete-tab"><img src="../icons/iconoir/edits/trash-solid.svg" style="height: 24px;"/></button>
-								<button class="colorize-button image-button action-button" data-action="remove-tab"><img src="../icons/iconoir/edits/xmark.svg" style="height: 24px; ${canRemove ? "" : "display: none;"}"/></button>
+							<span class="overlap overlapping-content">
+								<span class="title">${escapeHTML(tab.title)}</span>
+								<span class="actions">
+									<button class="colorize-button image-button action-button" data-action="open-tab"><img src="../icons/iconoir/edits/open-in-browser-dark.svg" class="only-in-dark-theme" style="height: 24px;" /><img src="../icons/iconoir/edits/open-in-browser-light.svg" class="only-in-light-theme" style="height: 24px;" /></button>
+									<button class="colorize-button image-button action-button" data-action="delete-tab"><img src="../icons/iconoir/edits/trash-solid.svg" style="height: 24px;"/></button>
+									<button class="colorize-button image-button action-button" data-action="remove-tab"><img src="../icons/iconoir/edits/xmark.svg" style="height: 24px; ${canRemove ? "" : "display: none;"}"/></button>
+								</span>
 							</span>
 						</li>
 					`);
@@ -1116,6 +1129,28 @@ async function populateTabListGroup(group) {
 			});
 		});
 	}
+}
+
+function createGroupsListForDragAndDrop(group, groupsList) {
+	const groupsListForDragAndDrop = group.querySelector(".grous-list-for-drag-and-drop");
+	groupsListForDragAndDrop.textContent = "";
+	
+	const groupsListChildren = groupsList.querySelectorAll("details");
+	
+	let dropTargetIndex = 0;
+	for (const groupsListChild of groupsListChildren) {
+		groupsListForDragAndDrop.appendChild(groupsListChild.cloneNode(true));
+		++dropTargetIndex;
+	}
+	
+	groupsListForDragAndDrop.insertAdjacentHTML("beforeend", `
+		<details class="group-details colorize-gray drop-footer" data-groupid="-1" tabindex="0" data-focuscount="0" data-hasfocus="false" data-droptargetindex="${dropTargetIndex}">
+			<span class="fav-icon-list-item" data-validimage="false"><img src="" class="fav-icon-small"/></span>
+			<span class="overlap overlapping-content">
+				<span class="title"><center>&#x2191;</center></span>
+			</span>
+		</details>
+	`);
 }
 
 async function populateGroupListGroup(group) {

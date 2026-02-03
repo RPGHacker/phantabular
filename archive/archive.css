@@ -166,7 +166,8 @@ details > summary::-webkit-details-marker {
 
 
 /* Stylings of "root" detail boxes (aka outer group boxes) */
-details.root-details .groups-list {
+details.root-details .groups-list,
+details.root-details .groups-list-for-drag-and-drop {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: self-start;
@@ -175,7 +176,8 @@ details.root-details .groups-list {
 	/* justify-content: space-between; */
 }
 
-details.root-details .groups-list > * {
+details.root-details .groups-list > *,
+details.root-details .groups-list-for-drag-and-drop > * {
 	/*
 		This will make groups only take up as much horizontal space as
 		required to make the entire title bar fit, but curiously it will
@@ -184,6 +186,28 @@ details.root-details .groups-list > * {
 	*/
 	/* display: flex; */
 	margin: 0px;
+}
+
+
+details.root-details .group-contents > .groups-list-for-drag-and-drop {
+	display: none;
+}
+
+details.root-details .group-contents[data-dragparent=true] > .groups-list {
+	display: none;
+}
+
+details.root-details .group-contents[data-dragparent=true] > .groups-list-for-drag-and-drop {
+	display: flex;
+}
+
+details.root-details .group-contents > .groups-list-for-drag-and-drop > details * {
+	pointer-events: none;
+}
+
+details.root-details .group-contents > .groups-list-for-drag-and-drop > details[data-dragtarget=true] > summary {
+	--group-details-summary-bg-color: var(--group-details-summary-hover-bg-color);
+	box-shadow: inset 0px 0px 0px 5px var(--filtered-count-badge-background-color);
 }
 
 /* Stylings of "group" detail boxes (aka inner group boxes) */

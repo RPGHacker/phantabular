@@ -14,6 +14,7 @@ const windowIdRemaps = {};
 
 let currentDragParent = null;
 let currentlyDraggedElements = [];
+let currentlyDraggedGroupElement = null;
 
 let currentTabSelectionParent = null;
 let currentlySelectedTabElements = [];
@@ -1132,23 +1133,46 @@ async function populateTabListGroup(group) {
 }
 
 function createGroupsListForDragAndDrop(group, groupsList) {
-	const groupsListForDragAndDrop = group.querySelector(".grous-list-for-drag-and-drop");
+	const groupsListForDragAndDrop = group.querySelector(".groups-list-for-drag-and-drop");
 	groupsListForDragAndDrop.textContent = "";
 	
 	const groupsListChildren = groupsList.querySelectorAll("details");
 	
 	let dropTargetIndex = 0;
 	for (const groupsListChild of groupsListChildren) {
-		groupsListForDragAndDrop.appendChild(groupsListChild.cloneNode(true));
+		const clonedNode = groupsListChild.cloneNode(true);
+		clonedNode.setAttribute("id", clonedNode.getAttribute("id") + "-for-drag-and-drop");
+		
+		// Should prevent the respective group from trying to populate automatically or show a spinner.
+		if (clonedNode.hasAttribute("data-istablist")) {
+			clonedNode.removeAttribute("data-istablist");
+		}
+		if (clonedNode.hasAttribute("data-isgrouplist")) {
+			clonedNode.removeAttribute("data-isgrouplist");
+		}
+		
+		const spinnerElement = clonedNode.querySelector(":scope > .group-content-setup-root > .spinner-root");
+		updateSpinnerVisibility(spinnerElement, parseInt(spinnerElement.dataset.activequerycount));
+		
+		groupsListForDragAndDrop.appendChild(clonedNode);
 		++dropTargetIndex;
 	}
 	
 	groupsListForDragAndDrop.insertAdjacentHTML("beforeend", `
-		<details class="group-details colorize-gray drop-footer" data-groupid="-1" tabindex="0" data-focuscount="0" data-hasfocus="false" data-droptargetindex="${dropTargetIndex}">
-			<span class="fav-icon-list-item" data-validimage="false"><img src="" class="fav-icon-small"/></span>
-			<span class="overlap overlapping-content">
-				<span class="title"><center>&#x2191;</center></span>
-			</span>
+		<details class="group-details group-box colorize-gray drop-footer" data-groupid="-1" tabindex="0" data-focuscount="0" data-hasfocus="false" data-droptargetindex="${dropTargetIndex}">
+			<summary data-hasfocus="false">
+				<span class="summary-contents">
+					<span class="summary-dynamics">
+						<span class="summary-overlap overlapping-content">
+							<span class="summary-title">&#x2190;</span>
+						</span>
+					</span>
+				</span>
+			</summary>
+			<div class="group-content-setup-root overlapping-content">
+				<div class="group-contents">
+				</div>
+			</div>
 		</details>
 	`);
 }
@@ -1222,8 +1246,11 @@ async function populateGroupListGroup(group) {
 				innerGroupsList.textContent = "";
 				flushMutationsQueue(group);
 				
+				let dropTargetIndex = 0;
 				for (const innerGroupData of innerGroupDatas) {
 					const innerGroup = initializeInnerGroup(innerGroupsList, innerGroupData, idPrefix, getGroupPropertiesFunction);
+					innerGroup.dataset.droptargetindex = dropTargetIndex;
+					innerGroup.dataset.sortkey = JSON.stringify(innerGroupData.sortkey);
 					
 					const queryCountArgument = parseInt(innerGroup.dataset[queryCountIdAccessor]);
 					initializeEntryCountLiveQuery(innerGroup, innerGroupFunctions, queryCountArgument);
@@ -1231,7 +1258,11 @@ async function populateGroupListGroup(group) {
 					if (openGroups[innerGroup.id]) {
 						innerGroup.open = true;
 					}
+					
+					++dropTargetIndex;
 				}
+				
+				createGroupsListForDragAndDrop(group, innerGroupsList);
 			});
 		});
 	}
@@ -1516,18 +1547,26 @@ async function removeTabFromGroup(tabId, groupElement) {
 }
 
 
-document.addEventListener("dragenter", (e) => {
-	if (currentlyDraggedElements.length === 0 || currentlyDraggedElements.includes(e.target)) {
-		return;
-	}
-	
+document.addEventListener("dragenter", (e) => {	
 	if (e.target.dataset.droptargetindex !== undefined) {
-		const tabsListForDragAndDrop = e.target.closest(".tabs-list-for-drag-and-drop");
-		if (tabsListForDragAndDrop !== null) {
-			for (const currentlyDraggedElement of currentlyDraggedElements) {
-				tabsListForDragAndDrop.insertBefore(currentlyDraggedElement, e.target);
+		if (currentlyDraggedElements.length !== 0) {
+			const tabsListForDragAndDrop = e.target.closest(".tabs-list-for-drag-and-drop");
+			if (tabsListForDragAndDrop !== null && !currentlyDraggedElements.includes(e.target)) {			
+				for (const currentlyDraggedElement of currentlyDraggedElements) {
+					tabsListForDragAndDrop.insertBefore(currentlyDraggedElement, e.target);
+				}
 			}
 		}
+		
+		// Handled in dragover instead, so that we can test which side of the group we overlap.
+		/*
+		if (currentlyDraggedGroupElement !== null) {
+			const groupsListForDragAndDrop = e.target.closest(".groups-list-for-drag-and-drop");
+			if (groupsListForDragAndDrop !== null) {
+				groupsListForDragAndDrop.insertBefore(currentlyDraggedGroupElement, e.target);
+			}
+		}
+		*/
 	}
 });
 
@@ -1539,19 +1578,22 @@ document.addEventListener("dragstart", (e) => {
 		currentDragParent = container;
 	}
 	
+	const selectedTabElements = currentlySelectedTabElements.map((tabElement) => {return tabElement;});
+	
+	deselectAllSelectedTabElements();
+	currentlyDraggedGroupElement = null;
+	
 	if (e.target.dataset.droptargetindex !== undefined) {
-		const tabsListForDragAndDrop = container.querySelector(".tabs-list-for-drag-and-drop");
+		const tabsListForDragAndDrop = container.querySelector(":scope > .tabs-list-for-drag-and-drop");
 		if (tabsListForDragAndDrop !== null) {
 			const elementsToDrag = [];
-			if (currentlySelectedTabElements.includes(e.target)) {
-				for (const currentlySelectedTabElement of currentlySelectedTabElements) {
+			if (selectedTabElements.includes(e.target)) {
+				for (const currentlySelectedTabElement of selectedTabElements) {
 					elementsToDrag.push(currentlySelectedTabElement);
 				}
 			} else {
 				elementsToDrag.push(e.target);
 			}
-			
-			deselectAllSelectedTabElements();
 			
 			elementsToDrag.sort(compareElementSortKeys);
 			
@@ -1561,6 +1603,55 @@ document.addEventListener("dragstart", (e) => {
 				currentlyDraggedElement.dataset.dragtarget = true;
 				currentlyDraggedElements.push(currentlyDraggedElement);
 			}
+		}
+		
+		const groupsListForDragAndDrop = container.querySelector(":scope > .groups-list-for-drag-and-drop");
+		if (groupsListForDragAndDrop !== null) {
+			// Match the "open" states between the two groups so that sizes don't change when we start a drag & drop.
+			// This currently assumes both lists are in the same order, which SHOULD be true as long as we don't already
+			// have a bug elsewhere.
+			const groupsList = container.querySelector(":scope > .groups-list");
+			
+			const groupsListChildren = groupsList.querySelectorAll("details");
+			const groupsListForDragAndDropChildren = groupsListForDragAndDrop.querySelectorAll("details");
+			
+			for (let childIdx = 0; childIdx < groupsListChildren.length; ++childIdx) {
+				const sourceGroup = groupsListChildren[childIdx];
+				const targetGroup = groupsListForDragAndDropChildren[childIdx];
+				
+				// Prevent the target group from starting queries - instead fill it with dummy elements.
+				if (sourceGroup.open) {
+					targetGroup.dataset.version = sourceGroup.dataset.version;
+					targetGroup.dataset.queriedversion = sourceGroup.dataset.version;
+					targetGroup.dataset.receivedversion = sourceGroup.dataset.version;
+					
+					if (targetGroup.dataset.receivedversion === targetGroup.dataset.queriedversion) {
+						const sourceTabsList = sourceGroup.querySelector(".tabs-list");
+						const targetTabsList = targetGroup.querySelector(".tabs-list");
+						
+						const sourceTabsListChildren = sourceTabsList.children;
+						
+						targetTabsList.textContent = "";
+						
+						for (const sourceTab of sourceTabsListChildren) {
+							targetTabsList.insertAdjacentHTML("beforeend", `
+								<li class="tab-entry colorize-gray">
+									<span class="fav-icon-list-item" data-validimage="false"><img src="undefined" class="fav-icon-small"/></span>
+									<span class="overlap overlapping-content">
+										<span class="title"></span>
+									</span>
+								</li>
+							`);
+						}
+					}
+				}
+				
+				targetGroup.open = sourceGroup.open;
+			}
+			
+			const currentlyDraggedElement = groupsListForDragAndDrop.querySelector(`[data-droptargetindex="${e.target.dataset.droptargetindex}"]`);
+			currentlyDraggedElement.dataset.dragtarget = true;
+			currentlyDraggedGroupElement = currentlyDraggedElement;
 		}
 	}
 });
@@ -1574,55 +1665,123 @@ async function waitUntilGroupUpToDate(group) {
 document.addEventListener("dragend", async (e) => {	
 	if (currentDragParent !== null) {		
 		if (e.dataTransfer.dropEffect === "none") {
-			const tabsList = currentDragParent.querySelector(".tabs-list");
-			createTabsListForDragAndDrop(currentDragParent, tabsList);
+			const tabsList = currentDragParent.querySelector(":scope > .tabs-list");
+			if (tabsList !== null) {
+				createTabsListForDragAndDrop(currentDragParent, tabsList);
+			}
+			
+			const groupsList = currentDragParent.querySelector(":scope > .groups-list");
+			if (groupsList !== null) {
+				createGroupsListForDragAndDrop(currentDragParent, groupsList);
+			}
 		} else if (e.dataTransfer.dropEffect == "move") {
-			if (currentlyDraggedElements.length !== 0) {
-				const tabsList = currentDragParent.querySelector(".tabs-list");
-				const tabsListForDragAndDrop = currentDragParent.querySelector(".tabs-list-for-drag-and-drop");
-	
-				const tabsListChildren = tabsList.querySelectorAll("li");
-				const tabsListForDragAndDropChildren = tabsListForDragAndDrop.querySelectorAll("li");
-				
-				// Iterate our tab lists once from the front and once from the back and check for all
-				// elements that didn't move (i.e. whose tab ID didn't change). That leaves us with a
-				// range within which elements were actually reordered. Only this smaller range needs
-				// to be updated in the database, everything else can remain untouched, avoiding
-				// unnecessary database write operations.
-				let firstNonMatchingIndex = 0;
-				let lastNonMatchingIndex = tabsListChildren.length - 1;
-				
-				for (let index = firstNonMatchingIndex; index <= lastNonMatchingIndex; ++index) {
-					firstNonMatchingIndex = index;
-					if (tabsListChildren[index].dataset.tabid !== tabsListForDragAndDropChildren[index].dataset.tabid) {
-						break;
-					}
-				}
-				
-				for (let index = lastNonMatchingIndex; index >= firstNonMatchingIndex; --index) {
-					lastNonMatchingIndex = index;
-					if (tabsListChildren[index].dataset.tabid !== tabsListForDragAndDropChildren[index].dataset.tabid) {
-						break;
-					}
-				}
-				
-				const entriesToUpdate = [];
-				
-				for (let index = firstNonMatchingIndex; index <= lastNonMatchingIndex; ++index) {
-					entriesToUpdate.push({
-						key: parseInt(tabsListForDragAndDropChildren[index].dataset.tabid),
-						changes: {
-							sortkey: JSON.parse(tabsListChildren[index].dataset.sortkey)
+			const tabsList = currentDragParent.querySelector(":scope > .tabs-list");
+			if (tabsList !== null) {
+				if (currentlyDraggedElements.length !== 0) {
+					const tabsListForDragAndDrop = currentDragParent.querySelector(":scope > .tabs-list-for-drag-and-drop");
+		
+					const tabsListChildren = tabsList.querySelectorAll("li");
+					const tabsListForDragAndDropChildren = tabsListForDragAndDrop.querySelectorAll("li");
+					
+					// Iterate our tab lists once from the front and once from the back and check for all
+					// elements that didn't move (i.e. whose tab ID didn't change). That leaves us with a
+					// range within which elements were actually reordered. Only this smaller range needs
+					// to be updated in the database, everything else can remain untouched, avoiding
+					// unnecessary database write operations.
+					let firstNonMatchingIndex = 0;
+					let lastNonMatchingIndex = tabsListChildren.length - 1;
+					
+					for (let index = firstNonMatchingIndex; index <= lastNonMatchingIndex; ++index) {
+						firstNonMatchingIndex = index;
+						if (tabsListChildren[index].dataset.tabid !== tabsListForDragAndDropChildren[index].dataset.tabid) {
+							break;
 						}
-					});
+					}
+					
+					for (let index = lastNonMatchingIndex; index >= firstNonMatchingIndex; --index) {
+						lastNonMatchingIndex = index;
+						if (tabsListChildren[index].dataset.tabid !== tabsListForDragAndDropChildren[index].dataset.tabid) {
+							break;
+						}
+					}
+					
+					const entriesToUpdate = [];
+					
+					for (let index = firstNonMatchingIndex; index <= lastNonMatchingIndex; ++index) {
+						entriesToUpdate.push({
+							key: parseInt(tabsListForDragAndDropChildren[index].dataset.tabid),
+							changes: {
+								sortkey: JSON.parse(tabsListChildren[index].dataset.sortkey)
+							}
+						});
+					}
+					
+					await db.tabs.bulkUpdate(entriesToUpdate);
+					
+					// This await keeps the "for drag & drop" list visible until our changes have been
+					// commited to the database and then read back to us. This effectively removes any
+					// visible popping of list elements while the update is being processed.
+					await waitUntilGroupUpToDate(currentDragParent.closest("details"));
 				}
-				
-				await db.tabs.bulkUpdate(entriesToUpdate);
-				
-				// This await keeps the "for drag & drop" list visible until our changes have been
-				// commited to the database and then read back to us. This effectively removes any
-				// visible popping of list elements while the update is being processed.
-				await waitUntilGroupUpToDate(currentDragParent.closest("details"));
+			}
+			
+			const groupsList = currentDragParent.querySelector(":scope > .groups-list");
+			if (groupsList !== null) {
+				// This is pretty much the same logic as above, just for groups instead of tabs.
+				if (currentlyDraggedGroupElement !== null) {
+					const groupsListForDragAndDrop = currentDragParent.querySelector(":scope > .groups-list-for-drag-and-drop");
+		
+					const groupsListChildren = groupsList.querySelectorAll("details");
+					const groupsListForDragAndDropChildren = groupsListForDragAndDrop.querySelectorAll("details");
+					
+					let idAccessor = undefined;
+					let dbAccessor = undefined;
+					
+					const containingGroup = currentDragParent.closest("details");
+					
+					if (containingGroup.dataset.iscategorieslist == "true") {
+						idAccessor = "categoryid";
+						dbAccessor = "categories";
+					} else if (containingGroup.dataset.issessionslist == "true") {
+						idAccessor = "sessionid";
+						dbAccessor = "sessions";
+					}
+					
+					let firstNonMatchingIndex = 0;
+					let lastNonMatchingIndex = groupsListChildren.length - 1;
+					
+					for (let index = firstNonMatchingIndex; index <= lastNonMatchingIndex; ++index) {
+						firstNonMatchingIndex = index;
+						if (groupsListChildren[index].dataset[idAccessor] !== groupsListForDragAndDropChildren[index].dataset[idAccessor]) {
+							break;
+						}
+					}
+					
+					for (let index = lastNonMatchingIndex; index >= firstNonMatchingIndex; --index) {
+						lastNonMatchingIndex = index;
+						if (groupsListChildren[index].dataset[idAccessor] !== groupsListForDragAndDropChildren[index].dataset[idAccessor]) {
+							break;
+						}
+					}
+					
+					const entriesToUpdate = [];
+					
+					for (let index = firstNonMatchingIndex; index <= lastNonMatchingIndex; ++index) {
+						entriesToUpdate.push({
+							key: parseInt(groupsListForDragAndDropChildren[index].dataset[idAccessor]),
+							changes: {
+								sortkey: JSON.parse(groupsListChildren[index].dataset.sortkey)
+							}
+						});
+					}
+					
+					await db[dbAccessor].bulkUpdate(entriesToUpdate);
+					
+					// This await keeps the "for drag & drop" list visible until our changes have been
+					// commited to the database and then read back to us. This effectively removes any
+					// visible popping of list elements while the update is being processed.
+					await waitUntilGroupUpToDate(currentDragParent.closest("details"));
+				}
 			}
 		}
 		
@@ -1638,7 +1797,7 @@ document.addEventListener("dragend", async (e) => {
 });
 
 document.addEventListener("dragover", (e) => {
-	if (currentDragParent !== null) {	
+	if (currentDragParent !== null) {
 		const rect = currentDragParent.getBoundingClientRect();
 	
 		const inside =
@@ -1649,6 +1808,34 @@ document.addEventListener("dragover", (e) => {
 	
 		if (inside) {
 			e.preventDefault();
+			
+			if (e.target.dataset.droptargetindex !== undefined)
+			{
+				if (currentlyDraggedGroupElement !== null && e.target !== currentlyDraggedGroupElement) {
+					const groupsListForDragAndDrop = e.target.closest(".groups-list-for-drag-and-drop");
+					if (groupsListForDragAndDrop !== null) {
+						const targetRect = e.target.getBoundingClientRect();
+	
+						const overlapsTargetLeft =
+							e.clientX >= targetRect.left &&
+							e.clientX < targetRect.left + (targetRect.width * 0.5) &&
+							e.clientY >= targetRect.top &&
+							e.clientY <= targetRect.bottom;
+	
+						const overlapsTargetRight =
+							e.clientX >= targetRect.left + (targetRect.width * 0.5) &&
+							e.clientX <= targetRect.right &&
+							e.clientY >= targetRect.top &&
+							e.clientY <= targetRect.bottom;
+
+						if (overlapsTargetLeft) {
+							groupsListForDragAndDrop.insertBefore(currentlyDraggedGroupElement, e.target);
+						} else if (overlapsTargetRight && e.target.dataset.groupid !== "-1") {
+							groupsListForDragAndDrop.insertBefore(currentlyDraggedGroupElement, e.target.nextSibling);
+						}
+					}
+				}
+			}
 		}
 	}
 });
@@ -1783,6 +1970,8 @@ document.addEventListener("click", (e) => {
 				currentlySelectedTabElements.push(e.target);
 			}
 		}
+	} else {
+		deselectAllSelectedTabElements();
 	}
 });
 

@@ -535,8 +535,8 @@ function getCategoryProperties(category) {
 		color: category.color,
 		draggable: true,
 		actions: `
-			<button data-action="edit-category-settings" class="colorize-button image-button action-button"><img src="../icons/iconoir/edits/settings-solid-fixed-light.svg" class="only-in-light-theme" style="height: 32px;" /><img src="../icons/iconoir/edits/settings-solid-fixed-dark.svg" class="only-in-dark-theme" style="height: 32px;" /></button>
-			<button data-action="delete-category" class="colorize-button image-button action-button"><img src="../icons/iconoir/edits/trash-solid.svg" style="height: 32px;" /></button>
+			<button data-action="edit-category-settings" data-tooltiptype="button" class="colorize-button image-button action-button has-tooltip"><img src="../icons/iconoir/edits/settings-solid-fixed-light.svg" class="only-in-light-theme" style="height: 32px;" /><img src="../icons/iconoir/edits/settings-solid-fixed-dark.svg" class="only-in-dark-theme" style="height: 32px;" /></button>
+			<button data-action="delete-category" data-tooltiptype="button" class="colorize-button image-button action-button has-tooltip"><img src="../icons/iconoir/edits/trash-solid.svg" style="height: 32px;" /></button>
 		`
 	}
 	
@@ -560,7 +560,7 @@ function getSessionProperties(session) {
 		color: "gray",
 		draggable: false,
 		actions: `
-			<button data-action="delete-session" class="colorize-button image-button action-button"><img src="../icons/iconoir/edits/trash-solid.svg" style="height: 32px;" /></button>
+			<button data-action="delete-session" data-tooltiptype="button" class="colorize-button image-button action-button has-tooltip"><img src="../icons/iconoir/edits/trash-solid.svg" style="height: 32px;" /></button>
 		`
 	}
 	
@@ -576,7 +576,7 @@ initializeEntryCountLiveQuery(rootGroups.sessions, groupFunctionLookup.sessions,
 initializeEntryCountLiveQuery(rootGroups.categories, groupFunctionLookup.categories, undefined);
 
 rootGroups.categories.querySelector(".group-contents").insertAdjacentHTML("afterbegin", `
-	<button data-action="create-category" class="colorize-button">&#xff0b;</button>
+	<button data-action="create-category" data-tooltiptype="button" class="colorize-button has-tooltip">&#xff0b;</button>
 `);
 
 
@@ -672,6 +672,47 @@ function updateShowTooltip(mousePos, mouseTarget) {
 				}
 				
 				tooltipLayer.insertAdjacentHTML("afterbegin", tooltipText);
+				break;
+				
+			case "button":
+				switch (tooltipElement.dataset.action)
+				{
+					case "edit-category-settings":
+						tooltipLayer.insertAdjacentHTML("afterbegin", "Edit category settings");
+						break;
+						
+					case "delete-category":
+						tooltipLayer.insertAdjacentHTML("afterbegin", "Delete category");
+						break;
+						
+					case "delete-session":
+						tooltipLayer.insertAdjacentHTML("afterbegin", "Delete session");
+						break;
+						
+					case "create-category":
+						tooltipLayer.insertAdjacentHTML("afterbegin", "Create new category");
+						break;
+						
+					case "copy-tab-url":
+						tooltipLayer.insertAdjacentHTML("afterbegin", "Copy URL");
+						break;
+						
+					case "open-tab":
+						tooltipLayer.insertAdjacentHTML("afterbegin", "Open tab");
+						break;
+						
+					case "delete-tab":
+						tooltipLayer.insertAdjacentHTML("afterbegin", "Delete tab");
+						break;
+						
+					case "remove-tab":
+						tooltipLayer.insertAdjacentHTML("afterbegin", "Remove tab from this group");
+						break;
+						
+					default:
+						tooltipLayer.textContent = tooltipElement.dataset.action;
+						break;
+				}
 				break;
 				
 			default:
@@ -1109,9 +1150,10 @@ async function populateTabListGroup(group) {
 							<span class="overlap overlapping-content">
 								<span class="title">${escapeHTML(tab.title)}</span>
 								<span class="actions">
-									<button class="colorize-button image-button action-button" data-action="open-tab"><img src="../icons/iconoir/edits/open-in-browser-dark.svg" class="only-in-dark-theme" style="height: 24px;" /><img src="../icons/iconoir/edits/open-in-browser-light.svg" class="only-in-light-theme" style="height: 24px;" /></button>
-									<button class="colorize-button image-button action-button" data-action="delete-tab"><img src="../icons/iconoir/edits/trash-solid.svg" style="height: 24px;"/></button>
-									<button class="colorize-button image-button action-button" data-action="remove-tab"><img src="../icons/iconoir/edits/xmark.svg" style="height: 24px; ${canRemove ? "" : "display: none;"}"/></button>
+									<button class="colorize-button has-tooltip image-button action-button" data-tooltiptype="button" data-action="copy-tab-url"><img src="../icons/iconoir/edits/copy-dark.svg" class="only-in-dark-theme" style="height: 24px;" /><img src="../icons/iconoir/edits/copy-light.svg" class="only-in-light-theme" style="height: 24px;" /></button>
+									<button class="colorize-button has-tooltip image-button action-button" data-tooltiptype="button" data-action="open-tab"><img src="../icons/iconoir/edits/open-in-browser-dark.svg" class="only-in-dark-theme" style="height: 24px;" /><img src="../icons/iconoir/edits/open-in-browser-light.svg" class="only-in-light-theme" style="height: 24px;" /></button>
+									<button class="colorize-button has-tooltip image-button action-button" data-tooltiptype="button" data-action="delete-tab"><img src="../icons/iconoir/edits/trash-solid.svg" style="height: 24px;"/></button>
+									<button class="colorize-button has-tooltip image-button action-button" data-tooltiptype="button" data-action="remove-tab"><img src="../icons/iconoir/edits/xmark.svg" style="height: 24px; ${canRemove ? "" : "display: none;"}"/></button>
 								</span>
 							</span>
 						</li>
@@ -2038,7 +2080,7 @@ document.addEventListener("click", (e) => {
 		case "add-category-regex-capture-group":
 			e.target.closest("li").insertAdjacentHTML("beforebegin", `
 				<li>
-					<input class="inline-text"></input> <button type="button" data-action="delete-category-regex-capture-group" class="colorize-button image-button">&#xff0d;</button>
+					<input class="inline-text"></input> <button type="button" data-action="delete-category-regex-capture-group" data-tooltiptype="button" class="colorize-button image-button has-tooltip">&#xff0d;</button>
 				</li>
 			`);
 			break;
@@ -2054,6 +2096,15 @@ document.addEventListener("click", (e) => {
 		case "category-rule-whats-this":
 			ruleExplanationDialog.showModal();
 			break;
+			
+		case "copy-tab-url":
+		{
+			const tabId = parseInt(e.target.closest("[data-tabid]").dataset.tabid);	
+			db.tabs.get({id: tabId}).then((tab) => {
+				navigator.clipboard.writeText(tab.url);
+			});
+			break;
+		}
 			
 		case "open-tab":
 			openTabForElement(e.target.closest("[data-tabid]"));

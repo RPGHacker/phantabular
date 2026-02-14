@@ -217,6 +217,8 @@ async function requestPreviewImageCapturePermissions() {
 browser.permissions.onAdded.addListener(updatePreviewImageCapturePermissions);
 browser.permissions.onRemoved.addListener(updatePreviewImageCapturePermissions);
 
+updatePreviewImageCapturePermissions();
+
 
 document.addEventListener("input", async (e) => {
 	let updatePreviewImage = false;

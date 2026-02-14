@@ -160,7 +160,7 @@
 				</p>
 				<div>
 					<input type="checkbox" id="categoryDeletionAlsoDeletesTabs"/>
-					<label for="categoryDeletionAlsoDeletesTabs">Delete all tabs inside this category.</label>
+					<label for="categoryDeletionAlsoDeletesTabs">Delete all tabs inside this category</label>
 				</div>
 				<p>
 					<center><label>WARNING!<br />Checking this will also delete the tabs from any other categories or sessions that contain them!</label></center>
@@ -179,7 +179,7 @@
 				</p>
 				<div>
 					<input type="checkbox" id="sessionDeletionAlsoDeletesTabs"/>
-					<label for="sessionDeletionAlsoDeletesTabs">Delete all tabs inside this session.</label>
+					<label for="sessionDeletionAlsoDeletesTabs">Delete all tabs inside this session</label>
 				</div>
 				<p>
 					<center><label>WARNING!<br />Checking this will also delete the tabs from any other categories or sessions that contain them!</label></center>
@@ -213,7 +213,83 @@
 				</p>
 				<div>
 					<button type="submit" data-action="confirm-tab-deletion" class="colorize-button colorize-red">Confirm Deletion</button>
-					<button type="reset" data-action="cancel-tab-deletion"  class="colorize-button" style="float: right;">Cancel</button>
+					<button type="reset" data-action="cancel-tab-deletion" class="colorize-button" style="float: right;">Cancel</button>
+				</div>
+			</form>
+		</dialog>
+		
+		<dialog id="convertToBookmarksDialog">
+			<form method="dialog">
+				<p>
+					You are about to convert <span id="convertToBookmarksTabCount">0</span> tab(s) to bookmarks.
+				</p>
+				
+				<p>
+					Parent directory:				
+					<select id="convertToBookmarksTargetDirectory" class="inline-option">
+					</select>
+				</p>
+				
+				<input type="checkbox" id="bookmarkConversionCreateDirectory"/>
+				<label for="bookmarkConversionCreateDirectory">Create additional directory</label>
+				
+				<input type="text" id="bookmarkConversionCreateDirectoryName" placeholder="Directory name..." disabled>
+				
+				<input type="checkbox" id="bookmarkConversionAlsoDeletesTabs"/>
+				<label for="bookmarkConversionAlsoDeletesTabs">Delete archived tabs after conversion to bookmarks</label>
+				
+				<p>
+					<center><label>WARNING!<br />Deleting tabs will also delete them from any other categories or sessions that contain them!</label></center>
+				</p>
+				<div>
+					<button type="submit" data-action="confirm-bookmark-conversion" class="colorize-button colorize-red">Confirm</button>
+					<button type="reset" data-action="cancel-bookmark-conversion" class="colorize-button" style="float: right;">Cancel</button>
+				</div>
+			</form>
+		</dialog>
+		
+		<dialog id="convertToBookmarksNoSelectionDialog">
+			<form method="dialog">
+				<p>
+					There's no tabs in this group that can be converted to bookmarks.
+				</p>
+				<div>
+					<center><button type="submit" class="colorize-button">Close</button></center>
+				</div>
+			</form>
+		</dialog>
+		
+		<dialog id="convertToBookmarksEmptyDirectoryNameDialog">
+			<form method="dialog">
+				<p>
+					When choosing to create an additional directory, the directory name must not be empty.
+				</p>
+				<div>
+					<center><button type="submit" data-action="convert-to-bookmarks-empty-directory-name-confirmed" class="colorize-button">Close</button></center>
+				</div>
+			</form>
+		</dialog>
+		
+		<dialog id="convertToBookmarksErrorDialog">
+			<form method="dialog">
+				<div>
+					<label>One or more errors occured while trying to convert tabs to bookmarks:</label>
+					<p><label id="convertToBookmarksError"></label></p>
+					<label id="successfullyConvertedBookmarksDespiteErrorRoot"><span id="successfullyConvertedBookmarksDespiteErrorCount">0</span> tab(s) were successfully converted to bookmarks despite errors.</label>
+				</div>
+				<div>
+					<center><button type="submit" class="colorize-button">Close</button></center>
+				</div>
+			</form>
+		</dialog>
+		
+		<dialog id="convertToBookmarksSuccessDialog">
+			<form method="dialog">
+				<div>
+					<label><span id="successfullyConvertedBookmarksCount">0</span> tab(s) were successfully converted to bookmarks.</label>
+				</div>
+				<div>
+					<center><button type="submit" class="colorize-button">Close</button></center>
 				</div>
 			</form>
 		</dialog>

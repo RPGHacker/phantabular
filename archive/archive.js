@@ -32,6 +32,9 @@ let filterStrings = [];
 const openGroups = {};
 const previousGroupEntryCounts = {};
 
+let hasBookmarkingPermission = false;
+let tabsToBookmark = null;
+
 
 tooltipLayer.style.opacity = 0;
 
@@ -42,6 +45,25 @@ function escapeHTML(unescaped) {
 	div.textContent = unescaped;
 	return div.innerHTML;
 }
+
+async function updateBookmarkingPermissions() {
+	let allPermissions = await browser.permissions.getAll();
+	
+	hasBookmarkingPermission = allPermissions.permissions.includes("bookmarks");
+}
+
+async function requestBookmarkingPermissions() {	
+	const permissionsToRequest = {
+		permissions: ["bookmarks"]
+	}
+	
+	hasBookmarkingPermission = await browser.permissions.request(permissionsToRequest);
+}
+
+browser.permissions.onAdded.addListener(updateBookmarkingPermissions);
+browser.permissions.onRemoved.addListener(updateBookmarkingPermissions);
+
+updateBookmarkingPermissions();
 
 function createGroup(container, className, id, displayName, actionsContent, insertLocation = "beforeend") {
 	container.insertAdjacentHTML(insertLocation, `
@@ -536,6 +558,7 @@ function getCategoryProperties(category) {
 		draggable: true,
 		actions: `
 			<button data-action="edit-category-settings" data-tooltiptype="button" class="colorize-button image-button action-button has-tooltip"><img src="../icons/iconoir/edits/settings-solid-fixed-light.svg" class="only-in-light-theme" style="height: 32px;" /><img src="../icons/iconoir/edits/settings-solid-fixed-dark.svg" class="only-in-dark-theme" style="height: 32px;" /></button>
+			<button data-action="convert-group-to-bookmarks" data-tooltiptype="button" class="colorize-button image-button action-button has-tooltip"><img src="../icons/iconoir/edits/bookmark-light.svg" class="only-in-light-theme" style="height: 32px;" /><img src="../icons/iconoir/edits/bookmark-dark.svg" class="only-in-dark-theme" style="height: 32px;" /></button>
 			<button data-action="delete-category" data-tooltiptype="button" class="colorize-button image-button action-button has-tooltip"><img src="../icons/iconoir/edits/trash-solid.svg" style="height: 32px;" /></button>
 		`
 	}
@@ -560,6 +583,7 @@ function getSessionProperties(session) {
 		color: "gray",
 		draggable: false,
 		actions: `
+			<button data-action="convert-group-to-bookmarks" data-tooltiptype="button" class="colorize-button image-button action-button has-tooltip"><img src="../icons/iconoir/edits/bookmark-light.svg" class="only-in-light-theme" style="height: 32px;" /><img src="../icons/iconoir/edits/bookmark-dark.svg" class="only-in-dark-theme" style="height: 32px;" /></button>
 			<button data-action="delete-session" data-tooltiptype="button" class="colorize-button image-button action-button has-tooltip"><img src="../icons/iconoir/edits/trash-solid.svg" style="height: 32px;" /></button>
 		`
 	}
@@ -681,6 +705,10 @@ function updateShowTooltip(mousePos, mouseTarget) {
 						tooltipLayer.insertAdjacentHTML("afterbegin", "Edit category settings");
 						break;
 						
+					case "convert-group-to-bookmarks":
+						tooltipLayer.insertAdjacentHTML("afterbegin", "Convert to bookmarks");
+						break;
+						
 					case "delete-category":
 						tooltipLayer.insertAdjacentHTML("afterbegin", "Delete category");
 						break;
@@ -699,6 +727,10 @@ function updateShowTooltip(mousePos, mouseTarget) {
 						
 					case "open-tab":
 						tooltipLayer.insertAdjacentHTML("afterbegin", "Open tab");
+						break;
+						
+					case "convert-tab-to-bookmark":
+						tooltipLayer.insertAdjacentHTML("afterbegin", "Convert to bookmark");
 						break;
 						
 					case "delete-tab":
@@ -751,7 +783,7 @@ async function editCategorySettings(categoryElement) {
 	categoryRuleTemplates.open = false;
 }
 
-async function applyCategorySettings() {	
+async function applyCategorySettings() {
 	const ruleIsJustWhitespace = (categoryRule.value.replace(/\s/g, "").length === 0);
 	const rule = (ruleIsJustWhitespace ? undefined : categoryRule.value);
 	
@@ -1037,6 +1069,10 @@ document.addEventListener("change", (e) => {
 			categoryRuleStringRoot.hidden = !optionsUsingTextField.includes(e.target.value);
 			categoryRegexRuleCaptureGroupsRoot.hidden = !optionsUsingCaptureGrous.includes(e.target.value);
 		}
+	} else if (e.target.tagName == "INPUT") {
+		if (e.target == bookmarkConversionCreateDirectory) {
+			bookmarkConversionCreateDirectoryName.disabled = !bookmarkConversionCreateDirectory.checked;
+		}
 	} else if (e.target === filterText) {
 		// We'll only do this on input, so that exiting the search filter doesn't activate this.
 		//updateSearchByFilter();
@@ -1152,6 +1188,7 @@ async function populateTabListGroup(group) {
 								<span class="actions">
 									<button class="colorize-button has-tooltip image-button action-button" data-tooltiptype="button" data-action="copy-tab-url"><img src="../icons/iconoir/edits/copy-dark.svg" class="only-in-dark-theme" style="height: 24px;" /><img src="../icons/iconoir/edits/copy-light.svg" class="only-in-light-theme" style="height: 24px;" /></button>
 									<button class="colorize-button has-tooltip image-button action-button" data-tooltiptype="button" data-action="open-tab"><img src="../icons/iconoir/edits/open-in-browser-dark.svg" class="only-in-dark-theme" style="height: 24px;" /><img src="../icons/iconoir/edits/open-in-browser-light.svg" class="only-in-light-theme" style="height: 24px;" /></button>
+									<button class="colorize-button has-tooltip image-button action-button" data-tooltiptype="button" data-action="convert-tab-to-bookmark"><img src="../icons/iconoir/edits/bookmark-dark.svg" class="only-in-dark-theme" style="height: 24px;" /><img src="../icons/iconoir/edits/bookmark-light.svg" class="only-in-light-theme" style="height: 24px;" /></button>
 									<button class="colorize-button has-tooltip image-button action-button" data-tooltiptype="button" data-action="delete-tab"><img src="../icons/iconoir/edits/trash-solid.svg" style="height: 24px;"/></button>
 									<button class="colorize-button has-tooltip image-button action-button" data-tooltiptype="button" data-action="remove-tab"><img src="../icons/iconoir/edits/xmark.svg" style="height: 24px; ${canRemove ? "" : "display: none;"}"/></button>
 								</span>
@@ -1966,6 +2003,159 @@ function getElementsBetween(a, b) {
 	return result;
 }
 
+function getBookmarkDirectoriesRecursive(bookmarkNodes, directories, path) {
+	for (const bookmarkNode of bookmarkNodes) {
+		if (bookmarkNode.type == "folder" && bookmarkNode.parentId) {
+			directories.push({
+				id: bookmarkNode.id,
+				title: path + bookmarkNode.title,
+				rawTitle: bookmarkNode.title
+			});
+		}
+		
+		if (bookmarkNode.children) {
+			let subPath = path;
+			if (bookmarkNode.parentId) {
+				subPath += "&#x21B3;";
+			}
+			getBookmarkDirectoriesRecursive(bookmarkNode.children, directories, subPath);
+		}
+	}
+}
+
+async function convertTabsToBookmarks(tabs, defaultDirectoryName) {
+	debugh.log("Coverting", tabs.length, "tabs to bookmarks.");
+	debugh.logVerbose("Tab details:", tabs);
+	
+	if (tabs.length === 0) {
+		convertToBookmarksNoSelectionDialog.showModal();
+		return;
+	}
+	
+	const bookmarkNodes = await browser.bookmarks.getTree();
+	
+	const bookmarkDirectories = [];
+	getBookmarkDirectoriesRecursive(bookmarkNodes, bookmarkDirectories, "");
+	
+	let defaultCreateDirectory = true;
+	convertToBookmarksTargetDirectory.textContent = "";
+	for (const bookmarkDirectory of bookmarkDirectories) {
+		const directoryMatchesDefaultName = (defaultDirectoryName == bookmarkDirectory.rawTitle);
+		if (directoryMatchesDefaultName) {
+			defaultCreateDirectory = false;
+		}
+		const selectedString = (directoryMatchesDefaultName ? " selected" : "");
+		convertToBookmarksTargetDirectory.insertAdjacentHTML("beforeend", `
+			<option value="${bookmarkDirectory.id}"${selectedString}>${bookmarkDirectory.title}</option>
+		`);
+	}
+	
+	convertToBookmarksTabCount.textContent = tabs.length;
+	bookmarkConversionCreateDirectory.checked = defaultCreateDirectory;
+	bookmarkConversionCreateDirectoryName.disabled = !defaultCreateDirectory;
+	bookmarkConversionCreateDirectoryName.value = defaultDirectoryName;
+	bookmarkConversionAlsoDeletesTabs.checked = false;
+	tabsToBookmark = tabs;
+	
+	convertToBookmarksDialog.showModal();
+}
+
+async function confirmConvertTabsToBookmarks(tabs) {		
+	const uniqueErrors = new Set();
+	const successfullyConvertedTabIds = [];
+		
+	try {
+		let parentDirectoryId = convertToBookmarksTargetDirectory.value;
+		
+		if (bookmarkConversionCreateDirectory.checked) {
+			const parentDirectoryNodeChildren = await browser.bookmarks.getChildren(parentDirectoryId);
+			
+			parentDirectoryId = (await browser.bookmarks.create({
+				index: parentDirectoryNodeChildren.length,
+				parentId: parentDirectoryId,
+				title: bookmarkConversionCreateDirectoryName.value,
+				type: "folder"
+			})).id;
+		}
+		
+		// This code is not particularly performant right now. We could parallelize all those
+		// Creation calls and only have a single wait at the end, but whatever. This solution is
+		// slightly simpler and probably good enough.
+		for (const tab of tabs) {
+			try {
+				const parentDirectoryNodeChildren = await browser.bookmarks.getChildren(parentDirectoryId);
+			
+				await browser.bookmarks.create({
+					index: parentDirectoryNodeChildren.length,
+					parentId: parentDirectoryId,
+					title: tab.title,
+					type: "bookmark",
+					url: tab.url
+				});
+				
+				successfullyConvertedTabIds.push(tab.id);
+			} catch (error) {
+				uniqueErrors.add(error);
+			}
+		}
+		
+		if (successfullyConvertedTabIds.length > 0 && bookmarkConversionAlsoDeletesTabs.checked) {
+			try {
+				db.deleteTabs(successfullyConvertedTabIds);
+			} catch(error) {
+				uniqueErrors.add(error);
+			}
+		}
+		
+		if (uniqueErrors.size > 0) {
+			convertToBookmarksError.textContent = Array.from(uniqueErrors).join("\n");
+			successfullyConvertedBookmarksDespiteErrorCount.textContent = successfullyConvertedTabIds.length;
+			successfullyConvertedBookmarksDespiteErrorRoot.hidden = (successfullyConvertedTabIds.length === 0);
+			convertToBookmarksErrorDialog.showModal();
+		} else {
+			successfullyConvertedBookmarksCount.textContent = successfullyConvertedTabIds.length;
+			convertToBookmarksSuccessDialog.showModal();
+		}
+	} catch (error) {
+		uniqueErrors.add(error);
+		convertToBookmarksError.textContent = Array.from(uniqueErrors).join("\n");
+		successfullyConvertedBookmarksDespiteErrorCount.textContent = successfullyConvertedTabIds.length;
+		successfullyConvertedBookmarksDespiteErrorRoot.hidden = (successfullyConvertedTabIds.length === 0);
+		convertToBookmarksErrorDialog.showModal();
+	}
+}
+
+async function convertTabElementToBookmark(tabElement) {
+	await requestBookmarkingPermissions();
+	
+	if (!hasBookmarkingPermission) {
+		return;
+	}
+	
+	const defaultDirectoryName = tabElement.closest("details").querySelector("summary .summary-title").textContent;
+	
+	const tabs = [ await db.tabs.get({id: parseInt(tabElement.dataset.tabid)}) ];
+	convertTabsToBookmarks(tabs, defaultDirectoryName);
+}
+
+async function convertGroupElementToBookmarks(groupElement) {
+	await requestBookmarkingPermissions();
+	
+	if (!hasBookmarkingPermission) {
+		return;
+	}
+	
+	const defaultDirectoryName = groupElement.closest("details").querySelector("summary .summary-title").textContent;
+	
+	if (groupElement.dataset.categoryid) {
+		const tabs = await groupFunctionLookup.tabsInCategory.query(parseInt(groupElement.dataset.categoryid));
+		convertTabsToBookmarks(tabs, defaultDirectoryName);
+	} else if (groupElement.dataset.sessionid) {
+		const tabs = await groupFunctionLookup.tabsInSession.query(parseInt(groupElement.dataset.sessionid));
+		convertTabsToBookmarks(tabs, defaultDirectoryName);
+	}
+}
+
 document.addEventListener("click", (e) => {
 	if (e.target.classList.contains("tab-entry")) {
 		const container = e.target.closest(".tabs-list");
@@ -2031,6 +2221,30 @@ document.addEventListener("click", (e) => {
 			
 		case "edit-category-settings":
 			editCategorySettings(e.target.closest("[data-categoryid]"));
+			break;
+			
+		case "convert-group-to-bookmarks":
+			convertGroupElementToBookmarks(e.target.closest(".group-details"));
+			break;
+			
+		case "confirm-bookmark-conversion":
+			const directoryNameIsJustWhitespace = (bookmarkConversionCreateDirectoryName.value.replace(/\s/g, "").length === 0);
+			if (bookmarkConversionCreateDirectory.checked && directoryNameIsJustWhitespace) {
+				convertToBookmarksEmptyDirectoryNameDialog.showModal();
+			} else {
+				confirmConvertTabsToBookmarks(tabsToBookmark);	
+				tabsToBookmark = null;
+				convertToBookmarksDialog.close();
+			}
+			break;
+			
+		case "cancel-bookmark-conversion":	
+			tabsToBookmark = null;
+			convertToBookmarksDialog.close();
+			break;
+			
+		case "convert-to-bookmarks-empty-directory-name-confirmed":
+			convertToBookmarksDialog.showModal();
 			break;
 			
 		case "delete-category":
@@ -2108,6 +2322,10 @@ document.addEventListener("click", (e) => {
 			
 		case "open-tab":
 			openTabForElement(e.target.closest("[data-tabid]"));
+			break;
+			
+		case "convert-tab-to-bookmark":
+			convertTabElementToBookmark(e.target.closest("[data-tabid]"));
 			break;
 			
 		case "delete-tab":

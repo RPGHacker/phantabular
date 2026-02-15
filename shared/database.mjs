@@ -245,11 +245,13 @@ export class PhanTabularDB extends Dexie {
 		debugh.logVerbose("Tab details:", tab);
 		
 		const archiveSettings = await settings.archiveSettings;
+			
+		const zoomLevel = await browser.tabs.getZoom(tab.id);
 		
 		const previewImageOptions = {
 			format: archiveSettings.previewImageFormat,
 			quality: archiveSettings.previewImageQuality,
-			scale: archiveSettings.previewImageScale / window.devicePixelRatio
+			scale: archiveSettings.previewImageScale / zoomLevel
 		};
 		
 		if (tab.discarded) {
@@ -374,13 +376,7 @@ export class PhanTabularDB extends Dexie {
 					if (tab.previewImage) {
 						// Don't generate a new preview image if we're already passing one in (for example, from a cache).
 						newEntry.previewImage = tab.previewImage;
-					} else {
-						const previewImageOptions = {
-							format: archiveSettings.previewImageFormat,
-							quality: archiveSettings.previewImageQuality,
-							scale: archiveSettings.previewImageScale / window.devicePixelRatio
-						};
-						
+					} else {						
 						try {
 							newEntry.previewImage = await this.capturePrewviewImage(tab);
 						} catch(error) {

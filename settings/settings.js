@@ -167,6 +167,8 @@ async function refreshPreviewImage() {
 			
 			const activeTab = (await browser.tabs.query({ active: true, currentWindow: true }))[0];
 			
+			const zoomLevel = await browser.tabs.getZoom(activeTab.id);
+			
 			const previewOptions = {
 				format: archiveSettings.previewImageFormat,
 				quality: archiveSettings.previewImageQuality,
@@ -176,7 +178,7 @@ async function refreshPreviewImage() {
 					width: previewImageSourceContent.offsetWidth,
 					height: previewImageSourceContent.offsetHeight
 				},
-				scale: archiveSettings.previewImageScale / window.devicePixelRatio
+				scale: archiveSettings.previewImageScale / zoomLevel
 			};
 			
 			const sizeEstimateOptions = JSON.parse(JSON.stringify(previewOptions));

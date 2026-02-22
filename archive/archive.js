@@ -741,6 +741,10 @@ function updateShowTooltip(mousePos, mouseTarget) {
 						tooltipLayer.insertAdjacentHTML("afterbegin", "Remove tab from this group");
 						break;
 						
+					case "toggle-menu":
+						tooltipLayer.insertAdjacentHTML("afterbegin", "Toggle menu");
+						break;
+						
 					default:
 						tooltipLayer.textContent = tooltipElement.dataset.action;
 						break;
@@ -2207,8 +2211,39 @@ document.addEventListener("click", (e) => {
 	}
 });
 
+function openMenu() {
+	mainMenu.hidden = false;
+	toggleMenuButton.dataset.open = true;
+}
+
+function hideMenu() {
+	mainMenu.hidden = true;
+	toggleMenuButton.dataset.open = false;
+}
+
+function toggleMenu() {
+	if (mainMenu.hidden) {
+		openMenu();
+	} else {
+		hideMenu();
+	}
+}
 
 document.addEventListener("click", (e) => {
+	if (!mainMenu.hidden && e.target != toggleMenuButton) {
+		const rect = mainMenu.getBoundingClientRect();
+	
+		const inside =
+			e.clientX >= rect.left &&
+			e.clientX <= rect.right &&
+			e.clientY >= rect.top &&
+			e.clientY <= rect.bottom;
+			
+		if (!inside) {
+			hideMenu();
+		}
+	}
+	
 	if (e.target.tagName !== "BUTTON" && e.target.dataset.action == undefined) {
 		return;
 	}
@@ -2357,6 +2392,22 @@ document.addEventListener("click", (e) => {
 			
 		case "cancel-tab-deletion":
 			confirmDeleteTab.close();
+			break;
+			
+		case "toggle-menu":
+			toggleMenu();
+			break;
+			
+		case "re-run-category-auto-catch":
+			hideMenu();
+			break;
+			
+		case "export-archive":
+			hideMenu();
+			break;
+			
+		case "import-archive":
+			hideMenu();
 			break;
 	}
 });

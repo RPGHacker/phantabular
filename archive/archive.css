@@ -452,6 +452,30 @@ button.action-button {
 }
 
 
+.dialog-spinner-animation {
+	display: flex;
+	padding: 10px 10px 10px 10px;
+}
+
+.dialog-spinner {
+	width: 32px;
+	height: 32px;
+	border: 5px dotted var(--spinner-color);
+	border-radius: 50%;
+	border-top-color: var(--spinner-fill-color);
+	animation: dialog-spin 2s linear infinite;
+}
+
+@keyframes dialog-spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+
 /* Stylings for color selectors */
 .color-selector-menu .color-selector-root {
 	display: inline-block;
@@ -691,4 +715,14 @@ button.toggle-menu-button[data-open=true]:not(:hover) {
 .main-menu > hr {
 	margin: 5px 0 5px 0;
 	background-color: var(--button-text-color);
+}
+
+
+/* Styles for centered dialogs */
+.centered-dialog label {	
+	text-align: center;
+}
+
+.centered-dialog * {	
+	justify-content: center;
 }

@@ -4,6 +4,7 @@ import db from "../shared/database.mjs";
 import ruleeval from "../shared/rules.mjs";
 
 const minimumSpinnerDisplayTime = 250;
+const minimumProcessDialogDisplayTime = 1000;
 
 const activeLiveQuerySubscriptions = {};
 const activeLiveQueryCountSubscriptions = {};
@@ -2064,7 +2065,7 @@ async function convertTabsToBookmarks(tabs, defaultDirectoryName) {
 	convertToBookmarksDialog.showModal();
 }
 
-async function confirmConvertTabsToBookmarks(tabs) {		
+async function confirmConvertTabsToBookmarks(tabs) {
 	const uniqueErrors = new Set();
 	const successfullyConvertedTabIds = [];
 		
@@ -2099,7 +2100,7 @@ async function confirmConvertTabsToBookmarks(tabs) {
 				
 				successfullyConvertedTabIds.push(tab.id);
 			} catch (error) {
-				uniqueErrors.add(error);
+				uniqueErrors.add(error.toString());
 			}
 		}
 		
@@ -2107,7 +2108,7 @@ async function confirmConvertTabsToBookmarks(tabs) {
 			try {
 				db.deleteTabs(successfullyConvertedTabIds);
 			} catch(error) {
-				uniqueErrors.add(error);
+				uniqueErrors.add(error.toString());
 			}
 		}
 		
@@ -2157,6 +2158,90 @@ async function convertGroupElementToBookmarks(groupElement) {
 	} else if (groupElement.dataset.sessionid) {
 		const tabs = await groupFunctionLookup.tabsInSession.query(parseInt(groupElement.dataset.sessionid));
 		convertTabsToBookmarks(tabs, defaultDirectoryName);
+	}
+}
+
+function openMenu() {
+	mainMenu.hidden = false;
+	toggleMenuButton.dataset.open = true;
+}
+
+function hideMenu() {
+	mainMenu.hidden = true;
+	toggleMenuButton.dataset.open = false;
+}
+
+function toggleMenu() {
+	if (mainMenu.hidden) {
+		openMenu();
+	} else {
+		hideMenu();
+	}
+}
+
+async function rerunCategoryAutoCatch() {
+	waitingForCompletionDialog.showModal();
+	
+	let caughtError = null;
+	
+	try {
+		const autoCatchCategories = await db.getCategoriesWithAutoCatchRules();
+		const tabs = await groupFunctionPrimitives.unsortedTabs().toArray();
+		
+		const tabsToUpdate = [];
+		const uniqueErrors = new Set();
+		
+		for (const tab of tabs) {
+			let needsUpdate = false;
+			
+			for (const autoCatchCategory of autoCatchCategories) {
+				try {
+					if (!tab.categories.includes(autoCatchCategory.id) && await ruleeval.matchesRule(tab, autoCatchCategory.rule)) {
+						tab.categories.push(autoCatchCategory.id);
+						needsUpdate = true;
+					}
+				} catch(error) {
+					uniqueErrors.add(error.toString());
+				}
+			}
+			
+			if (needsUpdate) {
+				tabsToUpdate.push(tab);
+			}
+		}
+		
+		if (tabsToUpdate.length > 0) {
+			try {
+				const entriesToUpdate = tabsToUpdate.map((tab) => {
+					return {
+						key: tab.id,
+						changes: {
+							categories: tab.categories,
+						}
+					};
+				});
+				
+				await db.tabs.bulkUpdate(entriesToUpdate);
+			} catch(error) {
+				uniqueErrors.add(error.toString());
+			}
+		}
+		
+		if (uniqueErrors.size > 0) {
+			throw Array.from(uniqueErrors).join("\n");
+		}
+	} catch(error) {
+		caughtError = error;
+	}
+	
+	await new Promise(r => setTimeout(r, minimumProcessDialogDisplayTime));
+	
+	waitingForCompletionDialog.close();
+	
+	if (caughtError) {
+		rerunCategoryAutoCatchError.textContent = caughtError;
+		
+		rerunCategoryAutoCatchErrorDialog.showModal();
 	}
 }
 
@@ -2210,24 +2295,6 @@ document.addEventListener("click", (e) => {
 		deselectAllSelectedTabElements();
 	}
 });
-
-function openMenu() {
-	mainMenu.hidden = false;
-	toggleMenuButton.dataset.open = true;
-}
-
-function hideMenu() {
-	mainMenu.hidden = true;
-	toggleMenuButton.dataset.open = false;
-}
-
-function toggleMenu() {
-	if (mainMenu.hidden) {
-		openMenu();
-	} else {
-		hideMenu();
-	}
-}
 
 document.addEventListener("click", (e) => {
 	if (!mainMenu.hidden && e.target != toggleMenuButton) {
@@ -2399,6 +2466,7 @@ document.addEventListener("click", (e) => {
 			break;
 			
 		case "re-run-category-auto-catch":
+			rerunCategoryAutoCatch();
 			hideMenu();
 			break;
 			

@@ -292,6 +292,31 @@
 					<center><button type="submit" class="colorize-button">Close</button></center>
 				</div>
 			</form>
+		</dialog>		
+		
+		<dialog id="waitingForCompletionDialog" class="centered-dialog">
+			<form method="dialog">
+				<p>
+					<label>In progress...</label>
+				</p>
+				<div class="dialog-spinner-container">
+					<div class="dialog-spinner-animation">
+						<div class="dialog-spinner"></div>
+					</div>
+				</div>
+			</form>
+		</dialog>
+		
+		<dialog id="rerunCategoryAutoCatchErrorDialog">
+			<form method="dialog">
+				<div>
+					<label>One or more errors occured while trying to re-run category auto-catch:</label>
+					<p><label id="rerunCategoryAutoCatchError"></label></p>
+				</div>
+				<div>
+					<center><button type="submit" class="colorize-button">Close</button></center>
+				</div>
+			</form>
 		</dialog>
 		
 		<div>

@@ -34,6 +34,7 @@ const openGroups = {};
 const previousGroupEntryCounts = {};
 
 let hasBookmarkingPermission = false;
+let hasDownloadingPermission = false;
 let tabsToBookmark = null;
 
 
@@ -47,10 +48,11 @@ function escapeHTML(unescaped) {
 	return div.innerHTML;
 }
 
-async function updateBookmarkingPermissions() {
+async function updatePermissions() {
 	let allPermissions = await browser.permissions.getAll();
 	
 	hasBookmarkingPermission = allPermissions.permissions.includes("bookmarks");
+	hasDownloadingPermission = allPermissions.permissions.includes("downloads");
 }
 
 async function requestBookmarkingPermissions() {	
@@ -61,10 +63,18 @@ async function requestBookmarkingPermissions() {
 	hasBookmarkingPermission = await browser.permissions.request(permissionsToRequest);
 }
 
-browser.permissions.onAdded.addListener(updateBookmarkingPermissions);
-browser.permissions.onRemoved.addListener(updateBookmarkingPermissions);
+async function requestDownloadingPermissions() {	
+	const permissionsToRequest = {
+		permissions: ["downloads"]
+	}
+	
+	hasDownloadingPermission = await browser.permissions.request(permissionsToRequest);
+}
 
-updateBookmarkingPermissions();
+browser.permissions.onAdded.addListener(updatePermissions);
+browser.permissions.onRemoved.addListener(updatePermissions);
+
+updatePermissions();
 
 function createGroup(container, className, id, displayName, actionsContent, insertLocation = "beforeend") {
 	container.insertAdjacentHTML(insertLocation, `
@@ -2245,6 +2255,103 @@ async function rerunCategoryAutoCatch() {
 	}
 }
 
+async function exportArchive() {
+	await requestDownloadingPermissions();
+	
+	if (!hasDownloadingPermission) {
+		return;
+	}
+	
+	importOrExportLabel.textContent = "Export";
+	importExportErrorTypeLabel.textContent = "export";
+	importOrExportProgressLabel.textContent = "0";
+	
+	importExportDialog.showModal();
+	
+	try {
+		const exportOptions = {
+			noTransaction: false,
+			numRowsPerChunk: 5,
+			prettyJson: true,
+			filter: null,
+			progressCallback: (progress) => {
+				importOrExportProgressLabel.textContent = ((progress.completedRows/progress.totalRows) * 100).toFixed(0);
+				return true;
+			}
+		};
+	
+		const archiveBlob = await db.export(exportOptions);
+			
+		await new Promise(r => setTimeout(r, minimumProcessDialogDisplayTime));
+
+		const currentDate = new Date();
+		
+		const day = String(currentDate.getDate()).padStart(2, '0');
+		const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+		const year = currentDate.getFullYear();
+		
+		const hours = String(currentDate.getHours()).padStart(2, '0');
+		const minutes = String(currentDate.getMinutes()).padStart(2, '0');
+		const seconds = String(currentDate.getSeconds()).padStart(2, '0');
+		
+		const dateTimeStamp = `${year}-${month}-${day}--${hours}-${minutes}-${seconds}`;
+		
+		await browser.downloads.download({
+			filename: `Phantabular-Archive--${dateTimeStamp}.json`,
+			url: URL.createObjectURL(archiveBlob)
+		});
+	} catch(error) {
+		importExportError.textContent = error;
+		importExportErrorDialog.showModal();
+	}
+	
+	importExportDialog.close();
+}
+
+async function importArchive() {
+	if (fileToImport.files.length == 0) {
+		noImportFileSelectedDialog.showModal();
+		return;
+	}
+	
+	importOrExportLabel.textContent = "Import";
+	importExportErrorTypeLabel.textContent = "import";
+	importOrExportProgressLabel.textContent = "0";
+	
+	try {		
+		const importOptions = {			
+			acceptMissingTables: true,
+			acceptVersionDiff: true,
+			acceptNameDiff: true,
+			acceptChangedPrimaryKey: true,
+			overwriteValues: true,
+			clearTablesBeforeImport: importOverwritesEntireArchive.checked,
+			noTransaction: false,
+			//chunkSizeBytes: 100000,
+			filter: null,
+			transform: null,	// Probably needs to be provided once we actually have versions to migrate?
+			progressCallback: (progress) => {
+				importOrExportProgressLabel.textContent = ((progress.completedRows/progress.totalRows) * 100).toFixed(0);
+				return true;
+			}
+		};
+	
+		await db.import(fileToImport.files[0], importOptions);
+	} catch(error) {
+		importExportError.textContent = error;
+		importExportErrorDialog.showModal();
+	}
+	
+	importExportDialog.close();
+}
+
+async function openImportArchiveSelector() {
+	fileToImport.value = "";
+	importOverwritesEntireArchive.checked = false;
+	
+	importFileSelectDialog.showModal();
+}
+
 document.addEventListener("click", (e) => {
 	if (e.target.classList.contains("tab-entry")) {
 		const container = e.target.closest(".tabs-list");
@@ -2466,16 +2573,31 @@ document.addEventListener("click", (e) => {
 			break;
 			
 		case "re-run-category-auto-catch":
-			rerunCategoryAutoCatch();
 			hideMenu();
+			rerunCategoryAutoCatch();
 			break;
 			
 		case "export-archive":
 			hideMenu();
+			exportArchive();
 			break;
 			
 		case "import-archive":
 			hideMenu();
+			openImportArchiveSelector();
+			break;
+			
+		case "confirm-import":
+			importFileSelectDialog.close();
+			importArchive();
+			break;
+			
+		case "cancel-import":
+			importFileSelectDialog.close();
+			break;
+			
+		case "no-import-file-selected-confirmed":
+			importFileSelectDialog.showModal();
 			break;
 	}
 });

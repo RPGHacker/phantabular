@@ -292,7 +292,7 @@
 					<center><button type="submit" class="colorize-button">Close</button></center>
 				</div>
 			</form>
-		</dialog>		
+		</dialog>
 		
 		<dialog id="waitingForCompletionDialog" class="centered-dialog">
 			<form method="dialog">
@@ -315,6 +315,63 @@
 				</div>
 				<div>
 					<center><button type="submit" class="colorize-button">Close</button></center>
+				</div>
+			</form>
+		</dialog>
+		
+		<dialog id="importExportDialog" class="centered-dialog">
+			<form method="dialog">
+				<p>
+					<label><span id="importOrExportLabel">Export</span> in progress...</label>
+					<label><span id="importOrExportProgressLabel">0</span>%</label>
+				</p>
+				<div class="dialog-spinner-container">
+					<div class="dialog-spinner-animation">
+						<div class="dialog-spinner"></div>
+					</div>
+				</div>
+			</form>
+		</dialog>
+		
+		<dialog id="importExportErrorDialog">
+			<form method="dialog">
+				<div>
+					<label>One or more errors occured while trying to <span id="importExportErrorTypeLabel">export</span> archive:</label>
+					<p><label id="importExportError"></label></p>
+				</div>
+				<div>
+					<center><button type="submit" class="colorize-button">Close</button></center>
+				</div>
+			</form>
+		</dialog>
+		
+		<dialog id="importFileSelectDialog">
+			<form method="dialog">
+				<div>
+					<label for="fileToImport">Select the file to import:</label>
+					<input type="file" id="fileToImport" accept=".json"></input>
+				</div>
+				<div>
+					<input type="checkbox" id="importOverwritesEntireArchive"/>
+					<label for="importOverwritesEntireArchive">Overwrite archive on import</label>
+				</div>
+				<p>
+					<center><label>WARNING!<br />Checking this will delete all current contents of the archive once import succeeds. If you don't check this, the imported file will instead only add and update entries.</label></center>
+				</p>
+				<div>
+					<button type="submit" data-action="confirm-import" class="colorize-button colorize-red">Start Import</button>
+					<button type="reset" data-action="cancel-import"  class="colorize-button" style="float: right;">Cancel</button>
+				</div>
+			</form>
+		</dialog>
+		
+		<dialog id="noImportFileSelectedDialog">
+			<form method="dialog">
+				<p>
+					You must select a file to import.
+				</p>
+				<div>
+					<center><button type="submit" data-action="no-import-file-selected-confirmed" class="colorize-button">Close</button></center>
 				</div>
 			</form>
 		</dialog>

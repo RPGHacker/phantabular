@@ -11,7 +11,7 @@
 	},
 	
 	"permissions": ["activeTab", "sessions", "tabGroups", "tabHide", "tabs", "storage", "unlimitedStorage", "cookies"],
-	"optional_permissions": ["<all_urls>", "bookmarks"],
+	"optional_permissions": ["<all_urls>", "bookmarks", "downloads"],
 	
 	"browser_specific_settings": {
 		"gecko": {

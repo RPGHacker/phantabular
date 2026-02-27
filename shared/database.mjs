@@ -2,6 +2,7 @@ import debugh from "./debughelper.mjs";
 import { Dexie, liveQuery } from "../deps/dexie/dist/dexie.mjs";
 import settings from "./settings.mjs";
 import ruleeval from "./rules.mjs";
+import { importDB, exportDB, importInto } from "../deps/dexie/addons/dexie-export-import/dist/dexie-export-import.mjs";
 
 debugh.log("Using Dexie: v" + Dexie.semVer);
 

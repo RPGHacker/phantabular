@@ -393,13 +393,18 @@
 				<div class="filter-root">
 					<label for="filterText">Filter:</label>
 					<div class="filter-root overlapping-content">
-						<input type="text" id="filterText" placeholder="Filter...">
+						<input type="text" id="filterText" placeholder="Filter..." autocomplete="off">
 						</input>
-						<div id="filterSpinnerRoot" class="filter-spinner-root" data-activequerycount="0" hidden>
-							<div class="filter-spinner-container">
-								<div class="filter-spinner-animation">
-									<div class="filter-spinner"></div>
+						<div class="filter-extras-root">
+							<div id="filterSpinnerRoot" class="filter-spinner-root" data-activequerycount="0" hidden>
+								<div class="filter-spinner-container">
+									<div class="filter-spinner-animation">
+										<div class="filter-spinner"></div>
+									</div>
 								</div>
+							</div>
+							<div id="filterClearButton" class="filter-clear-button-root" hidden>
+								<button class="colorize-button has-tooltip image-button action-button" data-tooltiptype="button" data-action="clear-filter"><img src="../icons/iconoir/edits/xmark.svg" height="27"/></button>
 							</div>
 						</div>
 					</div>

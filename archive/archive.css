@@ -476,6 +476,27 @@ button.action-button {
 }
 
 
+/* Stylings related to filter */
+.filter-extras-root {
+	display: flex;
+	pointer-events: none;
+	justify-content: right;
+}
+
+.filter-clear-button-root {
+	padding: 5px;
+}
+
+.filter-clear-button-root[hidden] {
+	display: none;
+}
+
+.filter-clear-button-root > button {
+	height: fit-content;
+	pointer-events: all;
+}
+
+
 /* Stylings for color selectors */
 .color-selector-menu .color-selector-root {
 	display: inline-block;

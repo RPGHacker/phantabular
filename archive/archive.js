@@ -756,6 +756,10 @@ function updateShowTooltip(mousePos, mouseTarget) {
 						tooltipLayer.insertAdjacentHTML("afterbegin", "Toggle menu");
 						break;
 						
+					case "clear-filter":
+						tooltipLayer.insertAdjacentHTML("afterbegin", "Clear");
+						break;
+						
 					default:
 						tooltipLayer.textContent = tooltipElement.dataset.action;
 						break;
@@ -902,6 +906,8 @@ async function applySearchFilter() {
 function updateSearchByFilter() {
 	const previousFilterText = filterText.value;
 	
+	filterClearButton.hidden = (filterText.value === "");
+	
 	clearTimeout(filterTimer);	
 	filterTimer = setTimeout(async () => {	
 		if (filterPromise != null) {
@@ -914,6 +920,7 @@ function updateSearchByFilter() {
 		if (previousFilterText != filterText.value) {
 			return;
 		}
+		
 		filterPromise = applySearchFilter();
 	}, 500);
 }
@@ -2598,6 +2605,10 @@ document.addEventListener("click", (e) => {
 			
 		case "no-import-file-selected-confirmed":
 			importFileSelectDialog.showModal();
+			break;
+			
+		case "clear-filter":
+			clearFilterStrings();
 			break;
 	}
 });

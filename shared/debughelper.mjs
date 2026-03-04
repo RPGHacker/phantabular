@@ -118,7 +118,7 @@ export class DebugHelper {
 		this._storagePromise.then((storage) => {
 			this._storage = storage;
 			this._patchMissingSettings(this._storage, this._defaultStorage);
-			// TODO: Also remove settings that no longer exist.
+			this._removeOutdatedSettings(this._storage, this._defaultStorage);
 			// Needs to be nulled before calling _flushBuffer().
 			this._storagePromise = null;
 			this._flushBuffer();
@@ -132,6 +132,7 @@ export class DebugHelper {
 				if (this._storage[changedKey]) {
 					this._storage[changedKey] = JSON.parse(JSON.stringify(changes[changedKey].newValue));
 					this._patchMissingSettings(this._storage[changedKey], this._defaultStorage[changedKey]);
+					this._removeOutdatedSettings(this._storage, this._defaultStorage);
 				}
 			}
 		});
@@ -139,16 +140,24 @@ export class DebugHelper {
 	
 	_patchMissingSettings(target, source) {
 		for (const key in source) {
-			if (typeof target[key] === "object") {
-				if (typeof target[key] === "undefined") {
-					target[key] = JSON.parse(JSON.stringify(source[key]));
-				} else {
+			if (typeof source[key] === "object") {
+				if (typeof target[key] === "object") {
 					this._patchMissingSettings(target[key], source[key]);
+				} else {
+					target[key] = JSON.parse(JSON.stringify(source[key]));
 				}
 			} else {
-				if (typeof target[key] === "undefined") {
-					target[key] = source[key];
-				}
+				target[key] = source[key];
+			}
+		}
+	}
+	
+	_removeOutdatedSettings(target, source) {
+		for (const key in target) {
+			if (typeof source[key] === "undefined") {
+				delete target[key];
+			} else if (typeof source[key] === "object") {
+				this._removeOutdatedSettings(target[key], source[key]);
 			}
 		}
 	}

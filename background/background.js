@@ -17,7 +17,7 @@ async function archiveTabs(tabs, windowData) {
 		const origin = "session-restore";
 		const archivedTabs = await db.archiveTabs(tabs, origin, windowData.sessionDate);
 		
-		if (archiveSettings.autoCloseArchivedTabsFromSessionRestore) {
+		if (archiveSettings.contextSpecificSettings.sessionRestore.autoCloseArchivedTabs) {
 			db.doPostArchivalClose(archivedTabs, origin);
 		}
 	} catch (error) {
@@ -41,8 +41,7 @@ async function checkOpenWindow(tabsToArchive, outWindowData, openWindow) {
 	
 		const archiveSettings = await settings.archiveSettings;
 		
-		// TODO: Replace by proper setting!
-		if (archiveSettings.archiveAllTabsOnSessionRestore) {
+		if (archiveSettings.contextSpecificSettings.sessionRestore.archiveAllTabs) {
 			let windowTabs = openWindow.tabs;
 			
 			if (!windowTabs) {

@@ -89,6 +89,12 @@ pre > code {
 	--code-bg-color:                        light-dark(var(--oc-gray-3), var(--oc-gray-7));
 	
 	--total-count-badge-background-color:   light-dark(var(--oc-gray-6), var(--oc-gray-8));
+	
+	--tab-view-border-color:                light-dark(var(--oc-gray-5), var(--oc-gray-7));
+	--tab-view-button-border-color:         light-dark(var(--oc-gray-6), var(--oc-gray-8));
+	--tab-view-inactive-button-bg-color:    light-dark(var(--oc-gray-4), var(--oc-gray-6));
+	--tab-view-active-button-bg-color:      light-dark(var(--oc-gray-5), var(--oc-gray-7));
+	--tab-view-button-hover-bg-color:       light-dark(var(--oc-gray-3), var(--oc-gray-5));
 }
 
 /* Override the default colors defined above based on user choice */

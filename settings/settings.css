@@ -155,3 +155,78 @@ ul.dependent-settings > li::marker {
 	margin-left: 24px;
 }
 
+
+/* Stylings for tabs view */
+div.tabs-view {
+}
+
+div.tabs-view > div.tabs-view-tab-selection-bar {
+	display: flex;
+	gap: -2px;
+}
+
+div.tabs-view > div.tabs-view-tab-selection-bar > button.tabs-view-tab-selection-button {
+	margin: 0px;
+	padding: 0px 5px 2px 5px;
+	border-radius: 5px;
+	border-color: var(--tab-view-button-border-color);
+	border-bottom-style: dashed;
+	/* border-bottom-style: none; */
+	border-bottom-left-radius: 0px;
+	border-bottom-right-radius: 0px;
+	background-color: var(--tab-view-inactive-button-bg-color);
+}
+
+div.tabs-view > div.tabs-view-tab-selection-bar > button.tabs-view-tab-selection-button:hover {
+	background-color: var(--tab-view-button-hover-bg-color);
+}
+
+div.tabs-view > div.tabs-view-tab-selection-bar > button.tabs-view-tab-selection-button:active {
+	background-color: var(--tab-view-active-button-bg-color);
+}
+
+div.tabs-view > div.tabs-view-tab-selection-bar > button.tabs-view-tab-selection-button:not(:first-child) {
+	margin-left: -2px;
+}
+
+div.tabs-view[data-selectedtab="0"] > div.tabs-view-tab-selection-bar > button.tabs-view-tab-selection-button[data-tabindex="0"],
+div.tabs-view[data-selectedtab="1"] > div.tabs-view-tab-selection-bar > button.tabs-view-tab-selection-button[data-tabindex="1"],
+div.tabs-view[data-selectedtab="2"] > div.tabs-view-tab-selection-bar > button.tabs-view-tab-selection-button[data-tabindex="2"],
+div.tabs-view[data-selectedtab="3"] > div.tabs-view-tab-selection-bar > button.tabs-view-tab-selection-button[data-tabindex="3"],
+div.tabs-view[data-selectedtab="4"] > div.tabs-view-tab-selection-bar > button.tabs-view-tab-selection-button[data-tabindex="4"],
+div.tabs-view[data-selectedtab="5"] > div.tabs-view-tab-selection-bar > button.tabs-view-tab-selection-button[data-tabindex="5"],
+div.tabs-view[data-selectedtab="6"] > div.tabs-view-tab-selection-bar > button.tabs-view-tab-selection-button[data-tabindex="6"],
+div.tabs-view[data-selectedtab="7"] > div.tabs-view-tab-selection-bar > button.tabs-view-tab-selection-button[data-tabindex="7"],
+div.tabs-view[data-selectedtab="8"] > div.tabs-view-tab-selection-bar > button.tabs-view-tab-selection-button[data-tabindex="8"],
+div.tabs-view[data-selectedtab="9"] > div.tabs-view-tab-selection-bar > button.tabs-view-tab-selection-button[data-tabindex="9"] {
+	z-index: 10;
+	background-color: var(--tab-view-active-button-bg-color);
+}
+
+div.tabs-view > div.tab-view-contents-root {
+	position: relative;
+	z-index: 5;
+	margin: 0px;
+	margin-top: -2px;
+	padding: 15px;
+	border-color: var(--tab-view-border-color);
+	border-style: solid;
+	border-width: 2px;
+}
+
+div.tabs-view > div.tab-view-contents-root > div.tab-view-contents {
+	display: none;
+}
+
+div.tabs-view[data-selectedtab="0"] > div.tab-view-contents-root > div.tab-view-contents[data-tabindex="0"],
+div.tabs-view[data-selectedtab="1"] > div.tab-view-contents-root > div.tab-view-contents[data-tabindex="1"],
+div.tabs-view[data-selectedtab="2"] > div.tab-view-contents-root > div.tab-view-contents[data-tabindex="2"],
+div.tabs-view[data-selectedtab="3"] > div.tab-view-contents-root > div.tab-view-contents[data-tabindex="3"],
+div.tabs-view[data-selectedtab="4"] > div.tab-view-contents-root > div.tab-view-contents[data-tabindex="4"],
+div.tabs-view[data-selectedtab="5"] > div.tab-view-contents-root > div.tab-view-contents[data-tabindex="5"],
+div.tabs-view[data-selectedtab="6"] > div.tab-view-contents-root > div.tab-view-contents[data-tabindex="6"],
+div.tabs-view[data-selectedtab="7"] > div.tab-view-contents-root > div.tab-view-contents[data-tabindex="7"],
+div.tabs-view[data-selectedtab="8"] > div.tab-view-contents-root > div.tab-view-contents[data-tabindex="8"],
+div.tabs-view[data-selectedtab="9"] > div.tab-view-contents-root > div.tab-view-contents[data-tabindex="9"] {
+	display: block;
+}

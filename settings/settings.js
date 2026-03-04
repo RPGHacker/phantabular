@@ -4,6 +4,48 @@ import db from "../shared/database.mjs";
 
 let previewImageTimer = null;
 let hasCapturePermission = false;
+
+function createTabsView(container, tabs) {
+	const returnedElements = {};
+	
+	container.insertAdjacentHTML("beforeend", `
+		<div class="tabs-view" data-selectedtab="0">
+			<div class="tabs-view-tab-selection-bar">
+			</div>
+			<div class="tab-view-contents-root">
+			</div>
+		</div>
+	`);
+	
+	const selectionBar = container.querySelector(".tabs-view:last-of-type > .tabs-view-tab-selection-bar");
+	const contentsRoot = container.querySelector(".tabs-view:last-of-type > .tab-view-contents-root");
+	let tabCount = 0;
+	
+	for (const tabName in tabs) {
+		const tabDisplayName = tabs[tabName];
+		
+		selectionBar.insertAdjacentHTML("beforeend", `
+			<button class="tabs-view-tab-selection-button" data-tabindex="${tabCount}" data-action="select-tab">${tabDisplayName}</button>
+		`);
+		
+		contentsRoot.insertAdjacentHTML("beforeend", `
+			<div class="tab-view-contents" data-tabindex="${tabCount}">
+				<div><input type="checkbox" id="testSetting1" /><label id="testSetting1Label" for="testSetting${tabCount}">Test Setting ${tabCount}</label></div>
+			</div>
+		`);
+		
+		returnedElements[tabName] = contentsRoot.querySelector(`.tab-view-contents[data-tabindex="${tabCount}"]`);
+		
+		tabCount++;
+	}
+	
+	return returnedElements;
+}
+
+const contextSpecificSettingTabElements = createTabsView(contextSpecificSettings, {
+	popup: "Popup",
+	sessionRestore: "Session Restore",
+});
 	
 function initializeForms(archiveSettings, openSettings) {
 	noDuplicateUrlsCheckbox.checked = archiveSettings.noDuplicateUrls;
@@ -307,5 +349,9 @@ document.addEventListener("click", (e) => {
 			});
 			
 			break;
+			
+		case "select-tab":
+			const tabsView = e.target.closest(".tabs-view");
+			tabsView.dataset.selectedtab = e.target.dataset.tabindex;
 	}
 });

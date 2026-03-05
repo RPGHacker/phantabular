@@ -92,7 +92,6 @@ export class Settings {
 			this._patchMissingSettings(this._storage, this._defaultStorage);
 			this._removeOutdatedSettings(this._storage, this._defaultStorage);
 			this._storagePromise = null;
-			debugh.log(this._storage);
 		});
 		
 		browser.storage.sync.onChanged.addListener((changes) => {

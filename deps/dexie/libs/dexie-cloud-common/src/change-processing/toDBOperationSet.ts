@@ -1,7 +1,5 @@
 import { DBDeleteOperation, DBOperation, DBUpdateOperation, DBUpsertOperation } from "../DBOperation.js";
 import { DBOperationsSet } from "../DBOperationsSet.js";
-import { randomString } from "../utils.js";
-import { DBKeyMutation } from "./DBKeyMutation.js";
 import { DBKeyMutationSet } from "./DBKeyMutationSet.js";
 
 /** Convert a DBKeyMutationSet (which is an internal format capable of looking up changes per ID)
@@ -10,10 +8,7 @@ import { DBKeyMutationSet } from "./DBKeyMutationSet.js";
  * @param inSet 
  * @returns DBOperationsSet representing inSet
  */
-export function toDBOperationSet(inSet: DBKeyMutationSet, txid=""): DBOperationsSet<string> {
-  // Fictive transaction:
-  if (!txid) txid = randomString(16);
-
+export function toDBOperationSet(inSet: DBKeyMutationSet, txid?: string): DBOperationsSet<string> {
   // Convert data into a temporary map to collect mutations of same table and type
   const map: {
     [table: string]: { [opType: string]: { key: any, val?: any, mod?: any }[] };

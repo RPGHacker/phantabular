@@ -24,7 +24,7 @@ async function archiveTabs(tabs, origin) {
 	try {
 		const archivedTabs = await db.archiveTabs(tabs, origin);
 		
-		if (archivedTabs.contextSpecificSettings.popup.autoCloseArchivedTabs) {
+		if (archiveSettings.contextSpecificSettings.popup.autoCloseArchivedTabs) {
 			db.doPostArchivalClose(archivedTabs, origin);
 		}
 		

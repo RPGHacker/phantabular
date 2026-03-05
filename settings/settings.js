@@ -30,11 +30,11 @@ function createTabsView(container, tabs) {
 		
 		contentsRoot.insertAdjacentHTML("beforeend", `
 			<div class="tab-view-contents" data-tabindex="${tabCount}">
-				<div><input type="checkbox" id="testSetting1" /><label id="testSetting1Label" for="testSetting${tabCount}">Test Setting ${tabCount}</label></div>
 			</div>
 		`);
 		
-		returnedElements[tabName] = contentsRoot.querySelector(`.tab-view-contents[data-tabindex="${tabCount}"]`);
+		returnedElements[tabName] = {}
+		returnedElements[tabName].root = contentsRoot.querySelector(`.tab-view-contents[data-tabindex="${tabCount}"]`);
 		
 		tabCount++;
 	}
@@ -42,27 +42,52 @@ function createTabsView(container, tabs) {
 	return returnedElements;
 }
 
+function createTabSpecificSettingsTabView(container, targetObject, contextName) {
+	const tabs = {
+		hidden: "Hidden Tabs",
+		pinned: "Pinned Tabs",
+		browser: "Browser-specific Tabs (\"about:\")",
+		extension: "Extension Tabs (\"moz-extension:\")",
+	}
+	
+	targetObject.tabSpecificSettings = createTabsView(container, tabs);
+	
+	for (const tabName in tabs) {
+		targetObject.tabSpecificSettings[tabName].root.insertAdjacentHTML("beforeend", `
+			<div><input type="checkbox" id="${contextName}_${tabName}_canArchive_checkbox" /><label id="${contextName}_${tabName}_canArchive_label" for="${contextName}_${tabName}_canArchive_checkbox">Can be archived</label></div>
+			<div><label class="note">NOTE: The "Selected Tab(s)" button can always archive tabs.</label></div>
+			<div><input type="checkbox" id="${contextName}_${tabName}_canClose_checkbox" /><label id="${contextName}_${tabName}_canClose_label" for="${contextName}_${tabName}_canClose_checkbox">Will be closed after archival</label></div>
+		`);
+	}
+}
+
 const contextSpecificSettingTabElements = createTabsView(contextSpecificSettings, {
 	popup: "Popup",
 	sessionRestore: "Session Restore",
 });
+
+contextSpecificSettingTabElements.popup.root.insertAdjacentHTML("beforeend", `
+	<div><input type="checkbox" id="popup_autoCloseArchivedTabs_checkbox" /><label id="popup_autoCloseArchivedTabs_label" for="popup_autoCloseArchivedTabs_checkbox">Automatically close tabs after archival</label></div>
+	
+	<h3>Tab-specific settings:</h3>
+`);
+
+contextSpecificSettingTabElements.sessionRestore.root.insertAdjacentHTML("beforeend", `
+	<div><input type="checkbox" id="sessionRestore_archiveAllTabs_checkbox" /><label id="sessionRestore_archiveAllTabs_label" for="sessionRestore_archiveAllTabs_checkbox">Archive all open tabs on session restore</label></div>
+	<div><label class="note" >NOTE: Installing a new version of the extension will also trigger this effect and archive all tabs. Since the browser can update extensions automatically in the background, this might lead to your tabs being archived seemingly at random sometimes. (Namely whenever an update of the extension releases).</label></div>
+	<div><input type="checkbox" id="sessionRestore_autoCloseArchivedTabs_checkbox" /><label id="sessionRestore_autoCloseArchivedTabs_label" for="sessionRestore_autoCloseArchivedTabs_checkbox">Automatically close tabs after archival</label></div>
+	
+	<h3>Tab-specific settings:</h3>
+`);
+
+for (const contextName in contextSpecificSettingTabElements) {
+	const contextSpecificTabData = contextSpecificSettingTabElements[contextName];
+	createTabSpecificSettingsTabView(contextSpecificTabData.root, contextSpecificTabData, contextName);
+}
 	
 function initializeForms(archiveSettings, openSettings) {
 	noDuplicateUrlsCheckbox.checked = archiveSettings.noDuplicateUrls;
 	onlyStoreLatestSessionCheckbox.checked = archiveSettings.onlyStoreLatestSession;
-	
-	autoCloseArchivedTabsFromPopupCheckbox.checked = archiveSettings.autoCloseArchivedTabsFromPopup;
-	archiveHiddenTabsFromPopupCheckbox.checked = archiveSettings.archiveHiddenTabsFromPopup;
-	closeHiddenTabsFromPopupCheckbox.checked = archiveSettings.closeHiddenTabsFromPopup;
-	archivePinnedTabsFromPopupCheckbox.checked = archiveSettings.archivePinnedTabsFromPopup;
-	closePinnedTabsFromPopupCheckbox.checked = archiveSettings.closePinnedTabsFromPopup;
-	
-	archiveAllTabsOnSessionRestoreCheckbox.checked = archiveSettings.archiveAllTabsOnSessionRestore;
-	autoCloseArchivedTabsFromSessionRestoreCheckbox.checked = archiveSettings.autoCloseArchivedTabsFromSessionRestore;
-	archiveHiddenTabsFromSessionRestoreCheckbox.checked = archiveSettings.archiveHiddenTabsFromSessionRestore;
-	closeHiddenTabsFromSessionRestoreCheckbox.checked = archiveSettings.closeHiddenTabsFromSessionRestore;
-	archivePinnedTabsFromSessionRestoreCheckbox.checked = archiveSettings.archivePinnedTabsFromSessionRestore;
-	closePinnedTabsFromSessionRestoreCheckbox.checked = archiveSettings.closePinnedTabsFromSessionRestore;
 	
 	savePreviewImagesCheckbox.checked = archiveSettings.savePreviewImages;
 	previewImageFormatSelect.value = archiveSettings.previewImageFormat;
@@ -70,6 +95,30 @@ function initializeForms(archiveSettings, openSettings) {
 	previewImageQualityNumber.value = archiveSettings.previewImageQuality;
 	previewImageScaleRange.value = archiveSettings.previewImageScale * 100;
 	previewImageScaleNumber.value = archiveSettings.previewImageScale * 100;
+	
+	for (const contextName in archiveSettings.contextSpecificSettings) {
+		const contextSpecificSettings = archiveSettings.contextSpecificSettings[contextName];
+		
+		for (const settingName in contextSpecificSettings) {
+			const settingValue = contextSpecificSettings[settingName];
+			
+			if (typeof settingValue === "boolean") {
+				window[`${contextName}_${settingName}_checkbox`].checked = settingValue;
+			}
+		}
+		
+		for (const tabName in contextSpecificSettings.tabSpecificSettings) {
+			const tabSpecificSettings = contextSpecificSettings.tabSpecificSettings[tabName];
+		
+			for (const settingName in tabSpecificSettings) {
+				const settingValue = tabSpecificSettings[settingName];
+				
+				if (typeof settingValue === "boolean") {
+					window[`${contextName}_${tabName}_${settingName}_checkbox`].checked = settingValue;
+				}
+			}
+		}
+	}
 	
 	deleteTabsUponOpenCheckbox.checked = openSettings.deleteTabsUponOpen;
 	tabOpenPositionSelect.value = openSettings.tabOpenPosition;
@@ -92,23 +141,30 @@ async function saveChanges() {
 	archiveSettings.noDuplicateUrls = noDuplicateUrlsCheckbox.checked;
 	archiveSettings.onlyStoreLatestSession = onlyStoreLatestSessionCheckbox.checked;
 	
-	archiveSettings.autoCloseArchivedTabsFromPopup = autoCloseArchivedTabsFromPopupCheckbox.checked;
-	archiveSettings.archiveHiddenTabsFromPopup = archiveHiddenTabsFromPopupCheckbox.checked;
-	archiveSettings.closeHiddenTabsFromPopup = closeHiddenTabsFromPopupCheckbox.checked;
-	archiveSettings.archivePinnedTabsFromPopup = archivePinnedTabsFromPopupCheckbox.checked;
-	archiveSettings.closePinnedTabsFromPopup = closePinnedTabsFromPopupCheckbox.checked;
-	
-	archiveSettings.archiveAllTabsOnSessionRestore = archiveAllTabsOnSessionRestoreCheckbox.checked;
-	archiveSettings.autoCloseArchivedTabsFromSessionRestore = autoCloseArchivedTabsFromSessionRestoreCheckbox.checked;
-	archiveSettings.archiveHiddenTabsFromSessionRestore = archiveHiddenTabsFromSessionRestoreCheckbox.checked;
-	archiveSettings.closeHiddenTabsFromSessionRestore = closeHiddenTabsFromSessionRestoreCheckbox.checked;
-	archiveSettings.archivePinnedTabsFromSessionRestore = archivePinnedTabsFromSessionRestoreCheckbox.checked;
-	archiveSettings.closePinnedTabsFromSessionRestore = closePinnedTabsFromSessionRestoreCheckbox.checked;
-	
 	archiveSettings.savePreviewImages = savePreviewImagesCheckbox.checked;
 	archiveSettings.previewImageFormat = previewImageFormatSelect.value;
 	archiveSettings.previewImageQuality = parseInt(previewImageQualityNumber.value);
 	archiveSettings.previewImageScale = parseInt(previewImageScaleNumber.value) / 100;
+	
+	for (const contextName in archiveSettings.contextSpecificSettings) {
+		const contextSpecificSettings = archiveSettings.contextSpecificSettings[contextName];
+		
+		for (const settingName in contextSpecificSettings) {			
+			if (typeof contextSpecificSettings[settingName] === "boolean") {
+				contextSpecificSettings[settingName] = window[`${contextName}_${settingName}_checkbox`].checked;
+			}
+		}
+		
+		for (const tabName in contextSpecificSettings.tabSpecificSettings) {
+			const tabSpecificSettings = contextSpecificSettings.tabSpecificSettings[tabName];
+		
+			for (const settingName in tabSpecificSettings) {				
+				if (typeof tabSpecificSettings[settingName] === "boolean") {
+					tabSpecificSettings[settingName] = window[`${contextName}_${tabName}_${settingName}_checkbox`].checked;
+				}
+			}
+		}
+	}
 	
 	openSettings.deleteTabsUponOpen = deleteTabsUponOpenCheckbox.checked;
 	openSettings.tabOpenPosition = tabOpenPositionSelect.value;
@@ -125,34 +181,35 @@ function setLabelDisabled(label, disabled) {
 	}
 }
 
+function setSettingEnabled(settingName, enabled) {
+	window[`${settingName}_checkbox`].disabled = !enabled;
+	setLabelDisabled(window[`${settingName}_label`], !enabled);
+}
+
 async function updateFormActivityStates() {
 	const archiveSettings = await settings.archiveSettings;
-
-	const showSessionRestoreSettings = archiveSettings.archiveAllTabsOnSessionRestore;
 	
-	const showCloseHiddenTabsFromPopup = archiveSettings.autoCloseArchivedTabsFromPopup && archiveSettings.archiveHiddenTabsFromPopup;
-	const showClosePinnedTabsFromPopup = archiveSettings.autoCloseArchivedTabsFromPopup && archiveSettings.archivePinnedTabsFromPopup;
-	
-	const showCloseHiddenTabsFromSessionRestore = showSessionRestoreSettings && archiveSettings.autoCloseArchivedTabsFromSessionRestore && archiveSettings.archiveHiddenTabsFromSessionRestore;
-	const showClosePinnedTabsFromSessionRestore = showSessionRestoreSettings && archiveSettings.autoCloseArchivedTabsFromSessionRestore && archiveSettings.archivePinnedTabsFromSessionRestore;
-	
-	setLabelDisabled(autoCloseArchivedTabsFromSessionRestoreLabel, !showSessionRestoreSettings);
-	setLabelDisabled(autoCloseArchivedTabsFromSessionRestoreNoteLabel, !showSessionRestoreSettings);
-	autoCloseArchivedTabsFromSessionRestoreCheckbox.disabled = !showSessionRestoreSettings;
-	setLabelDisabled(archiveHiddenTabsFromSessionRestoreLabel, !showSessionRestoreSettings);
-	archiveHiddenTabsFromSessionRestoreCheckbox.disabled = !showSessionRestoreSettings;
-	setLabelDisabled(archivePinnedTabsFromSessionRestoreLabel, !showSessionRestoreSettings);
-	archivePinnedTabsFromSessionRestoreCheckbox.disabled = !showSessionRestoreSettings;
-	
-	setLabelDisabled(closeHiddenTabsFromPopupLabel, !showCloseHiddenTabsFromPopup);
-	closeHiddenTabsFromPopupCheckbox.disabled = !showCloseHiddenTabsFromPopup;
-	setLabelDisabled(closePinnedTabsFromPopupLabel, !showClosePinnedTabsFromPopup);
-	closePinnedTabsFromPopupCheckbox.disabled = !showClosePinnedTabsFromPopup;
-	
-	setLabelDisabled(closeHiddenTabsFromSessionRestoreLabel, !showCloseHiddenTabsFromSessionRestore);
-	closeHiddenTabsFromSessionRestoreCheckbox.disabled = !showCloseHiddenTabsFromSessionRestore;
-	setLabelDisabled(closePinnedTabsFromSessionRestoreLabel, !showClosePinnedTabsFromSessionRestore);
-	closePinnedTabsFromSessionRestoreCheckbox.disabled = !showClosePinnedTabsFromSessionRestore;
+	for (const contextName in archiveSettings.contextSpecificSettings) {
+		const contextSpecificSettings = archiveSettings.contextSpecificSettings[contextName];
+		
+		let canChangeSettings = true;
+		
+		if (contextName === "sessionRestore" && !window[`${contextName}_archiveAllTabs_checkbox`].checked) {
+			canChangeSettings = false;
+		}
+		
+		setSettingEnabled(`${contextName}_autoCloseArchivedTabs`, canChangeSettings);
+		
+		for (const tabName in contextSpecificSettings.tabSpecificSettings) {
+			const tabSpecificSettings = contextSpecificSettings.tabSpecificSettings[tabName];
+		
+			setSettingEnabled(`${contextName}_${tabName}_canArchive`, canChangeSettings);
+			
+			const canChangeCloseSetting = canChangeSettings && window[ `${contextName}_${tabName}_canArchive_checkbox` ].checked;
+		
+			setSettingEnabled(`${contextName}_${tabName}_canClose`, canChangeCloseSetting);
+		}
+	}
 	
 	const showPreviewImageFormatSelection = archiveSettings.savePreviewImages;
 	const showPreviewImageQualitySelection = showPreviewImageFormatSelection && archiveSettings.previewImageFormat == "jpeg";

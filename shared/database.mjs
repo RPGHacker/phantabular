@@ -281,18 +281,34 @@ export class PhanTabularDB extends Dexie {
 		return null;
 	}
 	
-	_getTabSpecificSettings(contextSpecificSettings, tab) {			
-		if (tab.hidden) {
-			return contextSpecificSettings.tabSpecificSettings.hidden;
-		} else if (tab.pinned) {
-			return contextSpecificSettings.tabSpecificSettings.pinned;
-		} else if (tab.url.startsWith("about:")) {
-			return contextSpecificSettings.tabSpecificSettings.browser;
-		} else if (tab.url.startsWith("moz-extension:")) {
-			return contextSpecificSettings.tabSpecificSettings.extension;
+	_mergeTabSpecificSettings(targetSettings, sourceSettings) {
+		targetSettings.canArchive = targetSettings.canArchive && sourceSettings.canArchive;
+		targetSettings.canClose = targetSettings.canClose && sourceSettings.canClose;
+	}
+	
+	_getTabSpecificSettings(contextSpecificSettings, tab) {
+		const tabSpecificSettings = {
+			canArchive: true,
+			canClose: true,
 		}
 		
-		return null;
+		if (tab.hidden) {
+			this._mergeTabSpecificSettings(tabSpecificSettings, contextSpecificSettings.tabSpecificSettings.hidden);
+		}
+		
+		if (tab.pinned) {
+			this._mergeTabSpecificSettings(tabSpecificSettings, contextSpecificSettings.tabSpecificSettings.pinned);
+		}
+		
+		if (tab.url.startsWith("about:")) {
+			this._mergeTabSpecificSettings(tabSpecificSettings, contextSpecificSettings.tabSpecificSettings.browser);
+		}
+		
+		if (tab.url.startsWith("moz-extension:")) {
+			this._mergeTabSpecificSettings(tabSpecificSettings, contextSpecificSettings.tabSpecificSettings.extension);
+		}
+		
+		return tabSpecificSettings;
 	}
 
 	async archiveTabs(tabs, origin, sessionDate = undefined) {

@@ -140,13 +140,9 @@ export class DebugHelper {
 	
 	_patchMissingSettings(target, source) {
 		for (const key in source) {
-			if (typeof source[key] === "object") {
-				if (typeof target[key] === "object") {
-					this._patchMissingSettings(target[key], source[key]);
-				} else {
-					target[key] = JSON.parse(JSON.stringify(source[key]));
-				}
-			} else {
+			if (typeof source[key] === "object" && typeof target[key] === "object") {
+				this._patchMissingSettings(target[key], source[key]);
+			} else if (typeof target[key] !== typeof source[key]) {
 				target[key] = source[key];
 			}
 		}

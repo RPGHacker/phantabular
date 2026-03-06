@@ -4,86 +4,6 @@ import db from "../shared/database.mjs";
 
 let previewImageTimer = null;
 let hasCapturePermission = false;
-
-function createTabsView(container, tabs) {
-	const returnedElements = {};
-	
-	container.insertAdjacentHTML("beforeend", `
-		<div class="tabs-view" data-selectedtab="0">
-			<div class="tabs-view-tab-selection-bar">
-			</div>
-			<div class="tab-view-contents-root">
-			</div>
-		</div>
-	`);
-	
-	const selectionBar = container.querySelector(".tabs-view:last-of-type > .tabs-view-tab-selection-bar");
-	const contentsRoot = container.querySelector(".tabs-view:last-of-type > .tab-view-contents-root");
-	let tabCount = 0;
-	
-	for (const tabName in tabs) {
-		const tabDisplayName = tabs[tabName];
-		
-		selectionBar.insertAdjacentHTML("beforeend", `
-			<button class="tabs-view-tab-selection-button" data-tabindex="${tabCount}" data-action="select-tab">${tabDisplayName}</button>
-		`);
-		
-		contentsRoot.insertAdjacentHTML("beforeend", `
-			<div class="tab-view-contents" data-tabindex="${tabCount}">
-			</div>
-		`);
-		
-		returnedElements[tabName] = {}
-		returnedElements[tabName].root = contentsRoot.querySelector(`.tab-view-contents[data-tabindex="${tabCount}"]`);
-		
-		tabCount++;
-	}
-	
-	return returnedElements;
-}
-
-function createTabSpecificSettingsTabView(container, targetObject, contextName) {
-	const tabs = {
-		hidden: "Hidden Tabs",
-		pinned: "Pinned Tabs",
-		browser: "Browser-specific Tabs (\"about:\")",
-		extension: "Extension Tabs (\"moz-extension:\")",
-	}
-	
-	targetObject.tabSpecificSettings = createTabsView(container, tabs);
-	
-	for (const tabName in tabs) {
-		targetObject.tabSpecificSettings[tabName].root.insertAdjacentHTML("beforeend", `
-			<div><input type="checkbox" id="${contextName}_${tabName}_canArchive_checkbox" /><label id="${contextName}_${tabName}_canArchive_label" for="${contextName}_${tabName}_canArchive_checkbox">Can be archived</label></div>
-			<div><label class="note">NOTE: The "Selected Tab(s)" button can always archive tabs.</label></div>
-			<div><input type="checkbox" id="${contextName}_${tabName}_canClose_checkbox" /><label id="${contextName}_${tabName}_canClose_label" for="${contextName}_${tabName}_canClose_checkbox">Will be closed after archival</label></div>
-		`);
-	}
-}
-
-const contextSpecificSettingTabElements = createTabsView(contextSpecificSettings, {
-	popup: "Popup",
-	sessionRestore: "Session Restore",
-});
-
-contextSpecificSettingTabElements.popup.root.insertAdjacentHTML("beforeend", `
-	<div><input type="checkbox" id="popup_autoCloseArchivedTabs_checkbox" /><label id="popup_autoCloseArchivedTabs_label" for="popup_autoCloseArchivedTabs_checkbox">Automatically close tabs after archival</label></div>
-	
-	<h3>Tab-specific settings:</h3>
-`);
-
-contextSpecificSettingTabElements.sessionRestore.root.insertAdjacentHTML("beforeend", `
-	<div><input type="checkbox" id="sessionRestore_archiveAllTabs_checkbox" /><label id="sessionRestore_archiveAllTabs_label" for="sessionRestore_archiveAllTabs_checkbox">Archive all open tabs on session restore</label></div>
-	<div><label class="note" >NOTE: Installing a new version of the extension will also trigger this effect and archive all tabs. Since the browser can update extensions automatically in the background, this might lead to your tabs being archived seemingly at random sometimes. (Namely whenever an update of the extension releases).</label></div>
-	<div><input type="checkbox" id="sessionRestore_autoCloseArchivedTabs_checkbox" /><label id="sessionRestore_autoCloseArchivedTabs_label" for="sessionRestore_autoCloseArchivedTabs_checkbox">Automatically close tabs after archival</label></div>
-	
-	<h3>Tab-specific settings:</h3>
-`);
-
-for (const contextName in contextSpecificSettingTabElements) {
-	const contextSpecificTabData = contextSpecificSettingTabElements[contextName];
-	createTabSpecificSettingsTabView(contextSpecificTabData.root, contextSpecificTabData, contextName);
-}
 	
 function initializeForms(archiveSettings, openSettings) {
 	noDuplicateUrlsCheckbox.checked = archiveSettings.noDuplicateUrls;
@@ -183,7 +103,7 @@ function setLabelDisabled(label, disabled) {
 
 function setSettingEnabled(settingName, enabled) {
 	window[`${settingName}_checkbox`].disabled = !enabled;
-	setLabelDisabled(window[`${settingName}_label`], !enabled);
+	//setLabelDisabled(window[`${settingName}_label`], !enabled);
 }
 
 async function updateFormActivityStates() {

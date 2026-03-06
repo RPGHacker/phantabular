@@ -50,14 +50,129 @@
 			<div id="settings-root">
 				<h1>Settings</h1>
 				
+				<h2>Archival settings:</h2>
 				<div id="archive-settings" class="settings-section colorize-section">
-					<h2>Archival settings:</h2>					
+					<h3>General:</h3>
 					<div><input type="checkbox" id="noDuplicateUrlsCheckbox" /><label for="noDuplicateUrlsCheckbox">Merge tabs with identical URLs (avoids multiple copies of the same tab within a single group)</label></div>
 					<div><input type="checkbox" id="onlyStoreLatestSessionCheckbox" /><label for="onlyStoreLatestSessionCheckbox">Only store the latest session of a tab (empty sessions will automatically be deleted once the last tab moves out of them)</label></div>
 					
-					<div id="contextSpecificSettings">
-						<h3>Context-specific settings:</h3>
+					<hr />
+					
+					<h3>Context-specific settings:</h3>
+					<div class="config-specific-settings">						
+						<table class="settings-matrix colorize-table">
+							<tr>
+								<th></th>
+								<th>Popup</th>
+								<th>Session Restore</th>
+							</tr>
+							<tr>
+								<td>Activation archives all tabs in the current window&nbsp;*</td>
+								<td></td>
+								<td><input id="sessionRestore_archiveAllTabs_checkbox" type="checkbox" /></td>
+							</tr>
+							<tr>
+								<td>Closes tabs after archival</td>
+								<td><input id="popup_autoCloseArchivedTabs_checkbox" type="checkbox" /></td>
+								<td><input id="sessionRestore_autoCloseArchivedTabs_checkbox" type="checkbox" /></td>
+							</tr>
+						</table>
+						
+						<div><label class="note">*&nbsp;Only applies to session restore - the popup archives tabs via its action buttons.</label></div>
+					
 					</div>
+					
+					<hr />
+						
+					<h3>Tab-specific settings:</h3>
+					<div class="config-specific-settings">						
+						<div>These settings only apply if the respective context-specific setting is enabled.</div>
+						
+						<table class="settings-matrix colorize-table">
+							<tr>
+								<th>Hidden Tabs</th>
+								<th>Popup</th>
+								<th>Session Restore</th>
+							</tr>
+							<tr>
+								<td>Can be archived&nbsp;*</td>
+								<td><input id="popup_hidden_canArchive_checkbox" type="checkbox" /></td>
+								<td><input id="sessionRestore_hidden_canArchive_checkbox" type="checkbox" /></td>
+							</tr>
+							<tr>
+								<td>Can be closed after archival</td>
+								<td><input id="popup_hidden_canClose_checkbox" type="checkbox" /></td>
+								<td><input id="sessionRestore_hidden_canClose_checkbox" type="checkbox" /></td>
+							</tr>
+							<tr class="separator-row">
+								<td></td>
+								<td></td>
+								<td></td>
+							</tr>
+							
+							<tr>
+								<th>Pinned Tabs</th>
+								<th>Popup</th>
+								<th>Session Restore</th>
+							</tr>
+							<tr>
+								<td>Can be archived&nbsp;*</td>
+								<td><input id="popup_pinned_canArchive_checkbox" type="checkbox" /></td>
+								<td><input id="sessionRestore_pinned_canArchive_checkbox" type="checkbox" /></td>
+							</tr>
+							<tr>
+								<td>Can be closed after archival</td>
+								<td><input id="popup_pinned_canClose_checkbox" type="checkbox" /></td>
+								<td><input id="sessionRestore_pinned_canClose_checkbox" type="checkbox" /></td>
+							</tr>
+							<tr class="separator-row">
+								<td></td>
+								<td></td>
+								<td></td>
+							</tr>
+							
+							<tr>
+								<th>Browser-specific Tabs ("about:")</th>
+								<th>Popup</th>
+								<th>Session Restore</th>
+							</tr>
+							<tr>
+								<td>Can be archived&nbsp;*</td>
+								<td><input id="popup_browser_canArchive_checkbox" type="checkbox" /></td>
+								<td><input id="sessionRestore_browser_canArchive_checkbox" type="checkbox" /></td>
+							</tr>
+							<tr>
+								<td>Can be closed after archival</td>
+								<td><input id="popup_browser_canClose_checkbox" type="checkbox" /></td>
+								<td><input id="sessionRestore_browser_canClose_checkbox" type="checkbox" /></td>
+							</tr>
+							<tr class="separator-row">
+								<td></td>
+								<td></td>
+								<td></td>
+							</tr>
+							
+							<tr>
+								<th>Extension Tabs ("moz-extension:")</th>
+								<th>Popup</th>
+								<th>Session Restore</th>
+							</tr>
+							<tr>
+								<td>Can be archived&nbsp;*</td>
+								<td><input id="popup_extension_canArchive_checkbox" type="checkbox" /></td>
+								<td><input id="sessionRestore_extension_canArchive_checkbox" type="checkbox" /></td>
+							</tr>
+							<tr>
+								<td>Can be closed after archival</td>
+								<td><input id="popup_extension_canClose_checkbox" type="checkbox" /></td>
+								<td><input id="sessionRestore_extension_canClose_checkbox" type="checkbox" /></td>
+							</tr>
+						</table>
+						
+						<div><label class="note">*&nbsp;The "Selected Tab(s)" button in the popup can always archive tabs.</label></div>
+					</div>
+					
+					<hr />
 					
 					<h3>Preview images:</h3>
 					<div class="inner-section">
@@ -107,8 +222,9 @@
 					</div>
 				</div>
 				
+				<h2>Open settings:</h2>
 				<div id="open-settings" class="settings-section colorize-section">
-					<h2>Open settings:</h2>
+					<h3>General:</h3>
 					<div><input type="checkbox" id="deleteTabsUponOpenCheckbox" /><label for="deleteTabsUponOpenCheckbox">Opening tabs from the archive automatically deletes them from it</label></div>
 					<div>
 						<label for="tabOpenPositionSelect">Position of tabs after opening from the archive:</label>

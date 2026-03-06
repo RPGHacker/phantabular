@@ -8,6 +8,10 @@ body {
 	--width-card-wide: auto;
 }
 
+hr {
+	margin: 1rem 0;
+}
+
 
 /* Prevent contents of buttons from being selectable */
 button img {
@@ -229,4 +233,98 @@ div.tabs-view[data-selectedtab="7"] > div.tab-view-contents-root > div.tab-view-
 div.tabs-view[data-selectedtab="8"] > div.tab-view-contents-root > div.tab-view-contents[data-tabindex="8"],
 div.tabs-view[data-selectedtab="9"] > div.tab-view-contents-root > div.tab-view-contents[data-tabindex="9"] {
 	display: block;
+}
+
+/* Stylings for context-specific settings and matrices */
+.config-specific-settings {
+	width: max-content;
+}
+
+.config-specific-settings > table > tbody {
+	width: 100%;
+}
+
+table.settings-matrix {
+	display: table;
+	margin: 15px 0px 15px 0px;
+	border-collapse: collapse;
+}
+
+table.settings-matrix > tbody > tr > th:first-child,
+table.settings-matrix > tbody > tr > td:first-child {
+	max-width: 300px;
+}
+
+table.settings-matrix > tbody > tr:nth-child(odd) {
+  /* background-color: light-dark(#b3c7c5, #00162d); */
+}
+
+table.settings-matrix > tbody > tr.separator-row {
+	height: 35px;
+	background-color: transparent;
+	border-top-style: dashed;
+	border-bottom-style: dashed;
+	border-top-width: 2px;
+	border-bottom-width: 2px;
+	border-color: var(--color-bg-secondary);
+}
+
+table.settings-matrix > tbody > tr > th:not(:first-child),
+table.settings-matrix > tbody > tr > td:not(:first-child) {
+	text-align: center;
+}
+
+table.settings-matrix > tbody > tr > * > input[type="checkbox"] {
+	background-color: light-dark(var(--oc-gray-1), var(--oc-gray-9));
+	appearance: none;
+	padding: 0px;
+	width: 14px;
+	height: 14px;
+	border-width: 1px;
+	border-style: solid;
+	border-color: light-dark(var(--oc-gray-6), var(--oc-gray-6));
+	border-radius: 2px;
+	margin-top: 9px;
+	margin-bottom: 7px;
+}
+
+table.settings-matrix > tbody > tr > * > input[type="checkbox"]:hover {
+	background-color: light-dark(var(--oc-gray-0), var(--oc-gray-8));
+	border-color: light-dark(var(--oc-gray-5), var(--oc-gray-5));
+}
+
+table.settings-matrix > tbody > tr > * > input[type="checkbox"]:active {
+	background-color: light-dark(var(--oc-white), var(--oc-gray-7));
+	border-color: light-dark(var(--oc-gray-4), var(--oc-gray-4));
+}
+
+table.settings-matrix > tbody > tr > * > input[type="checkbox"]:checked {
+	background-color: light-dark(var(--oc-gray-7), var(--oc-gray-4));
+	border-color: light-dark(var(--oc-gray-7), var(--oc-gray-4));
+}
+
+table.settings-matrix > tbody > tr > * > input[type="checkbox"]:checked:hover {
+	background-color: light-dark(var(--oc-gray-6), var(--oc-gray-2));
+	border-color: light-dark(var(--oc-gray-6), var(--oc-gray-2));
+}
+
+table.settings-matrix > tbody > tr > * > input[type="checkbox"]:checked:active {
+	background-color: light-dark(var(--oc-gray-5), var(--oc-gray-0));
+	border-color: light-dark(var(--oc-gray-5), var(--oc-gray-0));
+}
+
+table.settings-matrix > tbody > tr > * > input[type="checkbox"][disabled],
+table.settings-matrix > tbody > tr > * > input[type="checkbox"][disabled]:checked {
+	background-color: light-dark(var(--oc-gray-4), var(--oc-black));
+	border-color: light-dark(var(--oc-gray-5), var(--oc-gray-7));
+}
+
+table.settings-matrix > tbody > tr > * > input[type="checkbox"]:checked::before {
+	color: light-dark(var(--oc-white), var(--oc-black));
+	content: "\2713";
+	font-weight: bold;
+	position: relative;
+	top: -4px;
+	font-size: 14px;
+	display: table-row;
 }

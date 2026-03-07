@@ -125,7 +125,9 @@ async function updateFormActivityStates() {
 		
 			setSettingEnabled(`${contextName}_${tabName}_canArchive`, canChangeSettings);
 			
-			const canChangeCloseSetting = canChangeSettings && window[ `${contextName}_${tabName}_canArchive_checkbox` ].checked;
+			const canChangeCloseSetting = canChangeSettings
+				&& window[ `${contextName}_autoCloseArchivedTabs_checkbox` ].checked
+				&& window[ `${contextName}_${tabName}_canArchive_checkbox` ].checked;
 		
 			setSettingEnabled(`${contextName}_${tabName}_canClose`, canChangeCloseSetting);
 		}

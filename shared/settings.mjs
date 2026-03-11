@@ -80,6 +80,7 @@ export class Settings {
 				deleteTabsUponOpen: false,
 				tabOpenPosition: "nextToActiveTab",
 				confirmTabDeletion: true,
+				restoreHiddenTabsAsHidden: true,
 			}
 		};
 		

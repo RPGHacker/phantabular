@@ -11,7 +11,10 @@ const activeLiveQueryCountSubscriptions = {};
 const queryCountFunctions = {};
 const activeMutationObservers = {};
 
+// NOTE: For more stability, these should probably go into the database.
+// But that's a lot of added complexity that I don't feel like bothering with right now.
 const windowIdRemaps = {};
+const groupIdRemaps = {};
 
 let currentDragParent = null;
 let currentlyDraggedElements = [];
@@ -515,7 +518,7 @@ function updateBadge(group, badgeData) {
 	
 	if (badgeData.uniqueTabCount !== undefined) {
 		if (newBadgeText !== "") {
-			newBadgeText += "｜";
+			newBadgeText += "|";
 		}
 		newBadgeText += `${badgeData.uniqueTabCount}`;
 		badgeSummaryElement.dataset.hasuniquetabs = true;
@@ -1403,7 +1406,7 @@ async function openTab(tab) {
 	const openSettings = await settings.openSettings;
 		
 	const legalProperties = [
-		"active",
+		//"active",
 		"cookieStoreId",
 		"discarded",
 		"index",
@@ -1415,7 +1418,9 @@ async function openTab(tab) {
 		"windowId",
 	];
 	
-	const createProperties = {};
+	const createProperties = {
+		active: false,
+	};
 	
 	for (const propertyName of legalProperties) {
 		if (typeof tab.metadata[propertyName] !== "undefined") {
@@ -1450,9 +1455,61 @@ async function openTab(tab) {
 	
 	// TODO: Try to restore some more properties, like "hidden".
 	
-	const openPromise = browser.tabs.create(createProperties);
+	const restoreAsHidden = openSettings.restoreHiddenTabsAsHidden && tab.metadata.hidden;
 	
-	openPromise.then(async () => {		
+	const openPromise = async function() {
+		const tab = await browser.tabs.create(createProperties);
+		// So that calling code can immediately query this...
+		tab.hidden = restoreAsHidden;
+		return tab;
+	}();
+	
+	openPromise.then(async (openedTab) => {
+		if (tab.metadata.groupId != -1) {
+			const groupProperties = {
+				groupId: tab.metadata.groupId,
+				tabIds: [ openedTab.id ],
+			};
+			
+			while (groupIdRemaps[groupProperties.groupId] && groupProperties.groupId != groupIdRemaps[groupProperties.groupId]) {
+				groupProperties.groupId = groupIdRemaps[groupProperties.groupId];
+			}
+			
+			try {			
+				await browser.tabs.group(groupProperties);
+			} catch (error) {
+				// This is hacky and horrible, but there doesn't seem to be
+				// any official means of checking whether a group exists?
+				// So the choice is between either this or just not restoring groups.
+				if (error.message.startsWith("No group with id:")) {
+					const previousGroupId = groupProperties.groupId;
+					delete groupProperties.groupId;
+					
+					groupProperties.createProperties = {
+						windowId: createProperties.windowId,
+					};
+					
+					try {
+						const newGroupId = await browser.tabs.group(groupProperties);
+						
+						groupIdRemaps[previousGroupId] = newGroupId;
+					} catch(error) {
+						// Do we bother displaying this error to the user?
+						debugh.error(error);
+					}
+				}
+			}
+		}
+		
+		if (restoreAsHidden) {
+			try {
+				await browser.tabs.hide(openedTab.id);
+			} catch(error) {
+				// Do we bother displaying this error to the user?
+				debugh.error(error);
+			}
+		}
+		
 		if (openSettings.deleteTabsUponOpen) {
 			await db.deleteTabs([ tab.id ]);
 		}
@@ -1611,6 +1668,10 @@ function openTabForElement(tabElement) {
 }
 
 async function setTabActive(tab) {
+	if (tab.hidden) {
+		return false;
+	}
+	
 	return browser.tabs.update(tab.id, {active: true});
 }
 

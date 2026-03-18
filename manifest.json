@@ -10,7 +10,7 @@
 		"96": "icons/phantabular.svg"
 	},
 	
-	"permissions": ["activeTab", "sessions", "tabGroups", "tabHide", "tabs", "storage", "unlimitedStorage", "cookies"],
+	"permissions": ["activeTab", "tabGroups", "tabHide", "tabs", "storage", "unlimitedStorage", "cookies"],
 	"optional_permissions": ["<all_urls>", "bookmarks", "downloads"],
 	
 	"browser_specific_settings": {

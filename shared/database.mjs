@@ -300,8 +300,13 @@ export class PhanTabularDB extends Dexie {
 			this._mergeTabSpecificSettings(tabSpecificSettings, contextSpecificSettings.tabSpecificSettings.pinned);
 		}
 		
-		if (tab.url.startsWith("about:")) {
-			this._mergeTabSpecificSettings(tabSpecificSettings, contextSpecificSettings.tabSpecificSettings.browser);
+		const browserSpecificUrls = ["about:", "chrome:", "data:", "file:"];
+		
+		for (const browserSpecificUrl of browserSpecificUrls) {
+			if (tab.url.startsWith(browserSpecificUrl)) {
+				this._mergeTabSpecificSettings(tabSpecificSettings, contextSpecificSettings.tabSpecificSettings.browser);
+				break;
+			}
 		}
 		
 		if (tab.url.startsWith("moz-extension:")) {
@@ -341,7 +346,7 @@ export class PhanTabularDB extends Dexie {
 		for (const tab of tabs){
 			const tabSpecificSettings = this._getTabSpecificSettings(contextSpecificSettings, tab);
 			
-			if (!tabSpecificSettings.canArchive) {
+			if (!tabSpecificSettings.canArchive && origin !== "popup-manual-selection") {
 				debugh.logVerbose("Not archiving tab", tab.id, "because its tab-specific settings prevent archiving it.");
 				debugh.logVerbose("Tab details:", tab);
 				continue;

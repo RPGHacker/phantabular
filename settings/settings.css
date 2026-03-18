@@ -178,6 +178,7 @@ table.settings-matrix {
 table.settings-matrix > tbody > tr > th:first-child,
 table.settings-matrix > tbody > tr > td:first-child {
 	max-width: 300px;
+	padding-right: 40px;
 }
 
 table.settings-matrix > tbody > tr.separator-row {

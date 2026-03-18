@@ -1416,6 +1416,11 @@ async function openTab(tab) {
 		"windowId",
 	];
 	
+	// Should this set "openerTabId", and if so, how? The original openerTabId might no longer
+	// be valid - the respective tab might've already been closed. Setting the ID of the archive tab
+	// (aka the currently active tab) also won't always work, since the openerTabId needs to be
+	// in the same window as the opened tab.
+	
 	const createProperties = {
 		active: false,
 		discarded: openSettings.openTabsUnloaded,
@@ -1451,8 +1456,6 @@ async function openTab(tab) {
 			createProperties.index = windowTabs.length;
 			break;
 	}
-	
-	// TODO: Try to restore some more properties, like "hidden".
 	
 	const restoreAsHidden = openSettings.restoreHiddenTabsAsHidden && tab.metadata.hidden;
 	

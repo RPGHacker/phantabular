@@ -81,6 +81,8 @@ export class Settings {
 				tabOpenPosition: "nextToActiveTab",
 				confirmTabDeletion: true,
 				restoreHiddenTabsAsHidden: true,
+				jumpToOpenedTab: true,
+				openTabsUnloaded: false,
 			}
 		};
 		

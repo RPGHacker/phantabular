@@ -1406,9 +1406,7 @@ async function openTab(tab) {
 	const openSettings = await settings.openSettings;
 		
 	const legalProperties = [
-		//"active",
 		"cookieStoreId",
-		"discarded",
 		"index",
 		"muted",
 		"openInReaderMode",
@@ -1420,6 +1418,7 @@ async function openTab(tab) {
 	
 	const createProperties = {
 		active: false,
+		discarded: openSettings.openTabsUnloaded,
 	};
 	
 	for (const propertyName of legalProperties) {
@@ -1668,7 +1667,9 @@ function openTabForElement(tabElement) {
 }
 
 async function setTabActive(tab) {
-	if (tab.hidden) {
+	const openSettings = await settings.openSettings;
+	
+	if (!openSettings.jumpToOpenedTab || tab.hidden) {
 		return false;
 	}
 	

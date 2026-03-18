@@ -41,6 +41,8 @@ function initializeForms(archiveSettings, openSettings) {
 	}
 	
 	restoreHiddenTabsAsHiddenCheckbox.checked = openSettings.restoreHiddenTabsAsHidden;
+	jumpToOpenedTabCheckbox.checked = openSettings.jumpToOpenedTab;
+	openTabsUnloadedCheckbox.checked = openSettings.openTabsUnloaded;
 	deleteTabsUponOpenCheckbox.checked = openSettings.deleteTabsUponOpen;
 	tabOpenPositionSelect.value = openSettings.tabOpenPosition;
 	confirmTabDeletionCheckbox.checked = openSettings.confirmTabDeletion;
@@ -88,6 +90,8 @@ async function saveChanges() {
 	}
 	
 	openSettings.restoreHiddenTabsAsHidden = restoreHiddenTabsAsHiddenCheckbox.checked;
+	openSettings.jumpToOpenedTab = jumpToOpenedTabCheckbox.checked;
+	openSettings.openTabsUnloaded = openTabsUnloadedCheckbox.checked;
 	openSettings.deleteTabsUponOpen = deleteTabsUponOpenCheckbox.checked;
 	openSettings.tabOpenPosition = tabOpenPositionSelect.value;
 	openSettings.confirmTabDeletion = confirmTabDeletionCheckbox.checked;

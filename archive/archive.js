@@ -1477,29 +1477,31 @@ async function openTab(tab) {
 				groupProperties.groupId = groupIdRemaps[groupProperties.groupId];
 			}
 			
-			try {			
-				await browser.tabs.group(groupProperties);
+			const previousGroupId = groupProperties.groupId;
+			
+			try {
+				await browser.tabGroups.get(groupProperties.groupId);
 			} catch (error) {
-				// This is hacky and horrible, but there doesn't seem to be
-				// any official means of checking whether a group exists?
-				// So the choice is between either this or just not restoring groups.
-				if (error.message.startsWith("No group with id:")) {
-					const previousGroupId = groupProperties.groupId;
-					delete groupProperties.groupId;
+				// The most likely reason of failure here would be the group not existing,
+				// so we try to create a new one.
+				debugh.error(error);
+				
+				delete groupProperties.groupId;
 					
-					groupProperties.createProperties = {
-						windowId: createProperties.windowId,
-					};
-					
-					try {
-						const newGroupId = await browser.tabs.group(groupProperties);
-						
-						groupIdRemaps[previousGroupId] = newGroupId;
-					} catch(error) {
-						// Do we bother displaying this error to the user?
-						debugh.error(error);
-					}
+				groupProperties.createProperties = {
+					windowId: createProperties.windowId,
+				};
+			}
+			
+			try {			
+				const newGroupId = await browser.tabs.group(groupProperties);
+				
+				if (newGroupId != tab.metadata.groupId) {
+					groupIdRemaps[previousGroupId] = newGroupId;
 				}
+			} catch (error) {
+				// Do we bother displaying this error to the user?
+				debugh.error(error);
 			}
 		}
 		

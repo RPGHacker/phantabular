@@ -206,8 +206,9 @@ details.root-details .group-contents > .groups-list-for-drag-and-drop > details 
 }
 
 details.root-details .group-contents > .groups-list-for-drag-and-drop > details[data-dragtarget=true] > summary {
-	--group-details-summary-bg-color: var(--group-details-summary-hover-bg-color);
-	box-shadow: inset 0px 0px 0px 5px var(--filtered-count-badge-background-color);
+	--group-details-summary-bg-color: light-dark(var(--oc-gray-5), var(--oc-gray-5));
+	--total-count-badge-background-color: light-dark(var(--oc-gray-6), var(--oc-gray-7));
+	box-shadow: inset 0px 0px 0px 5px light-dark(var(--oc-indigo-6), var(--oc-indigo-4));
 }
 
 /* Stylings of "group" detail boxes (aka inner group boxes) */
@@ -235,8 +236,8 @@ ul.tabs-list > li, ul.tabs-list-for-drag-and-drop > li {
 	color: light-dark(var(--oc-black), var(--oc-white));
 }
 
-ul.tabs-list-for-drag-and-drop > li.drop-footer {
-	--tab-entry-background-color: light-dark(var(--oc-gray-3), var(--oc-gray-8));
+.drop-footer {
+	display: none;
 }
 
 ul.tabs-list > li:hover {

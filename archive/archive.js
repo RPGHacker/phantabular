@@ -1123,11 +1123,7 @@ function createTabsListForDragAndDrop(group, tabsList) {
 	}
 	
 	tabsListForDragAndDrop.insertAdjacentHTML("beforeend", `
-		<li class="tab-entry colorize-gray drop-footer" data-tabid="-1" tabindex="0" data-focuscount="0" data-hasfocus="false" data-droptargetindex="${dropTargetIndex}">
-			<span class="fav-icon-list-item" data-validimage="false"><img src="" class="fav-icon-small"/></span>
-			<span class="overlap overlapping-content">
-				<span class="title"><center>&#x2191;</center></span>
-			</span>
+		<li class="drop-footer" data-tabid="-1" tabindex="0" data-focuscount="0" data-hasfocus="false" data-droptargetindex="${dropTargetIndex}">
 		</li>
 	`);
 }
@@ -1263,20 +1259,7 @@ function createGroupsListForDragAndDrop(group, groupsList) {
 	}
 	
 	groupsListForDragAndDrop.insertAdjacentHTML("beforeend", `
-		<details class="group-details group-box colorize-gray drop-footer" data-groupid="-1" tabindex="0" data-focuscount="0" data-hasfocus="false" data-droptargetindex="${dropTargetIndex}">
-			<summary data-hasfocus="false">
-				<span class="summary-contents">
-					<span class="summary-dynamics">
-						<span class="summary-overlap overlapping-content">
-							<span class="summary-title">&#x2190;</span>
-						</span>
-					</span>
-				</span>
-			</summary>
-			<div class="group-content-setup-root overlapping-content">
-				<div class="group-contents">
-				</div>
-			</div>
+		<details class="drop-footer" data-groupid="-1" tabindex="0" data-focuscount="0" data-hasfocus="false" data-droptargetindex="${dropTargetIndex}">
 		</details>
 	`);
 }
@@ -1715,29 +1698,6 @@ async function removeTabFromGroup(tabId, groupElement) {
 }
 
 
-document.addEventListener("dragenter", (e) => {	
-	if (e.target.dataset.droptargetindex !== undefined) {
-		if (currentlyDraggedElements.length !== 0) {
-			const tabsListForDragAndDrop = e.target.closest(".tabs-list-for-drag-and-drop");
-			if (tabsListForDragAndDrop !== null && !currentlyDraggedElements.includes(e.target)) {			
-				for (const currentlyDraggedElement of currentlyDraggedElements) {
-					tabsListForDragAndDrop.insertBefore(currentlyDraggedElement, e.target);
-				}
-			}
-		}
-		
-		// Handled in dragover instead, so that we can test which side of the group we overlap.
-		/*
-		if (currentlyDraggedGroupElement !== null) {
-			const groupsListForDragAndDrop = e.target.closest(".groups-list-for-drag-and-drop");
-			if (groupsListForDragAndDrop !== null) {
-				groupsListForDragAndDrop.insertBefore(currentlyDraggedGroupElement, e.target);
-			}
-		}
-		*/
-	}
-});
-
 document.addEventListener("dragstart", (e) => {
 	const container = e.target.closest(".group-contents");
 	
@@ -1814,7 +1774,9 @@ document.addEventListener("dragstart", (e) => {
 					}
 				}
 				
-				targetGroup.open = sourceGroup.open;
+				// Feels better when we close those groups after all. Makes dragging easier.
+				//targetGroup.open = sourceGroup.open;
+				targetGroup.open = false;
 			}
 			
 			const currentlyDraggedElement = groupsListForDragAndDrop.querySelector(`[data-droptargetindex="${e.target.dataset.droptargetindex}"]`);
@@ -1968,20 +1930,50 @@ document.addEventListener("dragover", (e) => {
 	if (currentDragParent !== null) {
 		const rect = currentDragParent.getBoundingClientRect();
 	
-		const inside =
+		const insideParent =
 			e.clientX >= rect.left &&
 			e.clientX <= rect.right &&
 			e.clientY >= rect.top &&
 			e.clientY <= rect.bottom;
 	
-		if (inside) {
+		if (insideParent) {
 			e.preventDefault();
 			
-			if (e.target.dataset.droptargetindex !== undefined)
-			{
-				if (currentlyDraggedGroupElement !== null && e.target !== currentlyDraggedGroupElement) {
+			if (e.target.dataset.droptargetindex !== undefined)	{				
+				if (currentlyDraggedElements.length !== 0) {
+					const tabsListForDragAndDrop = e.target.closest(".tabs-list-for-drag-and-drop");
+					if (tabsListForDragAndDrop !== null && !currentlyDraggedElements.includes(e.target)) {
+						const targetRect = e.target.getBoundingClientRect();
+						
+						const overlapsTargetTop =
+							e.clientX >= targetRect.left &&
+							e.clientX < targetRect.right &&
+							e.clientY >= targetRect.top &&
+							e.clientY <= targetRect.top + (targetRect.height * 0.5);
+	
+						const overlapsTargetBottom =
+							e.clientX >= targetRect.left &&
+							e.clientX <= targetRect.right &&
+							e.clientY >= targetRect.top + (targetRect.height * 0.5) &&
+							e.clientY <= targetRect.bottom;
+							
+						let nextSibling = e.target.nextSibling;
+						
+						while (currentlyDraggedElements.includes(nextSibling)) {
+							nextSibling = nextSibling.nextSibling;
+						}
+							
+						for (const currentlyDraggedElement of currentlyDraggedElements) {
+							if (overlapsTargetTop) {
+								tabsListForDragAndDrop.insertBefore(currentlyDraggedElement, e.target);
+							} else if (overlapsTargetBottom) {
+								tabsListForDragAndDrop.insertBefore(currentlyDraggedElement, nextSibling);
+							}
+						}
+					}
+				} else if (currentlyDraggedGroupElement !== null && e.target !== currentlyDraggedGroupElement) {
 					const groupsListForDragAndDrop = e.target.closest(".groups-list-for-drag-and-drop");
-					if (groupsListForDragAndDrop !== null) {
+					if (groupsListForDragAndDrop !== null && e.target != currentlyDraggedGroupElement) {
 						const targetRect = e.target.getBoundingClientRect();
 	
 						const overlapsTargetLeft =
@@ -1998,7 +1990,7 @@ document.addEventListener("dragover", (e) => {
 
 						if (overlapsTargetLeft) {
 							groupsListForDragAndDrop.insertBefore(currentlyDraggedGroupElement, e.target);
-						} else if (overlapsTargetRight && e.target.dataset.groupid !== "-1") {
+						} else if (overlapsTargetRight) {
 							groupsListForDragAndDrop.insertBefore(currentlyDraggedGroupElement, e.target.nextSibling);
 						}
 					}

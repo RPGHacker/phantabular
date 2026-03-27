@@ -40,6 +40,11 @@ let hasBookmarkingPermission = false;
 let hasDownloadingPermission = false;
 let tabsToBookmark = null;
 
+let elementHoveredOverForMoving = null;
+let idsOfTabsToMove = [];
+let moveTabsSourceGroup = null;
+let moveTabsTargetGroup = null;
+
 
 tooltipLayer.style.opacity = 0;
 
@@ -245,6 +250,11 @@ function initializeInnerGroup(outerGroup, groupData, idPrefix, getGroupPropertie
 	const innerGroup = createGroup(outerGroup, "group-details group-box colorize-" + groupProperties.color, idPrefix + "-" + idSuffix, groupProperties.name, groupProperties.actions, insertLocation);
 	innerGroup.setAttribute("data-" + idPrefix + "id", idSuffix);
 	innerGroup.setAttribute("draggable", groupProperties.draggable);
+	
+	innerGroup.querySelector("summary").insertAdjacentHTML("afterbegin", `
+		<span class="group-insert-indicator">
+		</span>
+	`);
 	
 	initializeGroupAsTabListContainer(innerGroup, idPrefix);
 	
@@ -1026,6 +1036,10 @@ async function getCategoryForId(id) {
 	return db.categories.get({id: id});
 }
 
+function hideTooltip() {
+	clearTimeout(tooltipData.tooltipTimer);
+	tooltipLayer.style.opacity = 0;
+}
 
 function checkTooltipMouseMove(e) {	
 	if (tooltipData.lastMousePos === null) {
@@ -1054,8 +1068,7 @@ function checkTooltipMouseMove(e) {
 		if (Math.abs(e.clientX - tooltipData.lastMousePos.clientX) >= movementThreshold
 			|| Math.abs(e.clientY - tooltipData.lastMousePos.clientY) >= movementThreshold
 		) {
-			clearTimeout(tooltipData.tooltipTimer);
-			tooltipLayer.style.opacity = 0;
+			hideTooltip();
 		}
 	}
 }
@@ -1071,8 +1084,7 @@ document.addEventListener("mousemove", (e) => {
 document.addEventListener("scroll", (e) => {
 	// Hide existing tooltip, but also check if the cursor has scrolled over a new element
 	// that might have a tooltip that we want to display once the cooldown expires again.
-	clearTimeout(tooltipData.tooltipTimer);
-	tooltipLayer.style.opacity = 0;
+	hideTooltip();
 	if (tooltipData.lastMousePos !== null) {
 		tooltipData.lastMouseTarget = document.elementFromPoint(tooltipData.lastMousePos.clientX, tooltipData.lastMousePos.clientY);
 		updateShowTooltip(tooltipData.lastMousePos, tooltipData.lastMouseTarget);
@@ -1598,9 +1610,7 @@ function compareSortKeysReversed(a, b) {
 async function openTabsById(tabIds) {
 	const openSettings = await settings.openSettings;
 	
-	const keys = tabIds.map((tabId) => {id: tabId});
-	
-	const tabs = await sortedQuery(db.tabs.bulkGet(keys).toArray(), compareSortKeys);
+	const tabs = await sortedQuery(db.tabs.bulkGet(tabIds), compareSortKeys);
 	
 	const defaultTabsToClose = [];
 	if (openSettings.tabOpenPosition == "originalPosition") {
@@ -1703,7 +1713,10 @@ document.addEventListener("dragstart", (e) => {
 	
 	if (container !== null) {
 		container.dataset.dragparent = true;
+		// Kinda sucks to have this in two places, but saves me some refactoring.
+		container.closest("details").dataset.dragparent = true;
 		currentDragParent = container;
+		currentDragParent.getRootNode().body.dataset.dragmode = "tab";
 	}
 	
 	const selectedTabElements = currentlySelectedTabElements.map((tabElement) => {return tabElement;});
@@ -1792,7 +1805,100 @@ async function waitUntilGroupUpToDate(group) {
 	}
 }
 
-document.addEventListener("dragend", async (e) => {	
+async function finishMoveTabs() {		
+	const archiveSettings = await settings.archiveSettings;
+	
+	let sourceGroupType = null;
+	let sourceGroupId = null;
+	if (moveTabsSourceGroup.dataset.issession) {
+		sourceGroupType = "sessions";
+		sourceGroupId = parseInt(moveTabsSourceGroup.dataset.sessionid);
+	} else if (moveTabsSourceGroup.dataset.iscategory) {
+		sourceGroupType = "categories";
+		sourceGroupId = parseInt(moveTabsSourceGroup.dataset.categoryid);
+	} else if (moveTabsSourceGroup.dataset.isunsortedtabs) {
+		sourceGroupType = "unsortedTabs";
+	}
+	
+	let targetGroupType = null;
+	let targetGroupId = null;
+	if (moveTabsTargetGroup.dataset.issession) {
+		targetGroupType = "sessions";
+		targetGroupId = parseInt(moveTabsTargetGroup.dataset.sessionid);
+	} else if (moveTabsTargetGroup.dataset.iscategory) {
+		targetGroupType = "categories";
+		targetGroupId = parseInt(moveTabsTargetGroup.dataset.categoryid);
+	}
+	
+	let removeFromSourceGroup =  moveTabsModeSelect.value === "move" || (sourceGroupType === "sessions" && targetGroupType === "sessions" && archiveSettings.onlyStoreLatestSession);
+	let createNewInTargetGroup = !removeFromSourceGroup && !archiveSettings.noDuplicateUrls;
+	
+	const tabs = await db.tabs.bulkGet(idsOfTabsToMove);
+	const tabsToWrite = [];
+	
+	for (const tab of tabs) {
+		const tabToWrite = JSON.parse(JSON.stringify(tab));
+		
+		if (createNewInTargetGroup) {
+			delete tabToWrite.id;
+			tabToWrite.categories = [];
+			tabToWrite.sessions = [];
+		}
+		
+		if (!tabToWrite[targetGroupType].includes(targetGroupId)) {
+			tabToWrite[targetGroupType].push(targetGroupId);
+		}
+		
+		if (removeFromSourceGroup) {
+			const existingIndex = tabToWrite[sourceGroupType].indexOf(sourceGroupId);
+	
+			if (existingIndex !== -1) {
+				tabToWrite[sourceGroupType].splice(existingIndex, 1);
+			}
+		}
+		
+		tabsToWrite.push(tabToWrite);
+	}
+	
+	await db.transaction("rw", db.tabs, db.sessions, async (tx) => {
+		await db.tabs.bulkPut(tabsToWrite);
+	
+		if (removeFromSourceGroup && sourceGroupType === "sessions") {
+			await db.deleteSessionIfNoLongerNeeded(sourceGroupId);
+		}
+	});
+}
+
+function openMoveToGroupPrompt(movedElements, targetGroup, sourceGroup) {
+	moveTabCount.textContent = movedElements.length;
+	const summaryTitle = targetGroup.querySelector(".summary-title").textContent;
+	moveTabOption.textContent = `Move to: ${summaryTitle}`;
+	copyTabOption.textContent = `Copy to: ${summaryTitle}`;
+	
+	const isUnsortedTabs = sourceGroup.dataset.isunsortedtabs;
+	moveTabOption.hidden = isUnsortedTabs;
+	moveTabOption.disabled = isUnsortedTabs;
+	if (isUnsortedTabs) {
+		moveTabsModeSelect.value = "copy";
+	}
+	
+	idsOfTabsToMove = movedElements.map((element) => {return parseInt(element.dataset.tabid)});
+	moveTabsSourceGroup = sourceGroup;
+	moveTabsTargetGroup = targetGroup;
+	
+	confirmMoveTabsDialog.showModal();
+}
+
+document.addEventListener("dragend", async (e) => {
+	if (elementHoveredOverForMoving !== null) {
+		if (e.dataTransfer.dropEffect == "move" && currentlyDraggedElements.length !== 0) {
+			openMoveToGroupPrompt(currentlyDraggedElements, elementHoveredOverForMoving.closest("details"), currentDragParent.closest("details"));
+		}
+		
+		elementHoveredOverForMoving.classList.remove("hovering-for-moving");
+		elementHoveredOverForMoving = null;
+	}
+	
 	if (currentDragParent !== null) {		
 		if (e.dataTransfer.dropEffect === "none") {
 			const tabsList = currentDragParent.querySelector(":scope > .tabs-list");
@@ -1915,7 +2021,9 @@ document.addEventListener("dragend", async (e) => {
 			}
 		}
 		
-		currentDragParent.dataset.dragparent = false;
+		delete currentDragParent.getRootNode().body.dataset.dragmode;
+		delete currentDragParent.closest("details").dataset.dragparent;
+		delete currentDragParent.dataset.dragparent;
 		currentDragParent = null;
 	}
 	
@@ -1927,6 +2035,31 @@ document.addEventListener("dragend", async (e) => {
 });
 
 document.addEventListener("dragover", (e) => {
+	// No tooltips while dragging.
+	hideTooltip();
+	
+	// Handle "move to/copy to this group" visualization.
+	if (currentlyDraggedElements.length !== 0) {
+		const previousElementHoveredOverForMoving = elementHoveredOverForMoving;
+		elementHoveredOverForMoving = null;
+		
+		if (e.target.classList.contains("group-insert-indicator")) {
+			e.preventDefault();
+			elementHoveredOverForMoving = e.target;
+		}
+			
+		if (elementHoveredOverForMoving != previousElementHoveredOverForMoving) {
+			if (previousElementHoveredOverForMoving !== null) {
+				previousElementHoveredOverForMoving.classList.remove("hovering-for-moving");
+			}
+			
+			if (elementHoveredOverForMoving !== null) {
+				elementHoveredOverForMoving.classList.add("hovering-for-moving");
+			}
+		}
+	}
+	
+	// Handle moving of tabs or groups.
 	if (currentDragParent !== null) {
 		const rect = currentDragParent.getBoundingClientRect();
 	
@@ -2668,6 +2801,18 @@ document.addEventListener("click", (e) => {
 			
 		case "clear-filter":
 			clearFilterStrings();
+			break;
+			
+		case "confirm-move-tabs":
+			confirmMoveTabsDialog.close();
+			finishMoveTabs().catch((error) => {
+				moveTabsError.textContent = error;
+				moveTabsErrorDialog.showModal();
+			});
+			break;
+			
+		case "cancel-move-tabs":
+			confirmMoveTabsDialog.close();
 			break;
 	}
 });

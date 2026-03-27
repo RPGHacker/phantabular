@@ -740,11 +740,41 @@ button.toggle-menu-button[data-open=true]:not(:hover) {
 }
 
 
-/* Styles for centered dialogs */
+/* Stylings for centered dialogs */
 .centered-dialog label {	
 	text-align: center;
 }
 
 .centered-dialog * {	
 	justify-content: center;
+}
+
+
+/* Stylings for when moving tabs between lists */
+.group-insert-indicator {
+	display: none;
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	width: 100%;
+	height: 100%;
+	z-index: 1;
+	background-color: light-dark(rgba(var(--oc-indigo-3-rgb), 0.5), rgba(var(--oc-indigo-7-rgb), 0.5));
+	font-size: 50px;
+	justify-content: center;
+	align-items: center;
+}
+
+body[data-dragmode="tab"] .group-details:not([data-dragparent=true]) > summary > .group-insert-indicator {
+	display: flex;
+	opacity: 0;
+}
+
+body[data-dragmode="tab"] .group-details:not([data-dragparent=true]) > summary > .group-insert-indicator.hovering-for-moving {
+	display: flex;
+	opacity: 1.0;
+}
+
+.group-insert-indicator::before {
+	content: "\ff0b";
 }

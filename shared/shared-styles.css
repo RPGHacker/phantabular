@@ -374,6 +374,11 @@ pre > code {
 
 
 /* Stylings for group boxes */
+details.group-box {
+	/* Apparently required so that child elements can use 100% of the box's size. */
+	position: relative;
+}
+
 details.group-box > summary {
 	--group-box-border-color: var(--group-details-summary-bg-color);
 	background-color: var(--group-box-border-color);

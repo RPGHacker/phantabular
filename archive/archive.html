@@ -376,6 +376,39 @@
 			</form>
 		</dialog>
 		
+		<dialog id="confirmMoveTabsDialog">
+			<form method="dialog">
+				<p>
+					What to do with the <span id="moveTabCount">0</span> selected tabs(s)?
+				</p>
+				<p>
+					<select id="moveTabsModeSelect">
+						<option value="move" id="moveTabOption" selected>Move to: My Category</option>
+						<option value="copy" id="copyTabOption">Copy to: My Category</option>
+					</select>
+				</p>
+				<p>
+					NOTE: Settings like "merge tabs" and "only store last session" can override this selection, leading to unintuitive results.
+				</p>
+				<div>
+					<button type="submit" data-action="confirm-move-tabs" class="colorize-button colorize-red">Confirm</button>
+					<button type="reset" data-action="cancel-move-tabs"  class="colorize-button" style="float: right;">Cancel</button>
+				</div>
+			</form>
+		</dialog>
+		
+		<dialog id="moveTabsErrorDialog">
+			<form method="dialog">
+				<div>
+					<label>One or more errors occured while trying to move or copy tabs:</label>
+					<p><label id="moveTabsError"></label></p>
+				</div>
+				<div>
+					<center><button type="submit" class="colorize-button">Close</button></center>
+				</div>
+			</form>
+		</dialog>
+		
 		<div>
 			<div id="archive-root">
 				<div class="menu-root">

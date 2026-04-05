@@ -1,6 +1,5 @@
 html,
 body {
-	margin: 8px;
 }
 
 
@@ -617,6 +616,11 @@ ol.editable-list > li > button {
 	height: 16px;
 }
 
+.fav-icon-large {
+	width: 48px;
+	height: 48px;
+}
+
 .fav-icon-list-item {
 	display: inline-flex;
 	margin: 0px 8px 0px 0px;
@@ -695,7 +699,7 @@ ol.editable-list > li > button {
 }
 
 button.toggle-menu-button {
-	background-color: light-dark(var(--oc-gray-5), var(--oc-gray-7));
+	background-color: light-dark(var(--oc-gray-5), var(--oc-gray-6));
 	padding: 5px;
 	margin-left: auto;
 	margin-right: 0px;
@@ -717,7 +721,7 @@ button.toggle-menu-button[data-open=true]:not(:hover) {
 	margin-top: 10px;
 	padding: 2px 0px 2px 0px;
 	border-radius: 5px;
-	background-color: light-dark(var(--oc-gray-5), var(--oc-gray-7));
+	background-color: light-dark(var(--oc-gray-5), var(--oc-gray-6));
 }
 
 .main-menu > button {
@@ -777,4 +781,82 @@ body[data-dragmode="tab"] .group-details:not([data-dragparent=true]) > summary >
 
 .group-insert-indicator::before {
 	content: "\ff0b";
+}
+
+
+/* Stylings for actions panel */
+.split-view {
+	height: 100vh;
+	display: flex;
+}
+
+.main-content {
+	flex: 1;
+	padding: 16px;
+	overflow: auto;
+}
+
+.actions-panel {
+	flex: 0 0 30%;
+	padding: 16px;
+	overflow: auto;
+	background-color: light-dark(var(--oc-gray-3), var(--oc-gray-7));
+}
+
+@media (orientation: portrait) {
+	.split-view {
+		height: 100vh;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.actions-panel {
+		flex: 0 0 35%;
+	}
+}
+
+.single-tab-details-title {
+	display: flex;
+	align-items: center;
+}
+
+.single-tab-details-title-fav-icon {
+	display: none;
+}
+
+.single-tab-details-title-fav-icon[data-validimage=true] {
+	display: inline-flex;
+	padding-right: 16px;
+}
+
+.single-tab-details-title-text {
+	display: inline-flex;
+}
+
+.single-tab-details-preview-image {
+	max-width: 100%;
+	margin: 24px 0 24px 0;
+	overflow: hidden;
+}
+
+.single-tab-details-preview-image[data-show=false] {
+	margin: 0px 0px 0px 0px;
+	display: none;
+}
+
+.actions-panel .metadata-entry {
+	display: block;
+}
+
+.actions-panel .metadata-entry[data-show=false] {
+	display: none;
+}
+
+.actions-panel button {
+	display: inline-flex;
+	padding: 10px;
+}
+
+.actions-panel button > img {
+	padding-right: 8px;
 }

@@ -218,6 +218,21 @@
 			</form>
 		</dialog>
 		
+		<dialog id="confirmDeleteTabs">
+			<form method="dialog">
+				<p>
+					<center><label>WARNING!<br />You're about to delete <span id="tabToDeleteCount">0</span> tab(s), which will also delete them from any categories or sessions that contain them! Are you sure?</label></center>
+				</p>
+				<p>
+					NOTE: This dialog can be disabled in the settings.
+				</p>
+				<div>
+					<button type="submit" data-action="confirm-multi-tab-deletion" class="colorize-button colorize-red">Confirm Deletion</button>
+					<button type="reset" data-action="cancel-multi-tab-deletion" class="colorize-button" style="float: right;">Cancel</button>
+				</div>
+			</form>
+		</dialog>
+		
 		<dialog id="convertToBookmarksDialog">
 			<form method="dialog">
 				<p>
@@ -411,39 +426,78 @@
 		
 		<div>
 			<div id="archive-root">
-				<div class="menu-root">
-					<button id="toggleMenuButton" data-action="toggle-menu" data-tooltiptype="button" class="toggle-menu-button image-button action-button has-tooltip"><img src="../icons/iconoir/edits/menu-light.svg" class="only-in-light-theme" style="height: 24px;" /><img src="../icons/iconoir/edits/menu-dark.svg" class="only-in-dark-theme" style="height: 24px;" /></button>
-					<div id="mainMenu" class="main-menu colorize-section" hidden>
-						<button data-action="re-run-category-auto-catch"><img src="../icons/iconoir/edits/refresh-double-light.svg" class="only-in-light-theme" style="height: 20px;" /><img src="../icons/iconoir/edits/refresh-double-dark.svg" class="only-in-dark-theme" style="height: 20px;" /> Re-run category auto-catch</button>
-						<hr />
-						<button data-action="export-archive"><img src="../icons/iconoir/edits/export-light.svg" class="only-in-light-theme" style="height: 20px;" /><img src="../icons/iconoir/edits/export-dark.svg" class="only-in-dark-theme" style="height: 20px;" /> Export archive</button>
-						<button data-action="import-archive"><img src="../icons/iconoir/edits/import-light.svg" class="only-in-light-theme" style="height: 20px;" /><img src="../icons/iconoir/edits/import-dark.svg" class="only-in-dark-theme" style="height: 20px;" /> Import archive</button>
-					</div>
-				</div>
-			
-				<h1>Archive</h1>
-				
-				<div class="filter-root">
-					<label for="filterText">Filter:</label>
-					<div class="filter-root overlapping-content">
-						<input type="text" id="filterText" placeholder="Filter..." autocomplete="off">
-						</input>
-						<div class="filter-extras-root">
-							<div id="filterSpinnerRoot" class="filter-spinner-root" data-activequerycount="0" hidden>
-								<div class="filter-spinner-container">
-									<div class="filter-spinner-animation">
-										<div class="filter-spinner"></div>
+				<div class="split-view">
+					<div class="main-content">
+						<div class="menu-root">
+							<button id="toggleMenuButton" data-action="toggle-menu" data-tooltiptype="button" class="toggle-menu-button image-button action-button has-tooltip"><img src="../icons/iconoir/edits/menu-light.svg" class="only-in-light-theme" style="height: 24px;" /><img src="../icons/iconoir/edits/menu-dark.svg" class="only-in-dark-theme" style="height: 24px;" /></button>
+							<div id="mainMenu" class="main-menu colorize-section" hidden>
+								<button data-action="re-run-category-auto-catch"><img src="../icons/iconoir/edits/refresh-double-light.svg" class="only-in-light-theme" style="height: 20px;" /><img src="../icons/iconoir/edits/refresh-double-dark.svg" class="only-in-dark-theme" style="height: 20px;" /> Re-run category auto-catch</button>
+								<hr />
+								<button data-action="export-archive"><img src="../icons/iconoir/edits/export-light.svg" class="only-in-light-theme" style="height: 20px;" /><img src="../icons/iconoir/edits/export-dark.svg" class="only-in-dark-theme" style="height: 20px;" /> Export archive</button>
+								<button data-action="import-archive"><img src="../icons/iconoir/edits/import-light.svg" class="only-in-light-theme" style="height: 20px;" /><img src="../icons/iconoir/edits/import-dark.svg" class="only-in-dark-theme" style="height: 20px;" /> Import archive</button>
+							</div>
+						</div>
+					
+						<h1>Archive</h1>
+					
+						<div class="filter-root">
+							<label for="filterText">Filter:</label>
+							<div class="filter-root overlapping-content">
+								<input type="text" id="filterText" placeholder="Filter..." autocomplete="off">
+								</input>
+								<div class="filter-extras-root">
+									<div id="filterSpinnerRoot" class="filter-spinner-root" data-activequerycount="0" hidden>
+										<div class="filter-spinner-container">
+											<div class="filter-spinner-animation">
+												<div class="filter-spinner"></div>
+											</div>
+										</div>
+									</div>
+									<div id="filterClearButton" class="filter-clear-button-root" hidden>
+										<button class="colorize-button has-tooltip image-button action-button" data-tooltiptype="button" data-action="clear-filter"><img src="../icons/iconoir/edits/xmark.svg" height="27"/></button>
 									</div>
 								</div>
 							</div>
-							<div id="filterClearButton" class="filter-clear-button-root" hidden>
-								<button class="colorize-button has-tooltip image-button action-button" data-tooltiptype="button" data-action="clear-filter"><img src="../icons/iconoir/edits/xmark.svg" height="27"/></button>
-							</div>
+						</div>
+							
+						<div id="groups-root-list" >
 						</div>
 					</div>
-				</div>
 					
-				<div id="groups-root-list" >
+					<div id="actionsPanel" class="actions-panel" hidden>
+						<div id="singleTabActionsPreview">
+							<div class="single-tab-details-title"><span id="singleTabDetailsFavIconRoot" class="single-tab-details-title-fav-icon"><img id="singleTabDetailsFavIcon" class="fav-icon-large"/></span><h1 id="singleTabDetailsTitle" class="single-tab-details-title-text">Tab Title</h1></div>
+							<a id="singleTabDetailsUrl" href="https://www.tabtitle.com">https://www.tabtitle.com</a>
+							<div id="singleTabDetailsPreviewImageRoot" class="single-tab-details-preview-image">
+								<img id="singleTabDetailsPreviewImage" />
+							</div>
+							
+							<div class="metadata-entry"><img src="../icons/iconoir/edits/database-solid-dark.svg" class="only-in-dark-theme" /><img src="../icons/iconoir/edits/database-solid-light.svg" class="only-in-light-theme" /> Database Tab Id: <span id="singleTabDetailsDatabaseTabId">0</span></div>
+							<div class="metadata-entry"><img src="../icons/iconoir/edits/web-window-solid-dark.svg" class="only-in-dark-theme" /><img src="../icons/iconoir/edits/web-window-solid-light.svg" class="only-in-light-theme" /> Browser Window Id: <span id="singleTabDetailsBrowserWindowId">0</span></div>
+							<div class="metadata-entry"><img src="../icons/iconoir/edits/window-tabs-solid-dark.svg" class="only-in-dark-theme" /><img src="../icons/iconoir/edits/window-tabs-solid-light.svg" class="only-in-light-theme" /> Browser Tab Id: <span id="singleTabDetailsBrowserTabsId">0</span></div>
+							<div class="metadata-entry" id="singleTabDetailsPinned" data-show="true"><img src="../icons/iconoir/edits/pin-solid.svg" /> Pinned</div>
+							<div class="metadata-entry" id="singleTabDetailsHidden" data-show="true"><img src="../icons/iconoir/edits/eye-closed-dark.svg" class="only-in-dark-theme" /><img src="../icons/iconoir/edits/eye-closed-light.svg" class="only-in-light-theme" /> Hidden</div>
+							
+							<h2>Actions:</h2>
+							<button class="colorize-button image-button" data-action="actions-copy-tab-url"><img src="../icons/iconoir/edits/copy-dark.svg" class="only-in-dark-theme" style="height: 24px;" /><img src="../icons/iconoir/edits/copy-light.svg" class="only-in-light-theme" style="height: 24px;" /> Copy URL</button>
+							<button class="colorize-button image-button" data-action="actions-open-tab"><img src="../icons/iconoir/edits/open-in-browser-dark.svg" class="only-in-dark-theme" style="height: 24px;" /><img src="../icons/iconoir/edits/open-in-browser-light.svg" class="only-in-light-theme" style="height: 24px;" /> Open in Browser</button>
+							<button class="colorize-button image-button" data-action="actions-convert-tab-to-bookmark"><img src="../icons/iconoir/edits/bookmark-dark.svg" class="only-in-dark-theme" style="height: 24px;" /><img src="../icons/iconoir/edits/bookmark-light.svg" class="only-in-light-theme" style="height: 24px;" /> Convert to Bookmark</button>
+							<button class="colorize-button image-button" data-action="actions-delete-tab"><img src="../icons/iconoir/edits/trash-solid.svg" style="height: 24px;"/> Delete</button>
+						</div>
+						
+						<div id="multiTabActionsPreview" hidden>
+							<h1><span id="multiTabDetailsTabCount">0</span> tab(s) selected</h1>
+							<h2>Actions:</h2>
+							<button class="colorize-button image-button" data-action="actions-open-tab"><img src="../icons/iconoir/edits/open-in-browser-dark.svg" class="only-in-dark-theme" style="height: 24px;" /><img src="../icons/iconoir/edits/open-in-browser-light.svg" class="only-in-light-theme" style="height: 24px;" /> Open in Browser</button>
+							<button class="colorize-button image-button" data-action="actions-convert-tab-to-bookmark"><img src="../icons/iconoir/edits/bookmark-dark.svg" class="only-in-dark-theme" style="height: 24px;" /><img src="../icons/iconoir/edits/bookmark-light.svg" class="only-in-light-theme" style="height: 24px;" /> Convert to Bookmarks</button>
+							<button class="colorize-button image-button" data-action="actions-delete-tab"><img src="../icons/iconoir/edits/trash-solid.svg" style="height: 24px;"/> Delete</button>
+						</div>
+						
+						<div id="sharedTabActionsRoot">
+							<h2>Categories:</h2>
+							<h2>Sessions:</h2>
+						</div>
+					</div>
 				</div>
 			</div>
 			<script type="module" src="archive.js"></script>

@@ -688,6 +688,7 @@ function updateShowTooltip(mousePos, mouseTarget) {
 						</div>
 						<div><a href="${tab.url}" class="colorize-link">${tab.url}</a></div>
 						<div>
+							<span class="metadata-entry"><img src="../icons/iconoir/edits/database-solid-dark.svg" class="only-in-dark-theme" /><img src="../icons/iconoir/edits/database-solid-light.svg" class="only-in-light-theme" /> DB Tab Id: ${tab.id}</span>
 							<span class="metadata-entry"><img src="../icons/iconoir/edits/web-window-solid-dark.svg" class="only-in-dark-theme" /><img src="../icons/iconoir/edits/web-window-solid-light.svg" class="only-in-light-theme" /> Window Id: ${tab.metadata.windowId}</span>
 							<span class="metadata-entry"><img src="../icons/iconoir/edits/window-tabs-solid-dark.svg" class="only-in-dark-theme" /><img src="../icons/iconoir/edits/window-tabs-solid-light.svg" class="only-in-light-theme" /> Tab Id: ${tab.metadata.id}</span>
 							<span class="metadata-entry" data-show="${tab.metadata.pinned}"><img src="../icons/iconoir/edits/pin-solid.svg" /> Pinned</span>
@@ -882,7 +883,7 @@ function initializeColorSelector(container) {
 	for (const color of settings.supportedColors) {
 		container.insertAdjacentHTML("beforeend", `
 			<div class="color-selector-root" data-color="${color}">
-				<div class="colorize-color-selector colorize-${color}" data-action="select-color">
+				<div class="colorize-color-selector colorize-${color}" data-action="select-color" tabindex="0">
 					<center>&#x2713;</center>
 				</div>
 			</div>
@@ -1607,7 +1608,7 @@ function compareSortKeysReversed(a, b) {
 	return compareSortKeys(a, b) * -1;
 }
 
-async function openTabsById(tabIds) {
+async function openTabsByIds(tabIds) {
 	const openSettings = await settings.openSettings;
 	
 	const tabs = await sortedQuery(db.tabs.bulkGet(tabIds), compareSortKeys);
@@ -1631,7 +1632,7 @@ async function openTabsById(tabIds) {
 	let successes = [];
 	let rejections = [];
 	
-	promises.forEach(async (promise) => {
+	for (const promise of promises) {
 		try {
 			successes.push({
 				tab: promise.tab,
@@ -1643,9 +1644,13 @@ async function openTabsById(tabIds) {
 				error: error
 			});
 		}
-	});
+	}
 	
-	return new Promise(function(resolve, reject) {	
+	return await new Promise(function(resolve, reject) {		
+		// Browsers like to put default empty tabs into newly created windows.
+		// Let's remove them.
+		browser.tabs.remove(defaultTabsToClose);
+		
 		if (rejections.length > 0) {
 			reject(rejections);
 		} else {
@@ -1661,6 +1666,36 @@ function openTabForElement(tabElement) {
 	}).catch((error) => {
 		openTabError.textContent = error;
 		openTabErrorDialog.showModal();
+	});
+}
+
+function openTabsForElements(tabElements) {
+	let tabIds = tabElements.map((tabElement) => {return parseInt(tabElement.closest("[data-tabid]").dataset.tabid)} );
+	openTabsByIds(tabIds).then(async (tabs) => {
+		for (const tab of tabs) {
+			try {
+				const openResult = await setTabActive(tab.result);
+				if (typeof openResult !== "boolean" || openResult === true) {
+					break;
+				}
+			} catch(error) {
+				debugh.error(error);
+			}
+		}
+	}).catch((errors) => {
+		if (Array.isArray(errors)) {
+			const uniqueErrors = new Set();
+			
+			for (const error of errors) {
+				uniqueErrors.add(error.error.toString());
+			}
+			
+			openTabError.textContent = Array.from(uniqueErrors).join("\n");
+			openTabErrorDialog.showModal();
+		} else {
+			openTabError.textContent = errors;
+			openTabErrorDialog.showModal();
+		}
 	});
 }
 
@@ -1716,7 +1751,12 @@ document.addEventListener("dragstart", (e) => {
 		// Kinda sucks to have this in two places, but saves me some refactoring.
 		container.closest("details").dataset.dragparent = true;
 		currentDragParent = container;
-		currentDragParent.getRootNode().body.dataset.dragmode = "tab";
+		const containingDetailsElement = container.closest("details");
+		if (containingDetailsElement.dataset.istablist) {
+			currentDragParent.getRootNode().body.dataset.dragmode = "tab";
+		} else {
+			currentDragParent.getRootNode().body.dataset.dragmode = "group";
+		}
 	}
 	
 	const selectedTabElements = currentlySelectedTabElements.map((tabElement) => {return tabElement;});
@@ -2188,6 +2228,44 @@ document.addEventListener("keydown", (e) => {
 	}
 });
 
+function hideActionsPanel() {	
+	actionsPanel.hidden = true;
+}
+
+async function showActionsPanel() {
+	actionsPanel.hidden = false;
+	
+	if (currentlySelectedTabElements.length === 1) {
+		const tab = await db.tabs.get({id: parseInt(currentlySelectedTabElements[0].dataset.tabid)});
+		
+		singleTabDetailsFavIcon.setAttribute("src", tab.metadata.favIconUrl);
+		singleTabDetailsFavIconRoot.dataset.validimage = (tab.metadata.favIconUrl !== undefined);
+		
+		singleTabDetailsTitle.textContent = tab.metadata.title;
+		
+		singleTabDetailsUrl.setAttribute("href", tab.metadata.url);
+		singleTabDetailsUrl.textContent = tab.metadata.url;
+		
+		singleTabActionsPreview.hidden = false;
+		multiTabActionsPreview.hidden = true;
+		
+		singleTabDetailsPreviewImage.setAttribute("src", tab.previewimageurl);
+		singleTabDetailsPreviewImageRoot.dataset.show = (tab.previewimageurl !== undefined);
+		
+		singleTabDetailsDatabaseTabId.textContent = tab.id;
+		singleTabDetailsBrowserWindowId.textContent = tab.metadata.windowId;
+		singleTabDetailsBrowserTabsId.textContent = tab.metadata.id;
+		
+		singleTabDetailsPinned.dataset.show = tab.metadata.pinned;
+		singleTabDetailsHidden.dataset.show = tab.metadata.hidden;
+	} else {
+		multiTabDetailsTabCount.textContent = currentlySelectedTabElements.length;
+		
+		singleTabActionsPreview.hidden = true;
+		multiTabActionsPreview.hidden = false;
+	}	
+}
+
 function deselectAllSelectedTabElements() {
 	for (const tabElement of currentlySelectedTabElements) {
 		tabElement.dataset.isselected = false;
@@ -2195,6 +2273,8 @@ function deselectAllSelectedTabElements() {
 	
 	currentTabSelectionParent = null;
 	currentlySelectedTabElements = [];
+	
+	hideActionsPanel();
 }
 
 function getElementsBetween(a, b) {
@@ -2368,6 +2448,21 @@ async function convertGroupElementToBookmarks(groupElement) {
 		const tabs = await groupFunctionLookup.tabsInSession.query(parseInt(groupElement.dataset.sessionid));
 		convertTabsToBookmarks(tabs, defaultDirectoryName);
 	}
+}
+
+async function convertTabElementsToBookmarks(tabElements) {
+	await requestBookmarkingPermissions();
+	
+	if (!hasBookmarkingPermission) {
+		return;
+	}
+	
+	const defaultDirectoryName = tabElements[0].closest("details").querySelector("summary .summary-title").textContent;	
+	
+	const tabIds = tabElements.map((tabElement) => {return parseInt(tabElement.closest("[data-tabid]").dataset.tabid)} );
+	const tabs = await sortedQuery(db.tabs.bulkGet(tabIds), compareSortKeys);
+	
+	convertTabsToBookmarks(tabs, defaultDirectoryName);
 }
 
 function openMenu() {
@@ -2596,9 +2691,13 @@ document.addEventListener("click", (e) => {
 				e.target.dataset.isselected = true;
 				currentlySelectedTabElements.push(e.target);
 			}
+			
+			showActionsPanel();
 		}
 	} else {
-		deselectAllSelectedTabElements();
+		if (e.target.closest(".actions-panel") === null) {
+			deselectAllSelectedTabElements();
+		}
 	}
 });
 
@@ -2813,6 +2912,54 @@ document.addEventListener("click", (e) => {
 			
 		case "cancel-move-tabs":
 			confirmMoveTabsDialog.close();
+			break;
+			
+		case "actions-copy-tab-url":
+		{
+			const tabId = parseInt(currentlySelectedTabElements[0].dataset.tabid);	
+			db.tabs.get({id: tabId}).then((tab) => {
+				navigator.clipboard.writeText(tab.url);
+			});
+			break;
+		}
+			
+		case "actions-open-tab":
+			if (currentlySelectedTabElements.length === 1) {
+				openTabForElement(currentlySelectedTabElements[0]);
+			} else {
+				openTabsForElements(currentlySelectedTabElements);
+			}
+			break;
+			
+		case "actions-convert-tab-to-bookmark":
+			convertTabElementsToBookmarks(currentlySelectedTabElements);
+			break;
+			
+		case "actions-delete-tab":
+		{
+			settings.openSettings.then((openSettings) => {
+				const tabIds = currentlySelectedTabElements.map((tabElement) => {return parseInt(tabElement.closest("[data-tabid]").dataset.tabid)} );
+				
+				if (openSettings.confirmTabDeletion) {
+					tabToDeleteCount.textContent = tabIds.length;					
+					confirmDeleteTabs.setAttribute("data-tabids", JSON.stringify(tabIds));
+					confirmDeleteTabs.showModal();
+				} else {
+					db.deleteTabs(tabIds);
+				}
+			});
+			break;
+		}
+		
+		case "confirm-multi-tab-deletion":
+		{
+			const tabIds = JSON.parse(e.target.closest("[data-tabids]").dataset.tabids).map((idStr) => parseInt(idStr));
+			db.deleteTabs(tabIds);
+			break;
+		}
+			
+		case "cancel-multi-tab-deletion":
+			confirmDeleteTabs.close();
 			break;
 	}
 });

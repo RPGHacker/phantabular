@@ -425,7 +425,7 @@
 		</dialog>
 		
 		<div>
-			<div id="archive-root">
+			<div id="archiveRoot" data-actionsvisible="true">
 				<div class="split-view">
 					<div class="main-content">
 						<div class="menu-root">
@@ -464,8 +464,11 @@
 						</div>
 					</div>
 					
-					<div id="actionsPanel" class="actions-panel" hidden>
-						<div id="singleTabActionsPreview">
+					<div class="actions-panel-toggle has-tooltip" tabindex="0" data-tooltiptype="button" data-action="toggle-actions-panel">
+					</div>
+					
+					<div id="actionsPanel" class="actions-panel">
+						<div id="singleTabActionsPreview" hidden>
 							<div class="single-tab-details-title"><span id="singleTabDetailsFavIconRoot" class="single-tab-details-title-fav-icon"><img id="singleTabDetailsFavIcon" class="fav-icon-large"/></span><h1 id="singleTabDetailsTitle" class="single-tab-details-title-text">Tab Title</h1></div>
 							<a id="singleTabDetailsUrl" href="https://www.tabtitle.com">https://www.tabtitle.com</a>
 							<div id="singleTabDetailsPreviewImageRoot" class="single-tab-details-preview-image">
@@ -493,9 +496,11 @@
 							<button class="colorize-button image-button" data-action="actions-delete-tab"><img src="../icons/iconoir/edits/trash-solid.svg" style="height: 24px;"/> Delete</button>
 						</div>
 						
-						<div id="sharedTabActionsRoot">
+						<div id="sharedTabActionsRoot" hidden>
 							<h2>Categories:</h2>
+							<div id="actionsPanelCategoriesListRoot" class="group-selector-menu"></div>
 							<h2>Sessions:</h2>
+							<div id="actionsPanelSessionsListRoot" class="group-selector-menu"></div>
 						</div>
 					</div>
 				</div>

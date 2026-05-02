@@ -8,6 +8,7 @@ const minimumProcessDialogDisplayTime = 1000;
 
 const activeLiveQuerySubscriptions = {};
 const activeLiveQueryCountSubscriptions = {};
+let activeActionsPanelLiveQuerySubscription = null;
 const queryCountFunctions = {};
 const activeMutationObservers = {};
 
@@ -774,6 +775,10 @@ function updateShowTooltip(mousePos, mouseTarget) {
 						tooltipLayer.insertAdjacentHTML("afterbegin", "Clear");
 						break;
 						
+					case "toggle-actions-panel":
+						tooltipLayer.insertAdjacentHTML("afterbegin", "Show/hide actions panel");
+						break;
+						
 					default:
 						tooltipLayer.textContent = tooltipElement.dataset.action;
 						break;
@@ -884,7 +889,7 @@ function initializeColorSelector(container) {
 		container.insertAdjacentHTML("beforeend", `
 			<div class="color-selector-root" data-color="${color}">
 				<div class="colorize-color-selector colorize-${color}" data-action="select-color" tabindex="0">
-					<center>&#x2713;</center>
+					<center>&#x2714;</center>
 				</div>
 			</div>
 		`);
@@ -2228,15 +2233,83 @@ document.addEventListener("keydown", (e) => {
 	}
 });
 
-function hideActionsPanel() {	
-	actionsPanel.hidden = true;
+function createGroupSelector(container, properties, tabs, groupAccessor) {		
+	let selectedCount = 0;
+	
+	for (const tab of tabs) {
+		if (tab[groupAccessor].includes(properties.id)) {
+			++selectedCount;
+		}
+	}
+	
+	let selected = "some";
+	
+	if (selectedCount === 0) {
+		selected = "none";
+	} else if (selectedCount === tabs.length) {
+		selected = "all";
+	}
+	
+	container.insertAdjacentHTML("beforeend", `
+		<div class="group-selector-root colorize-${properties.color}" data-selected="${selected}">
+			<div class="colorize-group-selector" data-action="actions-panel-select-${groupAccessor}" data-${groupAccessor}id="${properties.id}" tabindex="0">
+				<span class="group-selector-icon-root"></span>
+				${properties.name}
+			</div>
+		</div>
+	`);
 }
 
-async function showActionsPanel() {
+function showActionsPanel() {
 	actionsPanel.hidden = false;
+	archiveRoot.dataset.actionsvisible = true;
+}
+
+function hideActionsPanel() {	
+	actionsPanel.hidden = true;
+	archiveRoot.dataset.actionsvisible = false;
+}
+
+function toggleActionsPanel() {
+	if (actionsPanel.hidden) {
+		showActionsPanel();
+	} else {
+		hideActionsPanel();
+	}
+}
+
+function clearActionsPanel() {
+	singleTabActionsPreview.hidden = true;
+	multiTabActionsPreview.hidden = true;
+	sharedTabActionsRoot.hidden = true;
+}
+
+async function updateActionsPanel() {
+	if (activeActionsPanelLiveQuerySubscription) {
+		activeActionsPanelLiveQuerySubscription.unsubscribe();
+		activeActionsPanelLiveQuerySubscription = null;
+	}
+	
+	async function queryCategories() {
+		return sortedQuery(groupFunctionPrimitives.categories().toArray(), compareSortKeysReversed);
+	}
+	
+	async function querySessions() {
+		return sortedQuery(groupFunctionPrimitives.sessions().toArray(), compareSortKeysReversed);
+	}
+	
+	const categories = await queryCategories();
+	const sessions = await querySessions();
+	
+	let tabs = null;
 	
 	if (currentlySelectedTabElements.length === 1) {
-		const tab = await db.tabs.get({id: parseInt(currentlySelectedTabElements[0].dataset.tabid)});
+		async function queryTab() {
+			return db.tabs.get({id: parseInt(currentlySelectedTabElements[0].dataset.tabid)});
+		}
+		
+		const tab = await queryTab();
+		tabs = [ tab ];
 		
 		singleTabDetailsFavIcon.setAttribute("src", tab.metadata.favIconUrl);
 		singleTabDetailsFavIconRoot.dataset.validimage = (tab.metadata.favIconUrl !== undefined);
@@ -2258,12 +2331,58 @@ async function showActionsPanel() {
 		
 		singleTabDetailsPinned.dataset.show = tab.metadata.pinned;
 		singleTabDetailsHidden.dataset.show = tab.metadata.hidden;
-	} else {
+		
+		const observable = db.newLiveQuery(async () => {
+			await queryCategories();
+			await querySessions();
+			await queryTab();
+		});
+		
+		activeActionsPanelLiveQuerySubscription = observable.subscribe({
+			next: (result) => { refreshSelectedTabElements(); },
+			error: (error) => debugh.error(`Live query for actions panel failed: ${error}`)
+		});
+	} else if (currentlySelectedTabElements.length > 1) {
+		const tabIds = currentlySelectedTabElements.map((tabElement) => {return parseInt(tabElement.closest("[data-tabid]").dataset.tabid)} );
+		
+		async function queryTabs() {
+			return db.tabs.bulkGet(tabIds);
+		}
+		
+		tabs = await queryTabs();
+		
 		multiTabDetailsTabCount.textContent = currentlySelectedTabElements.length;
 		
 		singleTabActionsPreview.hidden = true;
 		multiTabActionsPreview.hidden = false;
-	}	
+		
+		const observable = db.newLiveQuery(async () => {
+			await queryCategories();
+			await querySessions();
+			await queryTabs();
+		});
+		
+		activeActionsPanelLiveQuerySubscription = observable.subscribe({
+			next: (result) => { refreshSelectedTabElements(); },
+			error: (error) => debugh.error(`Live query for actions panel failed: ${error}`)
+		});
+	} else {
+		clearActionsPanel();
+		return;
+	}
+	
+	actionsPanelCategoriesListRoot.textContent = "";
+	actionsPanelSessionsListRoot.textContent = "";
+	
+	for (const category of categories) {
+		createGroupSelector(actionsPanelCategoriesListRoot, getCategoryProperties(category), tabs, "categories");
+	}
+	
+	for (const session of sessions) {
+		createGroupSelector(actionsPanelSessionsListRoot, getSessionProperties(session), tabs, "sessions");
+	}
+	
+	sharedTabActionsRoot.hidden = false;
 }
 
 function deselectAllSelectedTabElements() {
@@ -2274,7 +2393,10 @@ function deselectAllSelectedTabElements() {
 	currentTabSelectionParent = null;
 	currentlySelectedTabElements = [];
 	
-	hideActionsPanel();
+	clearActionsPanel();
+}
+
+function refreshSelectedTabElements() {
 }
 
 function getElementsBetween(a, b) {
@@ -2692,7 +2814,7 @@ document.addEventListener("click", (e) => {
 				currentlySelectedTabElements.push(e.target);
 			}
 			
-			showActionsPanel();
+			updateActionsPanel();
 		}
 	} else {
 		if (e.target.closest(".actions-panel") === null) {
@@ -2960,6 +3082,101 @@ document.addEventListener("click", (e) => {
 			
 		case "cancel-multi-tab-deletion":
 			confirmDeleteTabs.close();
+			break;
+			
+		case "actions-panel-select-categories":
+		{
+			const categoryId = parseInt(e.target.dataset.categoriesid);
+			const tabIds = currentlySelectedTabElements.map((tabElement) => {return parseInt(tabElement.closest("[data-tabid]").dataset.tabid)} );
+			const previouslySelected = e.target.closest("[data-selected]").dataset.selected;
+			
+			db.tabs.bulkGet(tabIds).then((tabs) => {
+				const isAddTransaction = (previouslySelected !== "all");
+				
+				const entriesToUpdate = [];
+				
+				for (const tab of tabs) {
+					const update = {
+						key: tab.id,
+						changes: {
+							categories: tab.categories,
+						},
+					};
+					
+					if (isAddTransaction) {
+						if (!update.changes.categories.includes(categoryId)) {
+							update.changes.categories.push(categoryId);
+						}
+					} else {
+						const foundIndex = update.changes.categories.indexOf(categoryId);
+						
+						if (foundIndex !== -1) {
+							update.changes.categories.splice(foundIndex, 1);
+						}
+					}
+					
+					entriesToUpdate.push(update);
+				}
+				
+				db.tabs.bulkUpdate(entriesToUpdate).then(() => {
+					updateActionsPanel();
+				});
+			});
+			
+			break;
+		}
+			
+		case "actions-panel-select-sessions":
+		{
+			const sessionId = parseInt(e.target.dataset.sessionsid);
+			const tabIds = currentlySelectedTabElements.map((tabElement) => {return parseInt(tabElement.closest("[data-tabid]").dataset.tabid)} );
+			const previouslySelected = e.target.closest("[data-selected]").dataset.selected;
+			
+			settings.archiveSettings.then(async (archiveSettings) => {
+				const tabs = await db.tabs.bulkGet(tabIds);
+				
+				const isAddTransaction = (previouslySelected !== "all");
+				
+				const entriesToUpdate = [];
+				
+				for (const tab of tabs) {
+					const update = {
+						key: tab.id,
+						changes: {
+							sessions: tab.sessions,
+						},
+					};
+					
+					if (isAddTransaction) {
+						if (archiveSettings.onlyStoreLatestSession) {
+							update.changes.sessions = [sessionId];
+						} else {
+							if (!update.changes.sessions.includes(sessionId)) {
+								update.changes.sessions.push(sessionId);
+							}
+						}
+					} else {
+						const foundIndex = update.changes.sessions.indexOf(sessionId);
+						
+						if (foundIndex !== -1) {
+							update.changes.sessions.splice(foundIndex, 1);
+						}
+					}
+					
+					entriesToUpdate.push(update);
+				}
+				
+				db.tabs.bulkUpdate(entriesToUpdate).then(() => {
+					db.deleteSessionIfNoLongerNeeded(sessionId).then(() => {						
+						updateActionsPanel();
+					});
+				});
+			});
+			break;
+		}
+		
+		case "toggle-actions-panel":
+			toggleActionsPanel();
 			break;
 	}
 });

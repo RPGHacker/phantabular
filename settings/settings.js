@@ -5,7 +5,7 @@ import db from "../shared/database.mjs";
 let previewImageTimer = null;
 let hasCapturePermission = false;
 	
-function initializeForms(archiveSettings, openSettings) {
+function initializeForms(archiveSettings, viewSettings, openSettings) {
 	noDuplicateUrlsCheckbox.checked = archiveSettings.noDuplicateUrls;
 	onlyStoreLatestSessionCheckbox.checked = archiveSettings.onlyStoreLatestSession;
 	
@@ -40,6 +40,8 @@ function initializeForms(archiveSettings, openSettings) {
 		}
 	}
 	
+	initialActionsPanelStateSelect.value = viewSettings.initialActionsPanelState;
+	
 	restoreHiddenTabsAsHiddenCheckbox.checked = openSettings.restoreHiddenTabsAsHidden;
 	jumpToOpenedTabCheckbox.checked = openSettings.jumpToOpenedTab;
 	openTabsUnloadedCheckbox.checked = openSettings.openTabsUnloaded;
@@ -52,13 +54,16 @@ function initializeForms(archiveSettings, openSettings) {
 }
 
 settings.archiveSettings.then((archiveSettings) => {
-	settings.openSettings.then((openSettings) => {
-		initializeForms(archiveSettings, openSettings);
+	settings.viewSettings.then((viewSettings) => {
+		settings.openSettings.then((openSettings) => {
+			initializeForms(archiveSettings, viewSettings, openSettings);
+		});
 	});
 });
 
 async function saveChanges() {
 	const archiveSettings = await settings.archiveSettings;
+	const viewSettings = await settings.viewSettings;
 	const openSettings = await settings.openSettings;
 	
 	archiveSettings.noDuplicateUrls = noDuplicateUrlsCheckbox.checked;
@@ -88,6 +93,8 @@ async function saveChanges() {
 			}
 		}
 	}
+	
+	viewSettings.initialActionsPanelState = initialActionsPanelStateSelect.value;
 	
 	openSettings.restoreHiddenTabsAsHidden = restoreHiddenTabsAsHiddenCheckbox.checked;
 	openSettings.jumpToOpenedTab = jumpToOpenedTabCheckbox.checked;

@@ -1,5 +1,6 @@
 import debugh from "/shared/debughelper.mjs";
 import settings from "../shared/settings.mjs";
+import localcache from "../shared/localcache.mjs";
 import db from "../shared/database.mjs";
 import ruleeval from "../shared/rules.mjs";
 
@@ -23,6 +24,7 @@ let currentlyDraggedGroupElement = null;
 
 let currentTabSelectionParent = null;
 let currentlySelectedTabElements = [];
+let currentlySelectedTabElementIds = [];
 
 const tooltipData = {
 	tooltipTimer: null,
@@ -45,6 +47,29 @@ let elementHoveredOverForMoving = null;
 let idsOfTabsToMove = [];
 let moveTabsSourceGroup = null;
 let moveTabsTargetGroup = null;
+
+localcache.archive.then((archiveCache) => {
+	settings.viewSettings.then((viewSettings) => {
+		switch (viewSettings.initialActionsPanelState)
+		{
+			case "open":
+				showActionsPanel();
+				break;
+				
+			case "closed":
+				hideActionsPanel();
+				break;
+				
+			case "rememberLastState":		
+				if (archiveCache.actionsPanelWasOpen) {
+					showActionsPanel();
+				} else {
+					hideActionsPanel();
+				}
+				break;
+		}
+	});
+});
 
 
 tooltipLayer.style.opacity = 0;
@@ -1136,7 +1161,9 @@ function createTabsListForDragAndDrop(group, tabsList) {
 	
 	let dropTargetIndex = 0;
 	for (const tabsListChild of tabsListChildren) {
-		tabsListForDragAndDrop.appendChild(tabsListChild.cloneNode(true));
+		const clonedNode = tabsListChild.cloneNode(true);
+		clonedNode.setAttribute("id", clonedNode.getAttribute("id") + "-drag-and-drop");
+		tabsListForDragAndDrop.appendChild(clonedNode);
 		++dropTargetIndex;
 	}
 	
@@ -1156,6 +1183,7 @@ async function populateTabListGroup(group) {
 		let queryArgument = undefined;
 		let canRemove = false;
 		let accessor = undefined;
+		let groupPrefix = undefined;
 	
 		if (group.dataset.iscategory) {
 			// This is a category
@@ -1220,7 +1248,7 @@ async function populateTabListGroup(group) {
 				let dropTargetIndex = 0;
 				for (const tab of tabs) {
 					tabsList.insertAdjacentHTML("beforeend", `
-						<li class="tab-entry has-tooltip colorize-gray" data-tabid="${tab.id}" tabindex="0" data-focuscount="0" data-hasfocus="false" data-droptargetindex="${dropTargetIndex}" draggable="true">
+						<li id="tab-entry-${group.id}-${tab.id}" class="tab-entry has-tooltip colorize-gray" data-tabid="${tab.id}" tabindex="0" data-focuscount="0" data-hasfocus="false" data-droptargetindex="${dropTargetIndex}" draggable="true">
 							<span class="fav-icon-list-item" data-validimage="${tab.metadata.favIconUrl !== undefined}"><img src="${tab.metadata.favIconUrl}" class="fav-icon-small"/></span>
 							<span class="overlap overlapping-content">
 								<span class="title">${escapeHTML(tab.title)}</span>
@@ -1245,6 +1273,7 @@ async function populateTabListGroup(group) {
 				previousGroupEntryCounts[group.id] = tabs.length;
 				
 				createTabsListForDragAndDrop(group, tabsList);
+				refreshSelectedTabElements();
 			});
 		});
 	}
@@ -1368,6 +1397,7 @@ async function populateGroupListGroup(group) {
 				}
 				
 				createGroupsListForDragAndDrop(group, innerGroupsList);
+				refreshSelectedTabElements();
 			});
 		});
 	}
@@ -2263,11 +2293,21 @@ function createGroupSelector(container, properties, tabs, groupAccessor) {
 function showActionsPanel() {
 	actionsPanel.hidden = false;
 	archiveRoot.dataset.actionsvisible = true;
+	
+	localcache.archive.then((archiveCache) => {
+		archiveCache.actionsPanelWasOpen = true;
+		localcache.update();
+	});
 }
 
 function hideActionsPanel() {	
 	actionsPanel.hidden = true;
 	archiveRoot.dataset.actionsvisible = false;
+	
+	localcache.archive.then((archiveCache) => {
+		archiveCache.actionsPanelWasOpen = false;
+		localcache.update();
+	});
 }
 
 function toggleActionsPanel() {
@@ -2385,6 +2425,10 @@ async function updateActionsPanel() {
 	sharedTabActionsRoot.hidden = false;
 }
 
+function updateSelectedTabElementIds() {
+	currentlySelectedTabElementIds = currentlySelectedTabElements.map((element) => { return element.id; });
+}
+
 function deselectAllSelectedTabElements() {
 	for (const tabElement of currentlySelectedTabElements) {
 		tabElement.dataset.isselected = false;
@@ -2392,11 +2436,39 @@ function deselectAllSelectedTabElements() {
 	
 	currentTabSelectionParent = null;
 	currentlySelectedTabElements = [];
+	currentlySelectedTabElementIds = [];
 	
 	clearActionsPanel();
+	
+	updateSelectedTabElementIds();
 }
 
 function refreshSelectedTabElements() {
+	let changeDetected = false;
+	
+	currentlySelectedTabElements = [];
+	
+	for (const previouslySelectedElementId of currentlySelectedTabElementIds) {
+		const element = window[previouslySelectedElementId];
+		
+		if (!element) {
+			changeDetected = true;
+		} else {
+			currentTabSelectionParent = element.closest(".tabs-list");
+			
+			if (!element.dataset.isselected) {
+				changeDetected = true;
+				
+				element.dataset.isselected = true;
+			}
+			
+			currentlySelectedTabElements.push(element);
+		}
+	}
+	
+	if (changeDetected) {
+		updateActionsPanel();
+	}
 }
 
 function getElementsBetween(a, b) {
@@ -2815,6 +2887,8 @@ document.addEventListener("click", (e) => {
 			}
 			
 			updateActionsPanel();
+			
+			updateSelectedTabElementIds();
 		}
 	} else {
 		if (e.target.closest(".actions-panel") === null) {

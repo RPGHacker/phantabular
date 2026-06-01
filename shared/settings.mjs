@@ -76,6 +76,9 @@ export class Settings {
 					},
 				},
 			},
+			viewSettings: {
+				initialActionsPanelState: "rememberLastState",
+			},
 			openSettings: {
 				deleteTabsUponOpen: false,
 				tabOpenPosition: "nextToActiveTab",
@@ -83,7 +86,7 @@ export class Settings {
 				restoreHiddenTabsAsHidden: true,
 				jumpToOpenedTab: true,
 				openTabsUnloaded: false,
-			}
+			},
 		};
 		
 		this._storage = JSON.parse(JSON.stringify(this._defaultStorage));
@@ -141,6 +144,16 @@ export class Settings {
 			}
 			
 			return this._storage.archiveSettings;
+		})();
+	}
+	
+	get viewSettings() {	
+		return (async () => {
+			if (this._storagePromise !== null) {
+				await this._storagePromise;
+			}
+			
+			return this._storage.viewSettings;
 		})();
 	}
 	

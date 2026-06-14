@@ -1,59 +1,41 @@
 import debugh from "./debughelper.mjs";
-import Jexl from "../deps/jexl/jexl.bundle.js";
+import jsonata from "../deps/jsonata/dist/jsonata.mjs";
 
 export class RuleEvaluator {
 	constructor() {
-		this._capturingGroupTargetRegExp = /^[A-Za-z_][A-Za-z0-9_]*$/;
+		this._jsonataBindings = {
+			startsWith: (str, token) => str.startsWith(token),
+			endsWith: (str, token) => str.endsWith(token),
+		};
 	}
 	
-	// We currently create a new Jexl instance every time we evaluate
-	// a rule, which kinda sucks, but that's the only way I can think
-	// of to get our desired RegEx functionality with support for
-	// capturing groups into this thing in a manner that should be
-	// safe even across multiple evaluators running asynchronously
-	// at the same time.
-	async _evaluateWithNewJexlInstance(rule, context) {
-		const jexl = new Jexl.Jexl;
+	_generateFullRuleText(functionText) {
+		const ruleWithIndentation = functionText.replace(/^/gm, "\t\t");
 		
-		const temporaryContext = JSON.parse(JSON.stringify(context));
-		const _capturingGroupTargetRegExp = this._capturingGroupTargetRegExp;
+		const fullRule = `
+		(
+			$_includeTab := function($tab) {(
+		${ruleWithIndentation}
+			)};
+			
+			$_includeTab(_tabs[0])
+		)`;
 		
-		function matchRegex(string, expression, capturingGroupTargetVariableName) {
-			if (capturingGroupTargetVariableName) {
-				if (!_capturingGroupTargetRegExp.test(capturingGroupTargetVariableName)) {
-					throw "Invalid target variable name passed to matchRegex: \"" + capturingGroupTargetVariableName + "\".\nThe variable name may online contain alphanumeric characters and underscores and must not start with a digit.";
-				}
-			}
-			
-			let flags = "";
-			
-			if (expression.startsWith("/")) {
-				const lastSlashIndex = expression.lastIndexOf("/");
-				flags = expression.substring(lastSlashIndex + 1);
-				expression = expression.substring(1, lastSlashIndex);
-			}
-			
-			const regEx = new RegExp(expression, flags);
-			
-			const result = regEx.exec(string);
-			
-			if (capturingGroupTargetVariableName) {
-				if (typeof temporaryContext[capturingGroupTargetVariableName] !== "undefined") {
-					throw "Variable \"" + capturingGroupTargetVariableName + "\" already exists in the rule context.\nPlease use the name of a variable that doesn't exist yet as the capturing group target of matchRegex.";
-				}
-				temporaryContext[capturingGroupTargetVariableName] = result;
-			}
-			
-			return (result !== null);
-		}
+		return fullRule;
+	}
+	
+	async _evaluateWithJsonata(rule, context) {		
+		const expression = jsonata(rule);
 		
-		jexl.addFunction("matchRegex", matchRegex);
-		jexl.addFunction("startsWith", (string, substring) => { return string.startsWith(substring); });
-		jexl.addFunction("endsWith", (string, substring) => { return string.endsWith(substring); });
-		jexl.addTransform('lower', (val) => val.toLowerCase());
-		jexl.addTransform('upper', (val) => val.toUpperCase());
+		const result = await expression.evaluate(context, this._jsonataBindings);
 		
-		return jexl.eval(rule, temporaryContext);
+		return result;
+	}
+	
+	_generateJsonataErrorText(error) {
+		const userReadableError = `${error.code}: ${error.token}: ${error.message}`;
+		
+		return userReadableError;
 	}
 	
 	async matchesRule(tab, rule) {
@@ -62,21 +44,29 @@ export class RuleEvaluator {
 		}
 		
 		const context = {
-			tab: tab
-		}		
+			_tabs: [ tab ]
+		}
 		
 		let evalResult = false;
+		
+		const fullRule = this._generateFullRuleText(rule);
 
 		try {
-			evalResult = await this._evaluateWithNewJexlInstance(rule, context);
-		} catch (error) {
-			debugh.error("Auto-catch rule evaluation failed: " + error);
+			evalResult = await this._evaluateWithJsonata(fullRule, context);
+		} catch (error) {			
+			debugh.error("Auto-catch rule evaluation failed: " + this._generateJsonataErrorText(error));
+			return false;
+		}
+		
+		if (evalResult !== true && evalResult !== false) {
+			debugh.error(`An auto-catch rule returned "${evalResult}". Only "true" or "false" are allowed as return values.`);
+			return false;
 		}
 		
 		return evalResult;
 	}
 	
-	async isRuleValid(rule) {
+	async validateRule(rule) {
 		if (rule === undefined) {
 			return true;
 		}
@@ -84,10 +74,22 @@ export class RuleEvaluator {
 		const testTab = await browser.tabs.query({ active: true, currentWindow: true });
 		
 		const context = {
-			tab: testTab
+			_tabs: [ testTab ]
 		}
 		
-		return this._evaluateWithNewJexlInstance(rule, context);
+		let evalResult = false;
+		
+		const fullRule = this._generateFullRuleText(rule);
+
+		try {
+			evalResult = await this._evaluateWithJsonata(fullRule, context);
+		} catch (error) {			
+			throw new Error(this._generateJsonataErrorText(error));
+		}
+		
+		if (evalResult !== true && evalResult !== false) {
+			throw new Error(`Rule evaluation returned "${evalResult}". Only "true" or "false" are allowed as return values.`);
+		}
 	}
 }
 

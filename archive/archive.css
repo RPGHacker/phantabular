@@ -968,3 +968,38 @@ body[data-dragmode="tab"] .group-details:not([data-dragparent=true]) > summary >
 .group-selector-menu .group-selector-root[data-selected="all"] .colorize-group-selector .group-selector-icon-root .group-selector-icon-all-selected {
 	display: inline-block;
 }
+
+/* Auto-catch rule preview */
+code.code-preview {
+	display: flex;
+	background-color: light-dark(var(--oc-gray-4), var(--oc-gray-8));
+}
+
+code.code-preview > * {
+	display: flex;
+	padding: 5px;
+}
+
+code.code-preview > .code-line-numbers {
+	width: min-content;
+	justify-content: end;
+	font-weight: bold;
+}
+
+code.code-preview > .code-text {
+	flex: 1;
+	background-color: var(--code-bg-color);
+	/*
+	   This here is to prevent the parent container from growing when we generate long text.
+	   Don't ask me where I got that number from, I literally just tried random stuff until
+	   something seemed to work. I don't think this is a proper solution, but I couldn't figure
+	   out what else would work, so this'll have to do.
+	*/
+	max-width: 748px;
+}
+
+code.code-preview > .code-sidebar {
+	width: min-content;
+	padding-left: 11px;
+	justify-content: center;
+}

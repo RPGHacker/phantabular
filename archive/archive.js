@@ -804,6 +804,10 @@ function updateShowTooltip(mousePos, mouseTarget) {
 						tooltipLayer.insertAdjacentHTML("afterbegin", "Show/hide actions panel");
 						break;
 						
+					case "copy-rule-preview":
+						tooltipLayer.insertAdjacentHTML("afterbegin", "Copy code");
+						break;
+						
 					default:
 						tooltipLayer.textContent = tooltipElement.dataset.action;
 						break;
@@ -851,7 +855,7 @@ async function applyCategorySettings() {
 	const rule = (ruleIsJustWhitespace ? undefined : categoryRule.value);
 	
 	try {
-		await ruleeval.isRuleValid(rule);
+		await ruleeval.validateRule(rule);
 	} catch (error) {
 		debugh.error("Auto-catch rule validity check failed: " + error);
 		ruleValidtyCheckFailedDialog.showModal();
@@ -982,26 +986,26 @@ function escapeStringContents(input, escapableChars = ["\\", '"'], escapeChar = 
 	return escaped;
 }
 
-function fillCategoryRuleFromTemplate() {
+function generateRuleTextFromTemplate() {
 	let targetText = "<target>";
 	
 	switch (categoryTemplateTarget.value) {
 		case "title":
-			targetText = "tab.title";
+			targetText = "$tab.title";
 			break;
 		case "url":
-			targetText = "tab.url";
+			targetText = "$tab.url";
 			break;
 	}
 	
 	const valueText = escapeStringContents(categoryRuleString.value);
 	const caseInsensitive = categoryTemplateCaseInsensitive.checked;
 	
-	let lowerTransform = "";
+	let stringTransform = (str) => str;
 	let caseInsensitiveRegExFlags = "";
 	
 	if (caseInsensitive) {
-		lowerTransform = "|lower";
+		stringTransform = (str) => `$lowercase(${str})`;
 		caseInsensitiveRegExFlags = "i";
 	}
 	
@@ -1015,19 +1019,19 @@ function fillCategoryRuleFromTemplate() {
 			ruleText = "true";
 			break;
 		case "equal-to":
-			ruleText = `${targetText}${lowerTransform} == "${valueText}"${lowerTransform}`;
+			ruleText = `${stringTransform(targetText)} = ${stringTransform(`"${valueText}"`)}`;
 			break;
 		case "contains":
-			ruleText = `"${valueText}"${lowerTransform} in ${targetText}${lowerTransform}`;
+			ruleText = `$contains(${stringTransform(targetText)}, "${valueText}")`;
 			break;
 		case "doesnt-contain":
-			ruleText = `!("${valueText}"${lowerTransform} in ${targetText}${lowerTransform})`;
+			ruleText = `$not($contains(${stringTransform(targetText)}, "${valueText}"))`;
 			break;
 		case "starts-with":
-			ruleText = `startsWith(${targetText}${lowerTransform}, "${valueText}"${lowerTransform})`;
+			ruleText = `$startsWith(${stringTransform(targetText)}, "${valueText}")`;
 			break;
 		case "ends-with":
-			ruleText = `endsWith(${targetText}${lowerTransform}, "${valueText}"${lowerTransform})`;
+			ruleText = `$endsWith(${stringTransform(targetText)}, "${valueText}")`;
 			break;
 		case "matches-regex":
 			let userRegex = categoryRuleString.value;
@@ -1040,22 +1044,29 @@ function fillCategoryRuleFromTemplate() {
 				userRegex += caseInsensitiveRegExFlags;
 			}
 
-			let escapedRegex = escapeStringContents(userRegex);
-			ruleText = `matchRegex(${targetText}${lowerTransform}, "${escapedRegex}", "_matches")`;
+			ruleText = `$_match := (${stringTransform(targetText)} ~> ${userRegex}); $_match != null`;
 
 			let capturingGroupElements = categoryRegexRuleCaptureGroups.querySelectorAll("li input");
 
-			let capturingGroupIndex = 1;
+			let capturingGroupIndex = 0;
 			for (const input of capturingGroupElements) {
 				const groupMatchContent = escapeStringContents(input.value);
-				ruleText += ` && (_matches[${capturingGroupIndex}]${lowerTransform} == "${groupMatchContent}"${lowerTransform})`
+				ruleText += ` and (${stringTransform(`$_match.groups[${capturingGroupIndex}]`)} = ${stringTransform(`"${groupMatchContent}"`)})`
 				capturingGroupIndex += 1;
 			}
 
 			break;
 	}
 	
-	categoryRule.value = ruleText;
+	return ruleText;
+}
+
+function fillCategoryRulePreviewFromTemplate() {
+	generatedRuleText.innerText = generateRuleTextFromTemplate();
+}
+
+function fillCategoryRuleFromTemplate() {	
+	categoryRule.value = generateRuleTextFromTemplate();
 }
 
 
@@ -1150,6 +1161,8 @@ document.addEventListener("change", (e) => {
 document.addEventListener("input", (e) => {
 	if (e.target === filterText) {
 		updateSearchByFilter();
+	} else if (e.target.closest("#categoryRuleTemplates") == categoryRuleTemplates) {
+		fillCategoryRulePreviewFromTemplate();
 	}
 });
 
@@ -3252,5 +3265,11 @@ document.addEventListener("click", (e) => {
 		case "toggle-actions-panel":
 			toggleActionsPanel();
 			break;
+			
+		case "copy-rule-preview":
+		{
+			navigator.clipboard.writeText(generateRuleTextFromTemplate());
+			break;
+		}
 	}
 });

@@ -104,35 +104,16 @@
 		<dialog id="ruleExplanationDialog">
 			<form method="dialog">
 				<div>
-					<p>Auto-catch rules make it possible to automatically sort tabs into categories when archiving. They consist of <a href="https://github.com/pawel-up/Jexl" target="_blank" class="colorize-link">Jexl</a> expressions
-					that automatically get the <a href="https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/tabs/Tab" target="_blank" class="colorize-link">data</a> of the tab to be archived passed in via the <code class="colorize-code">tab</code> variable.
-					Returning any truthy value inside a category's expression for a given tab leads to that tab being added to that category.</p>
-					<p>The following Jexl transforms are available inside expressions:</p>
-					<table class="colorize-table">
-						<thead>
-							<tr>
-								<th scope="col">Transform</th>
-								<th scope="col">Description</th>
-								<th scope="col">Example</th>
-								<th scope="col">Returns</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<th scope="row"><code class="colorize-code">lower</code></th>
-								<td>Converts a string to lower-case.</td>
-								<td><code class="colorize-code">"mIxEd CaSe"|lower</code></td>
-								<td><code class="colorize-code">"mixed case"</code></td>
-							</tr>
-							<tr>
-								<th scope="row"><code class="colorize-code">upper</code></th>
-								<td>Converts a string to upper-case.</td>
-								<td><code class="colorize-code">"mIxEd CaSe"|upper</code></td>
-								<td><code class="colorize-code">"MIXED CASE"</code></td>
-							</tr>
-						</tbody>
-					</table>
-					<p>Additionally, the following Jexl functions are available:</p>
+					<p>
+						Auto-catch rules make it possible to automatically sort tabs into categories when archiving. To achieve this, you may provide some <a href="https://docs.jsonata.org/simple" target="_blank" class="colorize-link">JSONata</a> code that returns either <code class="colorize-code">true</code>
+						if the tab should be added to the category or <code class="colorize-code">false</code> if not. Rules may also be empty, in which case they will simply be ignored (acting as though they always returned <code class="colorize-code">false</code>).
+					</p>
+					</p>
+						Internally, your rule code will be wrapped into a function that automatically gets the <a href="https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/tabs/Tab" target="_blank" class="colorize-link">data</a>
+						of the tab to be archived passed in via the <code class="colorize-code">$tab</code> argument (though some properties might be inaccessible for security reasons - usually <code class="colorize-code">$tab.url</code> and <code class="colorize-code">$tab.title</code> will be all you need, anyways). Check the
+						official JSONata language reference linked above for an overview on how to use it.
+					</p>
+					<p>Phantabular also provides the following additional built-in functions for convenience:</p>
 					<table class="colorize-table">
 						<thead>
 							<tr>
@@ -144,18 +125,20 @@
 						</thead>
 						<tbody>
 							<tr>
-								<th scope="row"><code class="colorize-code">matchRegex</code></th>
-								<td>Tests if a string (first parameter) matches a regular expression (second parameter), and if so, returns an array with the full match at index 0 and the contents of all capturing groups at the subsequent indices.
-								If a string value is passed as the optional third parameter, the return value is also stored in a variable of the given name. The regular expression needs to be passed in as a string, so backslahes and quotation marks
-								must be escaped with a backslash, but the string can optionally contain / delimiters and flags.</td>
-								<td><pre><code class="colorize-code">matchRegex("FOOTBALL", "/\\S*(oo)\\S*(ll)/i", "matches")
-  && matches[1] == "OO"
-  && matches[2] == "LL"</code></pre></td>
-								<td><code class="colorize-code">matchRegex</code> returns <code class="colorize-code">[&nbsp;"FOOTBALL",&nbsp;"OO",&nbsp;"LL"&nbsp;]</code>.<br />Overall expression returns <code class="colorize-code">true</code>.</td>
+								<th scope="row"><code class="colorize-code">$startsWith($str, $token)</code></th>
+								<td>Returns <code class="colorize-code">true</code> if string <code class="colorize-code">$str</code> begins with <code class="colorize-code">$token</code>.</td>
+								<td><pre><code class="colorize-code">$startsWith("foobar", "foo")</code></pre></td>
+								<td><code class="colorize-code">true</code></td>
+							</tr>
+							<tr>
+								<th scope="row"><code class="colorize-code">$endsWith($str, $token)</code></th>
+								<td>Returns <code class="colorize-code">true</code> if string <code class="colorize-code">$str</code> ends with <code class="colorize-code">$token</code>.</td>
+								<td><pre><code class="colorize-code">$endsWith("foobar", "bar")</code></pre></td>
+								<td><code class="colorize-code">true</code></td>
 							</tr>
 						</tbody>
 					</table>
-					<p>You can use the "Fill from template" menu to automatically generate rules for the most common use cases.</p>
+					<p>You can use the "Fill from template" menu to automatically generate rules or rule snippets for the most common use cases.</p>
 				</div>
 				<div>
 					<center><button type="submit" class="colorize-button">Gotcha!</button></center>

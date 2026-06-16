@@ -72,8 +72,6 @@ localcache.archive.then((archiveCache) => {
 });
 
 
-tooltipLayer.style.opacity = 0;
-
 const groupsRootList = document.querySelector("#groups-root-list");
 	
 function escapeHTML(unescaped) {
@@ -698,7 +696,7 @@ function updateShowTooltip(mousePos, mouseTarget) {
 	tooltipData.tooltipTimer = setTimeout(async () => {	
 		const tooltipElement = tooltipData.lastMouseTarget.closest(".has-tooltip");
 		if (!tooltipElement) {
-			tooltipLayer.style.opacity = 0;
+			tooltipLayer.hidePopover();
 			return;
 		}
 		
@@ -820,12 +818,12 @@ function updateShowTooltip(mousePos, mouseTarget) {
 		}
 		
 		repositionTooltipLayer();
-		tooltipLayer.style.opacity = 1;
+		tooltipLayer.showPopover();
 	}, 500);
 }
 
 const tooltipResizeObserver = new ResizeObserver(() => {
-	if (parseFloat(tooltipLayer.style.opacity) === 0) {
+	if (!tooltipLayer.matches(':popover-open')) {
 		return;
 	}
 	
@@ -1080,7 +1078,7 @@ async function getCategoryForId(id) {
 
 function hideTooltip() {
 	clearTimeout(tooltipData.tooltipTimer);
-	tooltipLayer.style.opacity = 0;
+	tooltipLayer.hidePopover();
 }
 
 function checkTooltipMouseMove(e) {	
@@ -1091,7 +1089,7 @@ function checkTooltipMouseMove(e) {
 		};
 	}
 	
-	if (parseFloat(tooltipLayer.style.opacity) === 0) {
+	if (!tooltipLayer.matches(':popover-open')) {
 		const movementThreshold = 1.0;
 		
 		if (Math.abs(e.clientX - tooltipData.lastMousePos.clientX) >= movementThreshold
@@ -1134,7 +1132,7 @@ document.addEventListener("scroll", (e) => {
 });
 
 document.addEventListener("load", (e) => {
-	if (e.target.closest("#tooltipLayer") === tooltipLayer && parseFloat(tooltipLayer.style.opacity) !== 0) {
+	if (e.target.closest("#tooltipLayer") === tooltipLayer && tooltipLayer.matches(':popover-open')) {
 		repositionTooltipLayer();
 	}
 }, true);

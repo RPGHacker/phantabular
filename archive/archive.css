@@ -555,7 +555,6 @@ button.action-button {
     background: var(--group-details-content-bg-color);
     color: var(--group-details-content-text-color);
     padding: 6px 8px;
-    opacity: 0;
     transition: opacity 0.15s ease;
 	border-style: solid;
     border-radius: 4px;
@@ -566,6 +565,7 @@ button.action-button {
 	width: max-content;
 	max-width: 30vw;
 	white-space: collapse;
+	inset: auto;
 }
 
 /* A bunch of inline stylings useful for creating dialogs */

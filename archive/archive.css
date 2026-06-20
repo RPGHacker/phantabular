@@ -1017,6 +1017,32 @@ body[data-dragmode="tab"] .group-details:not([data-dragparent=true]) > summary >
 	display: inline-block;
 }
 
+/* Auto-catch rule edit */
+.rule-edit {
+	display: flex;
+	gap: 7px;
+}
+.rule-edit > * {
+	display: flex;
+}
+
+.rule-edit-code {
+	flex: 1;
+}
+
+.rule-edit-code > textarea {
+	margin: 0px;
+}
+
+.rule-edit-test-button {
+	width: max-content;
+	display: block;
+	align-content: center;
+}
+
+.rule-edit-test-button > button {
+}
+
 /* Auto-catch rule preview */
 code.code-preview {
 	display: flex;

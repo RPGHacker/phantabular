@@ -78,8 +78,15 @@
 							<center><button type="button" data-action="fill-category-rule-from-template" class="colorize-button">Fill rule</button></center>
 						</div>
 					</details>
-					<textarea id="categoryRule" name="categoryRule" rows="5" cols="33">
-					</textarea>
+					<div class="rule-edit">
+						<div class="rule-edit-code">
+							<textarea id="categoryRule" name="categoryRule" rows="5" cols="33">
+							</textarea>
+						</div>
+						<div class="rule-edit-test-button">
+							<button type="button" data-action="test-rule" class="colorize-button">Test Rule</button>
+						</div>
+					</div>
 				</div>
 				<div>
 					<button type="submit" data-action="confirm-edit-category" class="colorize-button">Save</button>

@@ -547,7 +547,7 @@ button.action-button {
 }
 
 /* Stylings for our custom tooltip */
-#tooltipLayer {
+#tooltipLayer, .text-bubble {
     position: fixed;
     pointer-events: none;
     z-index: 999999;
@@ -566,6 +566,54 @@ button.action-button {
 	max-width: 30vw;
 	white-space: collapse;
 	inset: auto;
+}
+
+#tooltipLayer:popover-open {
+	animation: tooltip-spawn 0.25s ease;
+}
+
+@keyframes tooltip-spawn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+.text-bubble {
+    z-index: 1000000;
+}
+
+.text-bubble:popover-open {
+	animation: text-bubble-spawn 0.25s ease;
+}
+
+.text-bubble:popover-open[data-fadingout=true] {
+	animation: text-bubble-despawn 0.25s ease;
+	opacity: 0;
+}
+
+@keyframes text-bubble-spawn {
+	from {
+		transform: translateY(-10px);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0px);
+		opacity: 1;
+	}
+}
+
+@keyframes text-bubble-despawn {
+	from {
+		transform: translateY(0px);
+		opacity: 1;
+	}
+	to {
+		transform: translateY(-10px);
+		opacity: 0;
+	}
 }
 
 /* A bunch of inline stylings useful for creating dialogs */
@@ -1002,4 +1050,18 @@ code.code-preview > .code-sidebar {
 	width: min-content;
 	padding-left: 11px;
 	justify-content: center;
+}
+
+button.code-side-button {
+	padding: 1px;
+	border-radius: 0px;
+	background-color: light-dark(var(--oc-gray-4), var(--oc-gray-8));
+}
+
+button.code-side-button:hover {
+	background-color: light-dark(var(--oc-gray-3), var(--oc-gray-7));
+}
+
+button.code-side-button:active {
+	background-color: light-dark(var(--oc-gray-5), var(--oc-gray-9));
 }

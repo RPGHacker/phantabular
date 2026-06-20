@@ -48,6 +48,8 @@ let idsOfTabsToMove = [];
 let moveTabsSourceGroup = null;
 let moveTabsTargetGroup = null;
 
+let textBubbleTimer = null;
+
 localcache.archive.then((archiveCache) => {
 	settings.viewSettings.then((viewSettings) => {
 		switch (viewSettings.initialActionsPanelState)
@@ -687,7 +689,11 @@ function repositionTooltipLayer() {
 	tooltipLayer.style.top = `${yPos}px`;
 }
 
-function updateShowTooltip(mousePos, mouseTarget) {	
+function updateShowTooltip(mousePos, mouseTarget) {
+	if (textBubbleLayer.matches(':popover-open')) {
+		return;
+	}
+	
 	tooltipData.lastMousePos = mousePos;
 	tooltipData.lastMouseTarget = mouseTarget;
 
@@ -829,6 +835,58 @@ const tooltipResizeObserver = new ResizeObserver(() => {
 	
 	repositionTooltipLayer();
 }).observe(tooltipLayer);
+
+
+function repositionTextBubble(textBubbleElement) {
+	if (tooltipData.lastMousePos === null) {
+		return;
+	}
+		
+	const tooltipWidth = textBubbleElement.offsetWidth;
+	const tooltipHeight = textBubbleElement.offsetHeight;
+	
+	const xOffset = 0;
+	const yOffset = 20;
+	
+	let xPos = tooltipData.lastMousePos.clientX + xOffset;
+	let yPos = tooltipData.lastMousePos.clientY + yOffset;
+	
+	if (tooltipWidth + xPos > window.innerWidth) {
+		xPos = window.innerWidth - tooltipWidth;
+	}
+	
+	if (tooltipHeight + yPos > window.innerHeight) {
+		yPos = tooltipData.lastMousePos.clientY - yOffset - tooltipHeight;
+	}
+	
+	textBubbleElement.style.left = `${xPos}px`;
+	textBubbleElement.style.top = `${yPos}px`;
+}
+
+function openTextBubble(content) {
+	hideTooltip();
+	
+	textBubbleLayer.textContent = "";
+	textBubbleLayer.insertAdjacentHTML("beforeend", `
+		${content}
+	`);
+	
+	textBubbleLayer.dataset.fadingout = false;
+	textBubbleLayer.showPopover();
+	repositionTextBubble(textBubbleLayer);
+	
+	clearTimeout(textBubbleTimer);
+
+	textBubbleTimer = setTimeout(async () => {
+		textBubbleLayer.dataset.fadingout = true;
+		clearTimeout(textBubbleTimer);
+		
+		textBubbleTimer = setTimeout(async () => {		
+			clearTimeout(textBubbleTimer);
+			textBubbleLayer.hidePopover();
+		}, 250);
+	}, 1000);
+}
 
 
 async function editCategorySettings(categoryElement) {	
@@ -3030,6 +3088,7 @@ document.addEventListener("click", (e) => {
 			const tabId = parseInt(e.target.closest("[data-tabid]").dataset.tabid);	
 			db.tabs.get({id: tabId}).then((tab) => {
 				navigator.clipboard.writeText(tab.url);
+				openTextBubble("Copied!");
 			});
 			break;
 		}
@@ -3267,6 +3326,7 @@ document.addEventListener("click", (e) => {
 		case "copy-rule-preview":
 		{
 			navigator.clipboard.writeText(generateRuleTextFromTemplate());
+			openTextBubble("Copied!");
 			break;
 		}
 	}

@@ -220,13 +220,16 @@ details.root-details .group-contents > .groups-list-for-drag-and-drop > details[
 
 
 /* Stylings for tab list */
-ul.tabs-list, ul.tabs-list-for-drag-and-drop {
+ul.tabs-list,
+ul.tabs-list-for-drag-and-drop {
 	list-style-type: none;
 	padding: 0px 0px 0px 0px;
 	margin: 0px 0px 0px 0px;
 }
 
-ul.tabs-list > li, ul.tabs-list-for-drag-and-drop > li {
+ul.tabs-list > li,
+ul.tabs-list-for-drag-and-drop > li,
+ul.tabs-list > div.tab-entry-test-results {
 	--tab-entry-background-color: light-dark(var(--oc-gray-2), var(--oc-gray-7));
 	background-color: var(--tab-entry-background-color);
     border: 1px solid #ccc;
@@ -235,12 +238,32 @@ ul.tabs-list > li, ul.tabs-list-for-drag-and-drop > li {
 	color: light-dark(var(--oc-black), var(--oc-white));
 }
 
+ul.tabs-list > li.colorize-red,
+ul.tabs-list-for-drag-and-drop > li.colorize-red,
+ul.tabs-list > div.tab-entry-test-results.colorize-red {
+	--tab-entry-background-color: light-dark(var(--oc-red-2), var(--oc-red-7));
+}
+
+ul.tabs-list > li.colorize-green,
+ul.tabs-list-for-drag-and-drop > li.colorize-green,
+ul.tabs-list > div.tab-entry-test-results.colorize-green {
+	--tab-entry-background-color: light-dark(var(--oc-green-2), var(--oc-green-7));
+}
+
 .drop-footer {
 	display: none;
 }
 
 ul.tabs-list > li:hover {
 	--tab-entry-background-color: light-dark(var(--oc-gray-1), var(--oc-gray-6));
+}
+
+ul.tabs-list > li.colorize-red:hover {
+	--tab-entry-background-color: light-dark(var(--oc-red-1), var(--oc-red-6));
+}
+
+ul.tabs-list > li.colorize-green:hover {
+	--tab-entry-background-color: light-dark(var(--oc-green-1), var(--oc-green-6));
 }
 
 ul.tabs-list > li[data-isselected=true] {
@@ -288,7 +311,8 @@ ul.tabs-list > li[data-isselected=true]:hover {
 
 
 /* Stylings for tab list entries */
-.tab-entry {
+.tab-entry,
+.tab-entry-test-results {
 	display: flex;
 	padding: 10px 10px 10px 10px;
 	min-width: 0;
@@ -296,7 +320,8 @@ ul.tabs-list > li[data-isselected=true]:hover {
 	user-select: none;
 }
 
-.tab-entry * {
+.tab-entry *,
+.tab-entry-test-results * {
 	align-items: center;
 }
 
@@ -320,7 +345,8 @@ ul.tabs-list > li[data-isselected=true]:hover {
 	justify-self: start;
 }
 
-.tab-entry > .overlap > .actions {
+.tab-entry > .overlap > .actions,
+.tab-entry > .overlap > .test-result {
 	display: flex;
 	gap: 0.5rem;
 	visibility: hidden;
@@ -338,10 +364,25 @@ ul.tabs-list > li[data-isselected=true]:hover {
 	);
 }
 
+.tab-entry > .overlap > .test-result {
+	visibility: visible;
+}
+
 .tab-entry:hover > .overlap > .actions,
 .tab-entry:focus > .overlap > .actions,
 .tab-entry[data-hasfocus=true] > .overlap > .actions {
 	visibility: visible;
+}
+
+.tab-entry > .overlap > .actions[hidden],
+.tab-entry > .overlap > .test-result[hidden],
+.tab-entry-test-results,
+.tab-entry-test-results[hidden] {
+	display: none;
+}
+
+.tab-entry[data-isselected=true] + .tab-entry-test-results:not([hidden]) {
+	display: block;
 }
 
 

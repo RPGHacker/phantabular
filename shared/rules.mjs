@@ -66,12 +66,14 @@ export class RuleEvaluator {
 		return evalResult;
 	}
 	
-	async validateRule(rule) {
+	async validateRule(rule, testTab = undefined) {
 		if (rule === undefined) {
-			return true;
+			return false;
 		}
 		
-		const testTab = await browser.tabs.query({ active: true, currentWindow: true });
+		if (testTab === undefined) {
+			testTab = await browser.tabs.query({ active: true, currentWindow: true });
+		}
 		
 		const context = {
 			_tabs: [ testTab ]
@@ -90,6 +92,8 @@ export class RuleEvaluator {
 		if (evalResult !== true && evalResult !== false) {
 			throw new Error(`Rule evaluation returned "${evalResult}". Only "true" or "false" are allowed as return values.`);
 		}
+		
+		return evalResult;
 	}
 }
 

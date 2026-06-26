@@ -84,7 +84,7 @@
 							</textarea>
 						</div>
 						<div class="rule-edit-test-button">
-							<button type="button" data-action="test-rule" class="colorize-button">Test Rule</button>
+							<button type="button" data-action="test-auto-catch-rule" class="colorize-button">Test Rule</button>
 						</div>
 					</div>
 				</div>
@@ -421,6 +421,16 @@
 				<div>
 					<center><button type="submit" class="colorize-button">Close</button></center>
 				</div>
+			</form>
+		</dialog>
+		
+		<dialog id="testAutoCatchRuleDialog">
+			<form method="dialog">
+				<h1 id="testAutoCatchRuleHeaderInProgress">Testing: <span id="testAutoCatchRuleHeaderInProgressPercentage">0</span>%</h1>
+				<h1 id="testAutoCatchRuleHeaderDone" hidden>Test Results</h1>
+				<div id="testAutoCatchRuleResultsRoot">
+				</div>
+				<center><button type="submit" class="colorize-button">Close</button></center>
 			</form>
 		</dialog>
 		

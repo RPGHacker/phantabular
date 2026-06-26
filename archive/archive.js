@@ -50,6 +50,23 @@ let moveTabsTargetGroup = null;
 
 let textBubbleTimer = null;
 
+let testAutoCatchRulePromise = null;
+let testAutoCatchRuleVersion = 0;
+const testAutoCatchRuleResults = {
+	testautocatchrulecaughttabs: {
+		openTabs: [],
+		archivedTabs: [],
+	},
+	testautocatchruleuncaughttabs: {
+		openTabs: [],
+		archivedTabs: [],
+	},
+	testautocatchruleerrors: {
+		openTabs: [],
+		archivedTabs: [],
+	},
+};
+
 localcache.archive.then((archiveCache) => {
 	settings.viewSettings.then((viewSettings) => {
 		switch (viewSettings.initialActionsPanelState)
@@ -110,7 +127,7 @@ browser.permissions.onRemoved.addListener(updatePermissions);
 
 updatePermissions();
 
-function createGroup(container, className, id, displayName, actionsContent, insertLocation = "beforeend") {
+function createGroup(container, className, id, displayName, actionsContent, metadata, insertLocation = "beforeend") {
 	container.insertAdjacentHTML(insertLocation, `
 		<details class="${className}" id="${id}" data-version="1" data-queriedversion="0" data-receivedversion="0">
 			<summary data-focuscount="0" data-hasfocus="false">
@@ -135,6 +152,10 @@ function createGroup(container, className, id, displayName, actionsContent, inse
 	`);
 
 	let group = container.querySelector("#" + id);
+	
+	for (const metadataKey in metadata) {
+		group.dataset[`metadata_${metadataKey}`] = metadata[metadataKey];
+	}
 
 	incrementGroupVersion(group);
 	
@@ -220,6 +241,19 @@ function initializeGroupAsTabListContainer(group, type) {
 	}
 }
 
+function clearGroupSubscriptions(group) {					
+	if (activeLiveQuerySubscriptions[group.id]) {
+		activeLiveQuerySubscriptions[group.id].unsubscribe();
+		activeLiveQuerySubscriptions[group.id] = undefined;
+	}
+	
+	if (activeLiveQueryCountSubscriptions[group.id]) {
+		activeLiveQueryCountSubscriptions[group.id].unsubscribe();
+		activeLiveQueryCountSubscriptions[group.id] = undefined;
+		queryCountFunctions[group.id] = undefined;
+	}
+}
+
 function processGroupsListMutations(mutations) {	
 	for (let mutation of mutations) {
 		if (mutation.type === "childList") {
@@ -227,16 +261,7 @@ function processGroupsListMutations(mutations) {
 				if (removedNode.nodeType == Node.ELEMENT_NODE) {
 					const group = removedNode;
 					
-					if (activeLiveQuerySubscriptions[group.id]) {
-						activeLiveQuerySubscriptions[group.id].unsubscribe();
-						activeLiveQuerySubscriptions[group.id] = undefined;
-					}
-					
-					if (activeLiveQueryCountSubscriptions[group.id]) {
-						activeLiveQueryCountSubscriptions[group.id].unsubscribe();
-						activeLiveQueryCountSubscriptions[group.id] = undefined;
-						queryCountFunctions[group.id] = undefined;
-					}
+					clearGroupSubscriptions(group);
 				}
 			}
 		}
@@ -268,12 +293,12 @@ function createGroupsList(container, groupId) {
 	return groupsList;
 }
 
-function initializeInnerGroup(outerGroup, groupData, idPrefix, getGroupPropertiesFunction, insertLocation = "beforeend") {
+function initializeInnerGroup(outerGroup, groupData, idPrefix, getGroupPropertiesFunction, metadata, insertLocation = "beforeend") {
 	const groupProperties = getGroupPropertiesFunction(groupData);
 	
 	const idSuffix = groupProperties.id;
 
-	const innerGroup = createGroup(outerGroup, "group-details group-box colorize-" + groupProperties.color, idPrefix + "-" + idSuffix, groupProperties.name, groupProperties.actions, insertLocation);
+	const innerGroup = createGroup(outerGroup, "group-details group-box colorize-" + groupProperties.color, idPrefix + "-" + idSuffix, groupProperties.name, groupProperties.actions, metadata, insertLocation);
 	innerGroup.setAttribute("data-" + idPrefix + "id", idSuffix);
 	innerGroup.setAttribute("draggable", groupProperties.draggable);
 	
@@ -506,7 +531,7 @@ const groupFunctionLookup = {
 				isFilteredResult: isFilteredResult
 			};
 		},
-	},
+	},	
 	
 	tabsInSession: {
 		query: async (creationdate) => {
@@ -532,6 +557,127 @@ const groupFunctionLookup = {
 			return {
 				uniqueTabCount: uniqueTabCount,
 				isFilteredResult: isFilteredResult
+			};
+		},
+	},
+	
+	
+	testautocatchrulecaughttabs: {
+		query: async () => {
+			if (testAutoCatchRulePromise !== null) {
+				await testAutoCatchRulePromise;
+			}
+			
+			return [
+				{ accessor: "openTabs", sortkey: 0},
+				{ accessor: "archivedTabs", sortkey: 1}, 
+			];
+		},
+		queryTabCount: async () => {
+			if (testAutoCatchRulePromise !== null) {
+				await testAutoCatchRulePromise;
+			}
+			
+			return {
+				groupCount: 2,
+				uniqueTabCount: testAutoCatchRuleResults.testautocatchrulecaughttabs.openTabs.length + testAutoCatchRuleResults.testautocatchrulecaughttabs.archivedTabs.length,
+				isFilteredResult: true
+			};
+		},
+	},
+	
+	testautocatchruleuncaughttabs: {
+		query: async () => {
+			if (testAutoCatchRulePromise !== null) {
+				await testAutoCatchRulePromise;
+			}
+			
+			return [
+				{ accessor: "openTabs", sortkey: 0},
+				{ accessor: "archivedTabs", sortkey: 1}, 
+			];
+		},
+		queryTabCount: async () => {
+			if (testAutoCatchRulePromise !== null) {
+				await testAutoCatchRulePromise;
+			}
+			
+			return {
+				groupCount: 2,
+				uniqueTabCount: testAutoCatchRuleResults.testautocatchruleuncaughttabs.openTabs.length + testAutoCatchRuleResults.testautocatchruleuncaughttabs.archivedTabs.length,
+				isFilteredResult: true
+			};
+		},
+	},
+	
+	testautocatchruleerrors: {
+		query: async () => {
+			if (testAutoCatchRulePromise !== null) {
+				await testAutoCatchRulePromise;
+			}
+			
+			return [
+				{ accessor: "openTabs", sortkey: 0},
+				{ accessor: "archivedTabs", sortkey: 1}, 
+			];
+		},
+		queryTabCount: async () => {
+			if (testAutoCatchRulePromise !== null) {
+				await testAutoCatchRulePromise;
+			}
+			
+			return {
+				groupCount: 2,
+				uniqueTabCount: testAutoCatchRuleResults.testautocatchruleerrors.openTabs.length + testAutoCatchRuleResults.testautocatchruleerrors.archivedTabs.length,
+				isFilteredResult: true
+			};
+		},
+	},
+	
+	tabsInTestAutoCatchRuleCaughtTabs: {
+		query: async (accessor) => {
+			if (testAutoCatchRulePromise !== null) {
+				await testAutoCatchRulePromise;
+			}
+			
+			return testAutoCatchRuleResults.testautocatchrulecaughttabs[accessor];
+		},
+		queryTabCount: async (accessor) => {
+			return {
+				uniqueTabCount: testAutoCatchRuleResults.testautocatchrulecaughttabs[accessor].length,
+				isFilteredResult: true
+			};
+		},
+	},
+	
+	tabsInTestAutoCatchRuleUncaughtTabs: {
+		query: async (accessor) => {
+			if (testAutoCatchRulePromise !== null) {
+				await testAutoCatchRulePromise;
+			}
+			
+			return testAutoCatchRuleResults.testautocatchruleuncaughttabs[accessor];
+		},
+		queryTabCount: async (accessor) => {
+			return {
+				uniqueTabCount: testAutoCatchRuleResults.testautocatchruleuncaughttabs[accessor].length,
+				isFilteredResult: true
+			};
+		},
+	},
+	
+	tabsInTestAutoCatchRuleErrors: {
+		query: async (accessor) => {
+			if (testAutoCatchRulePromise !== null) {
+				await testAutoCatchRulePromise;
+			}
+			
+			return testAutoCatchRuleResults.testautocatchruleerrors[accessor];
+		},
+		queryTabCount: async (accessor) => {
+			return {
+				uniqueTabCount: testAutoCatchRuleResults.testautocatchruleerrors[accessor].length,
+				isFilteredResult: true
 			};
 		},
 	},
@@ -595,16 +741,17 @@ function initializeEntryCountLiveQuery(group, groupFunctions, queryCountArgument
 }
 
 const rootGroups = {
-	categories: createGroup(groupsRootList, "root-details group-box colorize-cyan", "categoriesGroup", "Categories", ""),
-	sessions: createGroup(groupsRootList, "root-details group-box colorize-cyan", "sessionsGroup", "Sessions", ""),
-	unsortedTabs: createGroup(groupsRootList, "root-details group-box colorize-cyan", "unsortedTabsGroup", "Unsorted Tabs", ""),
+	categories: createGroup(groupsRootList, "root-details group-box colorize-cyan", "categoriesGroup", "Categories", "", { type: "groupsList", context: "mainArchive" }),
+	sessions: createGroup(groupsRootList, "root-details group-box colorize-cyan", "sessionsGroup", "Sessions", "", { type: "groupsList", context: "mainArchive" }),
+	unsortedTabs: createGroup(groupsRootList, "root-details group-box colorize-cyan", "unsortedTabsGroup", "Unsorted Tabs", "", { type: "groupsList", context: "mainArchive" }),
 }
 
 function getCategoryProperties(category) {
-	let properties = {
+	const properties = {
 		name: category.name,
 		id: category.id,
 		color: category.color,
+		storageLocation: "archivedTabs",
 		draggable: true,
 		actions: `
 			<button data-action="edit-category-settings" data-tooltiptype="button" class="colorize-button image-button action-button has-tooltip"><img src="../icons/iconoir/edits/settings-solid-fixed-light.svg" class="only-in-light-theme" style="height: 32px;" /><img src="../icons/iconoir/edits/settings-solid-fixed-dark.svg" class="only-in-dark-theme" style="height: 32px;" /></button>
@@ -627,15 +774,34 @@ function getSessionProperties(session) {
 		second: "2-digit",
 	};
 	
-	let properties = {
+	const properties = {
 		name: new Date(session.creationdate).toLocaleDateString(undefined, dateOptions),
 		id: session.creationdate,
 		color: "gray",
+		storageLocation: "archivedTabs",
 		draggable: false,
 		actions: `
 			<button data-action="convert-group-to-bookmarks" data-tooltiptype="button" class="colorize-button image-button action-button has-tooltip"><img src="../icons/iconoir/edits/bookmark-light.svg" class="only-in-light-theme" style="height: 32px;" /><img src="../icons/iconoir/edits/bookmark-dark.svg" class="only-in-dark-theme" style="height: 32px;" /></button>
 			<button data-action="delete-session" data-tooltiptype="button" class="colorize-button image-button action-button has-tooltip"><img src="../icons/iconoir/edits/trash-solid.svg" style="height: 32px;" /></button>
 		`
+	}
+	
+	return properties;
+}
+
+function getTestAutoCatchResultProperties(groupData) {
+	const names = {
+		openTabs: "Open Tabs",
+		archivedTabs: "Archived Tabs",
+	}
+	
+	const properties = {
+		name: names[groupData.accessor],
+		id: groupData.accessor,
+		color: "gray",
+		storageLocation: groupData.accessor,
+		draggable: false,
+		actions: ""
 	}
 	
 	return properties;
@@ -691,6 +857,8 @@ function repositionTooltipLayer() {
 
 function updateShowTooltip(mousePos, mouseTarget) {
 	if (textBubbleLayer.matches(':popover-open')) {
+		tooltipData.lastMousePos = mousePos;
+		tooltipData.lastMouseTarget = mouseTarget;
 		return;
 	}
 	
@@ -1078,16 +1246,16 @@ function generateRuleTextFromTemplate() {
 			ruleText = `${stringTransform(targetText)} = ${stringTransform(`"${valueText}"`)}`;
 			break;
 		case "contains":
-			ruleText = `$contains(${stringTransform(targetText)}, "${valueText}")`;
+			ruleText = `$contains(${stringTransform(targetText)}, ${stringTransform(`"${valueText}"`)})`;
 			break;
 		case "doesnt-contain":
-			ruleText = `$not($contains(${stringTransform(targetText)}, "${valueText}"))`;
+			ruleText = `$not($contains(${stringTransform(targetText)}, ${stringTransform(`"${valueText}"`)}))`;
 			break;
 		case "starts-with":
-			ruleText = `$startsWith(${stringTransform(targetText)}, "${valueText}")`;
+			ruleText = `$startsWith(${stringTransform(targetText)}, ${stringTransform(`"${valueText}"`)})`;
 			break;
 		case "ends-with":
-			ruleText = `$endsWith(${stringTransform(targetText)}, "${valueText}")`;
+			ruleText = `$endsWith(${stringTransform(targetText)}, ${stringTransform(`"${valueText}"`)})`;
 			break;
 		case "matches-regex":
 			let userRegex = categoryRuleString.value;
@@ -1123,6 +1291,176 @@ function fillCategoryRulePreviewFromTemplate() {
 
 function fillCategoryRuleFromTemplate() {	
 	categoryRule.value = generateRuleTextFromTemplate();
+}
+
+async function beginTestAutoCatchRuleQuery(previousPromise, selfVersion) {
+	// I imagine having two overlapping tests running could cause
+	// all kinds of bugs and glitches, so just in case, if another
+	// test is still in progress, we wait for it to finish here.
+	// Some minor glitches will probably still occur (notably the
+	// progress display showing incorrect percentages), but that
+	// can probably be excused.
+	if (previousPromise !== null) {
+		await previousPromise;
+	}
+	
+	if (selfVersion != testAutoCatchRuleVersion) {
+		return;
+	}
+	
+	const openTabs = await browser.tabs.query({});
+	const archivedTabs = await groupFunctionPrimitives.unsortedTabs().toArray();
+	
+	if (selfVersion != testAutoCatchRuleVersion) {
+		return;
+	}
+	
+	let totalTabCount = openTabs.length + archivedTabs.length;
+	let doneCount = 0;
+	
+	let ruleToTest = categoryRule.value;
+	
+	const ruleToTestIsJustWhitespace = (ruleToTest.replace(/\s/g, "").length === 0);
+	
+	if (ruleToTestIsJustWhitespace) {
+		ruleToTest = undefined;
+	}
+	
+	for (const tab of openTabs) {
+		let testResult = null;
+		let testError = null;
+		
+		try {
+			testResult = "uncaught";
+			if (await ruleeval.validateRule(ruleToTest, tab)) {
+				testResult = "caught";
+			}
+		} catch (error) {
+			testResult = "error";
+			testError = error;
+		}
+	
+		if (selfVersion != testAutoCatchRuleVersion) {
+			return;
+		}
+			
+		const newEntry = {
+			url: tab.url,
+			title: tab.title,
+			categories: [],
+			sessions: [],
+			metadata: tab,
+			sortkey: { keyHigh: 0, keyMid: tab.windowId, keyLow: tab.index }
+		}
+		
+		newEntry.metadata.testAutoCatchRuleResult = testResult;
+		
+		switch (testResult) {
+			case "caught":
+				testAutoCatchRuleResults.testautocatchrulecaughttabs.openTabs.push(newEntry);
+				break;
+			case "uncaught":
+				testAutoCatchRuleResults.testautocatchruleuncaughttabs.openTabs.push(newEntry);
+				break;
+			case "error":
+				newEntry.metadata.error = testError;
+				testAutoCatchRuleResults.testautocatchruleerrors.openTabs.push(newEntry);
+				break;
+		}
+		
+		doneCount++;
+		testAutoCatchRuleHeaderInProgressPercentage.textContent = `${Math.trunc((doneCount / totalTabCount) * 100)}`;
+	}
+	
+	for (const tab of archivedTabs) {
+		let testResult = null;
+		let testError = null;
+		
+		try {
+			testResult = "uncaught";
+			if (await ruleeval.validateRule(ruleToTest, tab.metadata)) {
+				testResult = "caught";
+			}
+		} catch (error) {
+			testResult = "error";
+			testError = error;
+		}
+	
+		if (selfVersion != testAutoCatchRuleVersion) {
+			return;
+		}
+			
+		const newEntry = tab;
+		
+		newEntry.metadata.testAutoCatchRuleResult = testResult;
+		
+		switch (testResult) {
+			case "caught":
+				testAutoCatchRuleResults.testautocatchrulecaughttabs.archivedTabs.push(newEntry);
+				break;
+			case "uncaught":
+				testAutoCatchRuleResults.testautocatchruleuncaughttabs.archivedTabs.push(newEntry);
+				break;
+			case "error":
+				newEntry.metadata.error = testError;
+				testAutoCatchRuleResults.testautocatchruleerrors.archivedTabs.push(newEntry);
+				break;
+		}
+		
+		doneCount++;
+		testAutoCatchRuleHeaderInProgressPercentage.textContent = `${Math.trunc((doneCount / totalTabCount) * 100)}`;
+	}
+	
+	testAutoCatchRuleHeaderInProgressPercentage.textContent = "100";
+	testAutoCatchRuleHeaderDone.hidden = false;
+	testAutoCatchRuleHeaderInProgress.hidden = true;
+}
+
+function cleanUpOldTestResultGroup(id) {
+	const group = testAutoCatchRuleResultsRoot.querySelector(`#${id}`);
+	
+	if (group !== null) {
+		let innerGroupsList = group.querySelector(".groups-list");
+		innerGroupsList.textContent = "";
+		flushMutationsQueue(group);
+		clearGroupSubscriptions(group);
+	}
+}
+
+function testAutoCatchRule() {	
+	cleanUpOldTestResultGroup("testAutoCatchRuleResultsCaughtTabs");
+	cleanUpOldTestResultGroup("testAutoCatchRuleResultsUncaughtTabs");
+	cleanUpOldTestResultGroup("testAutoCatchRuleResultsErrorTabs");
+	
+	testAutoCatchRuleResultsRoot.textContent = "";
+	
+	testAutoCatchRuleHeaderDone.hidden = true;
+	testAutoCatchRuleHeaderInProgressPercentage.textContent = "0";
+	testAutoCatchRuleHeaderInProgress.hidden = false;
+	
+	testAutoCatchRuleResults.testautocatchrulecaughttabs.openTabs = [];
+	testAutoCatchRuleResults.testautocatchrulecaughttabs.archivedTabs = [];
+	testAutoCatchRuleResults.testautocatchruleuncaughttabs.openTabs = [];
+	testAutoCatchRuleResults.testautocatchruleuncaughttabs.archivedTabs = [];
+	testAutoCatchRuleResults.testautocatchruleerrors.openTabs = [];
+	testAutoCatchRuleResults.testautocatchruleerrors.archivedTabs = [];
+	
+	const caughtTabsRoot = createGroup(testAutoCatchRuleResultsRoot, "test-rule-result-root-details group-box colorize-green", "testAutoCatchRuleResultsCaughtTabs", "Caught Tabs", "", { type: "groupsList", context: "testResults" });
+	const uncaughtTabsRoot = createGroup(testAutoCatchRuleResultsRoot, "test-rule-result-root-details group-box colorize-gray", "testAutoCatchRuleResultsUncaughtTabs", "Uncaught Tabs", "", { type: "groupsList", context: "testResults" });
+	const errorsRoot = createGroup(testAutoCatchRuleResultsRoot, "test-rule-result-root-details group-box colorize-red", "testAutoCatchRuleResultsErrorTabs", "Errors", "", { type: "groupsList", context: "testResults" });
+
+	initializeGroupAsChildGroupListContainer(caughtTabsRoot, "testautocatchrulecaughttabs");
+	initializeGroupAsChildGroupListContainer(uncaughtTabsRoot, "testautocatchruleuncaughttabs");
+	initializeGroupAsChildGroupListContainer(errorsRoot, "testautocatchruleerrors");
+	
+	testAutoCatchRuleVersion++;
+	testAutoCatchRulePromise = beginTestAutoCatchRuleQuery(testAutoCatchRulePromise, testAutoCatchRuleVersion);
+
+	initializeEntryCountLiveQuery(caughtTabsRoot, groupFunctionLookup.testautocatchrulecaughttabs, undefined);
+	initializeEntryCountLiveQuery(uncaughtTabsRoot, groupFunctionLookup.testautocatchruleuncaughttabs, undefined);
+	initializeEntryCountLiveQuery(errorsRoot, groupFunctionLookup.testautocatchruleerrors, undefined);
+	
+	testAutoCatchRuleDialog.showModal();
 }
 
 
@@ -1250,23 +1588,42 @@ async function populateTabListGroup(group) {
 		group.dataset.queriedversion = queriedVersion;
 	
 		let queryArgument = undefined;
-		let canRemove = false;
+		let actionSet = "default";
 		let accessor = undefined;
 		let groupPrefix = undefined;
+		let supportsReorderTabs = false;
 	
 		if (group.dataset.iscategory) {
 			// This is a category
 			accessor = "tabsInCategory";
 			queryArgument = parseInt(group.dataset.categoryid);
-			canRemove = true;
+			actionSet = "full";
+			supportsReorderTabs = true;
 		} else if (group.dataset.issession) {
 			// This is a session
 			accessor = "tabsInSession";
 			queryArgument = parseInt(group.dataset.sessionid);
-			canRemove = true;
+			actionSet = "full";
+			supportsReorderTabs = true;
 		} else if (group.dataset.isunsortedtabs) {
 			// This is an unsorted tab list
 			accessor = "unsortedTabs";
+			supportsReorderTabs = true;
+		} else if (group.dataset.istestautocatchrulecaughttabs) {
+			// Auto-catch rule test results: Caught tabs
+			accessor = "tabsInTestAutoCatchRuleCaughtTabs";
+			queryArgument = group.dataset.testautocatchrulecaughttabsid;
+			actionSet = "none";
+		} else if (group.dataset.istestautocatchruleuncaughttabs) {
+			// Auto-catch rule test results: Uncaught tabs
+			accessor = "tabsInTestAutoCatchRuleUncaughtTabs";
+			queryArgument = group.dataset.testautocatchruleuncaughttabsid;
+			actionSet = "none";
+		} else if (group.dataset.istestautocatchruleerrors) {
+			// Auto-catch rule test results: Errors
+			accessor = "tabsInTestAutoCatchRuleErrors";
+			queryArgument = group.dataset.testautocatchruleerrorsid;
+			actionSet = "none";
 		} else {
 			debugh.error("The following tab list is of an unknown type: " + group);
 		}
@@ -1316,20 +1673,39 @@ async function populateTabListGroup(group) {
 				
 				let dropTargetIndex = 0;
 				for (const tab of tabs) {
+					let color = "gray";
+					let catchResultText = "&#x2718;";
+					
+					switch (tab.metadata.testAutoCatchRuleResult) {
+						case "caught":
+							color = "green";
+							catchResultText = "&#x2714;";
+							break;
+						case "error":
+							color = "red";
+							break;
+					}
+					
 					tabsList.insertAdjacentHTML("beforeend", `
-						<li id="tab-entry-${group.id}-${tab.id}" class="tab-entry has-tooltip colorize-gray" data-tabid="${tab.id}" tabindex="0" data-focuscount="0" data-hasfocus="false" data-droptargetindex="${dropTargetIndex}" draggable="true">
+						<li id="tab-entry-${group.id}-${tab.id}" class="tab-entry has-tooltip colorize-${color}" data-tabid="${tab.id}" tabindex="0" data-focuscount="0" data-hasfocus="false" data-droptargetindex="${dropTargetIndex}" ${supportsReorderTabs ? 'draggable="true"' : ''}>
 							<span class="fav-icon-list-item" data-validimage="${tab.metadata.favIconUrl !== undefined}"><img src="${tab.metadata.favIconUrl}" class="fav-icon-small"/></span>
 							<span class="overlap overlapping-content">
 								<span class="title">${escapeHTML(tab.title)}</span>
-								<span class="actions">
+								<span class="actions" ${actionSet === "none" ? "hidden" : ""}>
 									<button class="colorize-button has-tooltip image-button action-button" data-tooltiptype="button" data-action="copy-tab-url"><img src="../icons/iconoir/edits/copy-dark.svg" class="only-in-dark-theme" style="height: 24px;" /><img src="../icons/iconoir/edits/copy-light.svg" class="only-in-light-theme" style="height: 24px;" /></button>
 									<button class="colorize-button has-tooltip image-button action-button" data-tooltiptype="button" data-action="open-tab"><img src="../icons/iconoir/edits/open-in-browser-dark.svg" class="only-in-dark-theme" style="height: 24px;" /><img src="../icons/iconoir/edits/open-in-browser-light.svg" class="only-in-light-theme" style="height: 24px;" /></button>
 									<button class="colorize-button has-tooltip image-button action-button" data-tooltiptype="button" data-action="convert-tab-to-bookmark"><img src="../icons/iconoir/edits/bookmark-dark.svg" class="only-in-dark-theme" style="height: 24px;" /><img src="../icons/iconoir/edits/bookmark-light.svg" class="only-in-light-theme" style="height: 24px;" /></button>
 									<button class="colorize-button has-tooltip image-button action-button" data-tooltiptype="button" data-action="delete-tab"><img src="../icons/iconoir/edits/trash-solid.svg" style="height: 24px;"/></button>
-									<button class="colorize-button has-tooltip image-button action-button" data-tooltiptype="button" data-action="remove-tab"><img src="../icons/iconoir/edits/xmark.svg" style="height: 24px; ${canRemove ? "" : "display: none;"}"/></button>
+									<button class="colorize-button has-tooltip image-button action-button" data-tooltiptype="button" data-action="remove-tab"><img src="../icons/iconoir/edits/xmark.svg" style="height: 24px; ${actionSet === "full" ? "" : "display: none;"}"/></button>
+								</span>
+								<span class="test-result" ${tab.metadata.testAutoCatchRuleResult === undefined ? "hidden" : ""}>
+									${catchResultText}
 								</span>
 							</span>
 						</li>
+						<div id="test-results-${group.id}-${tab.id}" class="tab-entry-test-results colorize-${color}" ${tab.metadata.error === undefined ? "hidden" : ""}>
+							<pre><code>${tab.metadata.error}</code></pre>
+						</div>
 					`);
 					
 					const newElement = tabsList.querySelector(`[data-tabid="${tab.id}"]`);
@@ -1341,7 +1717,9 @@ async function populateTabListGroup(group) {
 				
 				previousGroupEntryCounts[group.id] = tabs.length;
 				
-				createTabsListForDragAndDrop(group, tabsList);
+				if (supportsReorderTabs) {
+					createTabsListForDragAndDrop(group, tabsList);
+				}
 				refreshSelectedTabElements();
 			});
 		});
@@ -1392,22 +1770,49 @@ async function populateGroupListGroup(group) {
 		let innerAccessor = undefined;
 		let queryCountIdAccessor = undefined;
 		let getGroupPropertiesFunction = undefined;
+		// TODO: This kinda has the same purpose as "draggable" in the group properties.
+		// Unify this into just a single property.
+		let supportsReorderGroups = false;
+		const groupMetaData = {
+			type: "tabsList",
+			context: "mainArchive"
+		}
 		
 		if (group.dataset.iscategorieslist) {
 			idPrefix = "category";
 			accessor = "categories";
 			innerAccessor = "tabsInCategory";
-			queryCountIdAccessor = "categoryid";
 			getGroupPropertiesFunction = getCategoryProperties;
+			supportsReorderGroups = true;
 		} else if (group.dataset.issessionslist) {
 			idPrefix = "session";
 			accessor = "sessions";
 			innerAccessor = "tabsInSession";
-			queryCountIdAccessor = "sessionid";
 			getGroupPropertiesFunction = getSessionProperties;
+			supportsReorderGroups = true;
+		} else if (group.dataset.istestautocatchrulecaughttabslist) {
+			idPrefix = "testautocatchrulecaughttabs";
+			accessor = idPrefix;
+			innerAccessor = "tabsInTestAutoCatchRuleCaughtTabs";
+			getGroupPropertiesFunction = getTestAutoCatchResultProperties;
+			groupMetaData.context = "testResults";
+		} else if (group.dataset.istestautocatchruleuncaughttabslist) {
+			idPrefix = "testautocatchruleuncaughttabs";
+			accessor = idPrefix;
+			innerAccessor = "tabsInTestAutoCatchRuleUncaughtTabs";
+			getGroupPropertiesFunction = getTestAutoCatchResultProperties;
+			groupMetaData.context = "testResults";
+		} else if (group.dataset.istestautocatchruleerrorslist) {
+			idPrefix = "testautocatchruleerrors";
+			accessor = idPrefix;
+			innerAccessor = "tabsInTestAutoCatchRuleErrors";
+			getGroupPropertiesFunction = getTestAutoCatchResultProperties;
+			groupMetaData.context = "testResults";
 		} else {
 			debugh.error("The following group list is of an unknown type: " + group);
 		}
+		
+		queryCountIdAccessor = idPrefix + "id";
 		
 		const groupFunctions = groupFunctionLookup[accessor];
 		const innerGroupFunctions = groupFunctionLookup[innerAccessor];
@@ -1451,11 +1856,14 @@ async function populateGroupListGroup(group) {
 				
 				let dropTargetIndex = 0;
 				for (const innerGroupData of innerGroupDatas) {
-					const innerGroup = initializeInnerGroup(innerGroupsList, innerGroupData, idPrefix, getGroupPropertiesFunction);
+					const innerGroup = initializeInnerGroup(innerGroupsList, innerGroupData, idPrefix, getGroupPropertiesFunction, groupMetaData);
 					innerGroup.dataset.droptargetindex = dropTargetIndex;
 					innerGroup.dataset.sortkey = JSON.stringify(innerGroupData.sortkey);
 					
-					const queryCountArgument = parseInt(innerGroup.dataset[queryCountIdAccessor]);
+					let queryCountArgument = parseInt(innerGroup.dataset[queryCountIdAccessor]);
+					if (isNaN(queryCountArgument)) {
+						queryCountArgument = innerGroup.dataset[queryCountIdAccessor];
+					}
 					initializeEntryCountLiveQuery(innerGroup, innerGroupFunctions, queryCountArgument);
 					
 					if (openGroups[innerGroup.id]) {
@@ -1465,7 +1873,9 @@ async function populateGroupListGroup(group) {
 					++dropTargetIndex;
 				}
 				
-				createGroupsListForDragAndDrop(group, innerGroupsList);
+				if (supportsReorderGroups) {
+					createGroupsListForDragAndDrop(group, innerGroupsList);
+				}
 				refreshSelectedTabElements();
 			});
 		});
@@ -1816,7 +2226,7 @@ async function setTabActive(tab) {
 async function removeTabFromGroup(tabId, groupElement) {
 	let groupIdToDelete = undefined;
 	let entryToDeleteFromName = undefined;
-	const rootGroupElement = groupElement.closest("[data-isgrouplist]")
+	const rootGroupElement = groupElement.closest("[data-isgrouplist]");
 	if (rootGroupElement.dataset.iscategorieslist) {
 		groupIdToDelete = parseInt(groupElement.dataset.categoryid);
 		entryToDeleteFromName = "categories";
@@ -2394,6 +2804,14 @@ function clearActionsPanel() {
 }
 
 async function updateActionsPanel() {
+	if (currentlySelectedTabElements.length > 0) {
+		const tabsListElement = currentlySelectedTabElements[0].closest("[data-istablist]");
+		
+		if (tabsListElement.dataset.metadata_context !== "mainArchive") {
+			return;
+		}
+	}
+	
 	if (activeActionsPanelLiveQuerySubscription) {
 		activeActionsPanelLiveQuerySubscription.unsubscribe();
 		activeActionsPanelLiveQuerySubscription = null;
@@ -3069,10 +3487,12 @@ document.addEventListener("click", (e) => {
 					<input class="inline-text"></input> <button type="button" data-action="delete-category-regex-capture-group" data-tooltiptype="button" class="colorize-button image-button has-tooltip">&#xff0d;</button>
 				</li>
 			`);
+			fillCategoryRulePreviewFromTemplate();
 			break;
 			
 		case "delete-category-regex-capture-group":
 			e.target.closest("li").remove();
+			fillCategoryRulePreviewFromTemplate();
 			break;
 			
 		case "fill-category-rule-from-template":
@@ -3329,5 +3749,9 @@ document.addEventListener("click", (e) => {
 			openTextBubble("Copied!");
 			break;
 		}
+		
+		case "test-auto-catch-rule":
+			testAutoCatchRule();
+			break;
 	}
 });

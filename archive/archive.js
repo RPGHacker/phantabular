@@ -130,7 +130,7 @@ updatePermissions();
 function createGroup(container, className, id, displayName, actionsContent, metadata, insertLocation = "beforeend") {
 	container.insertAdjacentHTML(insertLocation, `
 		<details class="${className}" id="${id}" data-version="1" data-queriedversion="0" data-receivedversion="0">
-			<summary data-focuscount="0" data-hasfocus="false">
+			<summary data-focuscount="0" data-hasfocus="false" data-containedgroupcount="0" data-containedtabcount="0">
 				<span class="summary-contents">
 					<span class="summary-statics">
 						<span class="summary-open-marker"></span>
@@ -687,6 +687,9 @@ const groupFunctionLookup = {
 
 
 function updateBadge(group, badgeData) {
+	group.dataset.containedgroupcount = 0;
+	group.dataset.containedtabcount = 0;
+	
 	const badgeSummaryElement = group.querySelector(":scope > summary .summary-badge");
 		
 	badgeSummaryElement.dataset.hasgroups = false;
@@ -698,6 +701,7 @@ function updateBadge(group, badgeData) {
 		newBadgeText += `${badgeData.groupCount}`;
 		badgeSummaryElement.dataset.hasgroups = true;
 		badgeSummaryElement.dataset.groupcount = badgeData.groupCount;
+		group.dataset.containedgroupcount = badgeData.groupCount;
 	}
 	
 	if (badgeData.uniqueTabCount !== undefined) {
@@ -707,6 +711,7 @@ function updateBadge(group, badgeData) {
 		newBadgeText += `${badgeData.uniqueTabCount}`;
 		badgeSummaryElement.dataset.hasuniquetabs = true;
 		badgeSummaryElement.dataset.uniquetabcount = badgeData.uniqueTabCount;
+		group.dataset.containedtabcount = badgeData.uniqueTabCount;
 	}
 	
 	badgeSummaryElement.dataset.isfiltered = badgeData.isFilteredResult;

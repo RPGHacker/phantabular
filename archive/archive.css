@@ -1139,3 +1139,7 @@ button.code-side-button:active {
 	min-width: var(--fixed-width);
 	max-width: var(--fixed-width);
 }
+
+.group-box[data-metadata_context="testResults"][data-containedtabcount="0"] {
+	display: none;
+}

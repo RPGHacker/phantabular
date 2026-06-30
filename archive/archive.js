@@ -296,6 +296,8 @@ function createGroupsList(container, groupId) {
 function initializeInnerGroup(outerGroup, groupData, idPrefix, getGroupPropertiesFunction, metadata, insertLocation = "beforeend") {
 	const groupProperties = getGroupPropertiesFunction(groupData);
 	
+	metadata.storagelocation = groupProperties.storageLocation;
+	
 	const idSuffix = groupProperties.id;
 
 	const innerGroup = createGroup(outerGroup, "group-details group-box colorize-" + groupProperties.color, idPrefix + "-" + idSuffix, groupProperties.name, groupProperties.actions, metadata, insertLocation);
@@ -569,8 +571,8 @@ const groupFunctionLookup = {
 			}
 			
 			return [
-				{ accessor: "openTabs", sortkey: 0},
-				{ accessor: "archivedTabs", sortkey: 1}, 
+				{ accessor: "openTabs", sortkey: 0, color: "green" },
+				{ accessor: "archivedTabs", sortkey: 1, color: "green"}, 
 			];
 		},
 		queryTabCount: async () => {
@@ -593,8 +595,8 @@ const groupFunctionLookup = {
 			}
 			
 			return [
-				{ accessor: "openTabs", sortkey: 0},
-				{ accessor: "archivedTabs", sortkey: 1}, 
+				{ accessor: "openTabs", sortkey: 0, color: "gray"},
+				{ accessor: "archivedTabs", sortkey: 1, color: "gray"}, 
 			];
 		},
 		queryTabCount: async () => {
@@ -617,8 +619,8 @@ const groupFunctionLookup = {
 			}
 			
 			return [
-				{ accessor: "openTabs", sortkey: 0},
-				{ accessor: "archivedTabs", sortkey: 1}, 
+				{ accessor: "openTabs", sortkey: 0, color: "red"},
+				{ accessor: "archivedTabs", sortkey: 1, color: "red"}, 
 			];
 		},
 		queryTabCount: async () => {
@@ -743,7 +745,7 @@ function initializeEntryCountLiveQuery(group, groupFunctions, queryCountArgument
 const rootGroups = {
 	categories: createGroup(groupsRootList, "root-details group-box colorize-cyan", "categoriesGroup", "Categories", "", { type: "groupsList", context: "mainArchive" }),
 	sessions: createGroup(groupsRootList, "root-details group-box colorize-cyan", "sessionsGroup", "Sessions", "", { type: "groupsList", context: "mainArchive" }),
-	unsortedTabs: createGroup(groupsRootList, "root-details group-box colorize-cyan", "unsortedTabsGroup", "Unsorted Tabs", "", { type: "groupsList", context: "mainArchive" }),
+	unsortedTabs: createGroup(groupsRootList, "root-details group-box colorize-cyan", "unsortedTabsGroup", "Unsorted Tabs", "", { type: "groupsList", context: "mainArchive", storagelocation: "archivedTabs" }),
 }
 
 function getCategoryProperties(category) {
@@ -798,7 +800,7 @@ function getTestAutoCatchResultProperties(groupData) {
 	const properties = {
 		name: names[groupData.accessor],
 		id: groupData.accessor,
-		color: "gray",
+		color: groupData.color,
 		storageLocation: groupData.accessor,
 		draggable: false,
 		actions: ""
@@ -879,23 +881,46 @@ function updateShowTooltip(mousePos, mouseTarget) {
 		switch (tooltipElement.dataset.tooltiptype) {
 			case "tab":
 				try {
-					const tab = await db.tabs.get({id: parseInt(tooltipElement.dataset.tabid)});
-					tooltipLayer.insertAdjacentHTML("afterbegin", `
-						<div>
-							<span class="fav-icon-list-item" data-validimage="${tab.metadata.favIconUrl !== undefined}"><img src="${tab.metadata.favIconUrl}" class="fav-icon-small" /></span><span class="tooltip-title">${tab.title}</span>
-						</div>
-						<div><a href="${tab.url}" class="colorize-link">${tab.url}</a></div>
-						<div>
-							<span class="metadata-entry"><img src="../icons/iconoir/edits/database-solid-dark.svg" class="only-in-dark-theme" /><img src="../icons/iconoir/edits/database-solid-light.svg" class="only-in-light-theme" /> DB Tab Id: ${tab.id}</span>
-							<span class="metadata-entry"><img src="../icons/iconoir/edits/web-window-solid-dark.svg" class="only-in-dark-theme" /><img src="../icons/iconoir/edits/web-window-solid-light.svg" class="only-in-light-theme" /> Window Id: ${tab.metadata.windowId}</span>
-							<span class="metadata-entry"><img src="../icons/iconoir/edits/window-tabs-solid-dark.svg" class="only-in-dark-theme" /><img src="../icons/iconoir/edits/window-tabs-solid-light.svg" class="only-in-light-theme" /> Tab Id: ${tab.metadata.id}</span>
-							<span class="metadata-entry" data-show="${tab.metadata.pinned}"><img src="../icons/iconoir/edits/pin-solid.svg" /> Pinned</span>
-							<span class="metadata-entry" data-show="${tab.metadata.hidden}"><img src="../icons/iconoir/edits/eye-closed-dark.svg" class="only-in-dark-theme" /><img src="../icons/iconoir/edits/eye-closed-light.svg" class="only-in-light-theme" /> Hidden</span>
-						</div>
-						<div class="tooltip-tab-preview-image" data-show="${Boolean(tab.previewimageurl)}">
-							<center><img src="${tab.previewimageurl}" /></center>
-						</div>
-					`);
+					switch (tooltipElement.dataset.storagelocation) {
+						case "openTabs": {
+							const tab = await browser.tabs.get(parseInt(tooltipElement.dataset.tabid));
+							tab.metadata = tab;
+							tooltipLayer.insertAdjacentHTML("afterbegin", `
+								<div>
+									<span class="fav-icon-list-item" data-validimage="${tab.metadata.favIconUrl !== undefined}"><img src="${tab.metadata.favIconUrl}" class="fav-icon-small" /></span><span class="tooltip-title">${tab.title}</span>
+								</div>
+								<div><a href="${tab.url}" class="colorize-link">${tab.url}</a></div>
+								<div>
+									<span class="metadata-entry"><img src="../icons/iconoir/edits/web-window-solid-dark.svg" class="only-in-dark-theme" /><img src="../icons/iconoir/edits/web-window-solid-light.svg" class="only-in-light-theme" /> Window Id: ${tab.metadata.windowId}</span>
+									<span class="metadata-entry"><img src="../icons/iconoir/edits/window-tabs-solid-dark.svg" class="only-in-dark-theme" /><img src="../icons/iconoir/edits/window-tabs-solid-light.svg" class="only-in-light-theme" /> Tab Id: ${tab.metadata.id}</span>
+									<span class="metadata-entry" data-show="${tab.metadata.pinned}"><img src="../icons/iconoir/edits/pin-solid.svg" /> Pinned</span>
+									<span class="metadata-entry" data-show="${tab.metadata.hidden}"><img src="../icons/iconoir/edits/eye-closed-dark.svg" class="only-in-dark-theme" /><img src="../icons/iconoir/edits/eye-closed-light.svg" class="only-in-light-theme" /> Hidden</span>
+								</div>
+							`);
+							break;
+						}
+						
+						case "archivedTabs": {
+							const tab = await db.tabs.get({id: parseInt(tooltipElement.dataset.tabid)});
+							tooltipLayer.insertAdjacentHTML("afterbegin", `
+								<div>
+									<span class="fav-icon-list-item" data-validimage="${tab.metadata.favIconUrl !== undefined}"><img src="${tab.metadata.favIconUrl}" class="fav-icon-small" /></span><span class="tooltip-title">${tab.title}</span>
+								</div>
+								<div><a href="${tab.url}" class="colorize-link">${tab.url}</a></div>
+								<div>
+									<span class="metadata-entry"><img src="../icons/iconoir/edits/database-solid-dark.svg" class="only-in-dark-theme" /><img src="../icons/iconoir/edits/database-solid-light.svg" class="only-in-light-theme" /> DB Tab Id: ${tab.id}</span>
+									<span class="metadata-entry"><img src="../icons/iconoir/edits/web-window-solid-dark.svg" class="only-in-dark-theme" /><img src="../icons/iconoir/edits/web-window-solid-light.svg" class="only-in-light-theme" /> Window Id: ${tab.metadata.windowId}</span>
+									<span class="metadata-entry"><img src="../icons/iconoir/edits/window-tabs-solid-dark.svg" class="only-in-dark-theme" /><img src="../icons/iconoir/edits/window-tabs-solid-light.svg" class="only-in-light-theme" /> Tab Id: ${tab.metadata.id}</span>
+									<span class="metadata-entry" data-show="${tab.metadata.pinned}"><img src="../icons/iconoir/edits/pin-solid.svg" /> Pinned</span>
+									<span class="metadata-entry" data-show="${tab.metadata.hidden}"><img src="../icons/iconoir/edits/eye-closed-dark.svg" class="only-in-dark-theme" /><img src="../icons/iconoir/edits/eye-closed-light.svg" class="only-in-light-theme" /> Hidden</span>
+								</div>
+								<div class="tooltip-tab-preview-image" data-show="${Boolean(tab.previewimageurl)}">
+									<center><img src="${tab.previewimageurl}" /></center>
+								</div>
+							`);
+							break;
+						}
+					}
 				} catch {}
 				break;
 				
@@ -1686,8 +1711,19 @@ async function populateTabListGroup(group) {
 							break;
 					}
 					
+					let tabIdString = "";
+					
+					switch (group.dataset.metadata_storagelocation) {
+						case "openTabs":
+							tabIdString = `data-windowid="${tab.metadata.windowId}" data-tabid="${tab.metadata.id}"`;
+							break;
+						case "archivedTabs":
+							tabIdString = `data-tabid="${tab.id}"`;
+							break;
+					}
+					
 					tabsList.insertAdjacentHTML("beforeend", `
-						<li id="tab-entry-${group.id}-${tab.id}" class="tab-entry has-tooltip colorize-${color}" data-tabid="${tab.id}" tabindex="0" data-focuscount="0" data-hasfocus="false" data-droptargetindex="${dropTargetIndex}" ${supportsReorderTabs ? 'draggable="true"' : ''}>
+						<li id="tab-entry-${group.id}-${tab.id}" class="tab-entry has-tooltip colorize-${color}" ${tabIdString} tabindex="0" data-focuscount="0" data-hasfocus="false" data-droptargetindex="${dropTargetIndex}" data-storagelocation=${group.dataset.metadata_storagelocation} ${supportsReorderTabs ? 'draggable="true"' : ''}>
 							<span class="fav-icon-list-item" data-validimage="${tab.metadata.favIconUrl !== undefined}"><img src="${tab.metadata.favIconUrl}" class="fav-icon-small"/></span>
 							<span class="overlap overlapping-content">
 								<span class="title">${escapeHTML(tab.title)}</span>
@@ -1708,7 +1744,7 @@ async function populateTabListGroup(group) {
 						</div>
 					`);
 					
-					const newElement = tabsList.querySelector(`[data-tabid="${tab.id}"]`);
+					const newElement = tabsList.lastElementChild.previousElementSibling;
 					newElement.setAttribute("data-tooltiptype", "tab");
 					newElement.setAttribute("data-sortkey", JSON.stringify(tab.sortkey));
 					

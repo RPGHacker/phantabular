@@ -1132,3 +1132,10 @@ button.code-side-button:hover {
 button.code-side-button:active {
 	background-color: light-dark(var(--oc-gray-5), var(--oc-gray-9));
 }
+
+#testAutoCatchRuleDialog > form {
+	--fixed-width: min(300px, 90vw);
+	width: var(--fixed-width);
+	min-width: var(--fixed-width);
+	max-width: var(--fixed-width);
+}

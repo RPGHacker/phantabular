@@ -65,6 +65,10 @@ const testAutoCatchRuleResults = {
 		openTabs: [],
 		archivedTabs: [],
 	},
+	testautocatchruleallresults: {
+		openTabs: [],
+		archivedTabs: [],
+	},
 };
 
 localcache.archive.then((archiveCache) => {
@@ -636,6 +640,30 @@ const groupFunctionLookup = {
 		},
 	},
 	
+	testautocatchruleallresults: {
+		query: async () => {
+			if (testAutoCatchRulePromise !== null) {
+				await testAutoCatchRulePromise;
+			}
+			
+			return [
+				{ accessor: "openTabs", sortkey: 0, color: "gray"},
+				{ accessor: "archivedTabs", sortkey: 1, color: "gray"}, 
+			];
+		},
+		queryTabCount: async () => {
+			if (testAutoCatchRulePromise !== null) {
+				await testAutoCatchRulePromise;
+			}
+			
+			return {
+				groupCount: 2,
+				uniqueTabCount: testAutoCatchRuleResults.testautocatchruleallresults.openTabs.length + testAutoCatchRuleResults.testautocatchruleallresults.archivedTabs.length,
+				isFilteredResult: true
+			};
+		},
+	},
+	
 	tabsInTestAutoCatchRuleCaughtTabs: {
 		query: async (accessor) => {
 			if (testAutoCatchRulePromise !== null) {
@@ -679,6 +707,22 @@ const groupFunctionLookup = {
 		queryTabCount: async (accessor) => {
 			return {
 				uniqueTabCount: testAutoCatchRuleResults.testautocatchruleerrors[accessor].length,
+				isFilteredResult: true
+			};
+		},
+	},
+	
+	tabsInTestAutoCatchRuleAllResults: {
+		query: async (accessor) => {
+			if (testAutoCatchRulePromise !== null) {
+				await testAutoCatchRulePromise;
+			}
+			
+			return testAutoCatchRuleResults.testautocatchruleallresults[accessor];
+		},
+		queryTabCount: async (accessor) => {
+			return {
+				uniqueTabCount: testAutoCatchRuleResults.testautocatchruleallresults[accessor].length,
 				isFilteredResult: true
 			};
 		},
@@ -1398,6 +1442,8 @@ async function beginTestAutoCatchRuleQuery(previousPromise, selfVersion) {
 				break;
 		}
 		
+		testAutoCatchRuleResults.testautocatchruleallresults.openTabs.push(newEntry);
+		
 		doneCount++;
 		testAutoCatchRuleHeaderInProgressPercentage.textContent = `${Math.trunc((doneCount / totalTabCount) * 100)}`;
 	}
@@ -1437,6 +1483,8 @@ async function beginTestAutoCatchRuleQuery(previousPromise, selfVersion) {
 				break;
 		}
 		
+		testAutoCatchRuleResults.testautocatchruleallresults.archivedTabs.push(newEntry);
+		
 		doneCount++;
 		testAutoCatchRuleHeaderInProgressPercentage.textContent = `${Math.trunc((doneCount / totalTabCount) * 100)}`;
 	}
@@ -1461,6 +1509,7 @@ function testAutoCatchRule() {
 	cleanUpOldTestResultGroup("testAutoCatchRuleResultsCaughtTabs");
 	cleanUpOldTestResultGroup("testAutoCatchRuleResultsUncaughtTabs");
 	cleanUpOldTestResultGroup("testAutoCatchRuleResultsErrorTabs");
+	cleanUpOldTestResultGroup("testAutoCatchRuleResultsAllResults");
 	
 	testAutoCatchRuleResultsRoot.textContent = "";
 	
@@ -1474,14 +1523,23 @@ function testAutoCatchRule() {
 	testAutoCatchRuleResults.testautocatchruleuncaughttabs.archivedTabs = [];
 	testAutoCatchRuleResults.testautocatchruleerrors.openTabs = [];
 	testAutoCatchRuleResults.testautocatchruleerrors.archivedTabs = [];
+	testAutoCatchRuleResults.testautocatchruleallresults.openTabs = [];
+	testAutoCatchRuleResults.testautocatchruleallresults.archivedTabs = [];
 	
 	const caughtTabsRoot = createGroup(testAutoCatchRuleResultsRoot, "test-rule-result-root-details group-box colorize-green", "testAutoCatchRuleResultsCaughtTabs", "Caught Tabs", "", { type: "groupsList", context: "testResults" });
 	const uncaughtTabsRoot = createGroup(testAutoCatchRuleResultsRoot, "test-rule-result-root-details group-box colorize-gray", "testAutoCatchRuleResultsUncaughtTabs", "Uncaught Tabs", "", { type: "groupsList", context: "testResults" });
 	const errorsRoot = createGroup(testAutoCatchRuleResultsRoot, "test-rule-result-root-details group-box colorize-red", "testAutoCatchRuleResultsErrorTabs", "Errors", "", { type: "groupsList", context: "testResults" });
+	
+	testAutoCatchRuleResultsRoot.insertAdjacentHTML("beforeend", `
+		<hr/>
+	`);
+	
+	const allResultsRoot = createGroup(testAutoCatchRuleResultsRoot, "test-rule-result-root-details group-box colorize-gray", "testAutoCatchRuleResultsAllResults", "All Results", "", { type: "groupsList", context: "testResults" });
 
 	initializeGroupAsChildGroupListContainer(caughtTabsRoot, "testautocatchrulecaughttabs");
 	initializeGroupAsChildGroupListContainer(uncaughtTabsRoot, "testautocatchruleuncaughttabs");
 	initializeGroupAsChildGroupListContainer(errorsRoot, "testautocatchruleerrors");
+	initializeGroupAsChildGroupListContainer(allResultsRoot, "testautocatchruleallresults");
 	
 	testAutoCatchRuleVersion++;
 	testAutoCatchRulePromise = beginTestAutoCatchRuleQuery(testAutoCatchRulePromise, testAutoCatchRuleVersion);
@@ -1489,6 +1547,7 @@ function testAutoCatchRule() {
 	initializeEntryCountLiveQuery(caughtTabsRoot, groupFunctionLookup.testautocatchrulecaughttabs, undefined);
 	initializeEntryCountLiveQuery(uncaughtTabsRoot, groupFunctionLookup.testautocatchruleuncaughttabs, undefined);
 	initializeEntryCountLiveQuery(errorsRoot, groupFunctionLookup.testautocatchruleerrors, undefined);
+	initializeEntryCountLiveQuery(allResultsRoot, groupFunctionLookup.testautocatchruleallresults, undefined);
 	
 	testAutoCatchRuleDialog.showModal();
 }
@@ -1653,6 +1712,11 @@ async function populateTabListGroup(group) {
 			// Auto-catch rule test results: Errors
 			accessor = "tabsInTestAutoCatchRuleErrors";
 			queryArgument = group.dataset.testautocatchruleerrorsid;
+			actionSet = "none";
+		} else if (group.dataset.istestautocatchruleallresults) {
+			// Auto-catch rule test results: Errors
+			accessor = "tabsInTestAutoCatchRuleAllResults";
+			queryArgument = group.dataset.testautocatchruleallresultsid;
 			actionSet = "none";
 		} else {
 			debugh.error("The following tab list is of an unknown type: " + group);
@@ -1847,6 +1911,12 @@ async function populateGroupListGroup(group) {
 			idPrefix = "testautocatchruleerrors";
 			accessor = idPrefix;
 			innerAccessor = "tabsInTestAutoCatchRuleErrors";
+			getGroupPropertiesFunction = getTestAutoCatchResultProperties;
+			groupMetaData.context = "testResults";
+		} else if (group.dataset.istestautocatchruleallresultslist) {
+			idPrefix = "testautocatchruleallresults";
+			accessor = idPrefix;
+			innerAccessor = "tabsInTestAutoCatchRuleAllResults";
 			getGroupPropertiesFunction = getTestAutoCatchResultProperties;
 			groupMetaData.context = "testResults";
 		} else {
@@ -2314,12 +2384,12 @@ document.addEventListener("dragstart", (e) => {
 		}
 	}
 	
-	const selectedTabElements = currentlySelectedTabElements.map((tabElement) => {return tabElement;});
+	if (e.target.dataset.droptargetindex !== undefined) {	
+		const selectedTabElements = currentlySelectedTabElements.map((tabElement) => {return tabElement;});
+		
+		deselectAllSelectedTabElements();
+		currentlyDraggedGroupElement = null;
 	
-	deselectAllSelectedTabElements();
-	currentlyDraggedGroupElement = null;
-	
-	if (e.target.dataset.droptargetindex !== undefined) {
 		const tabsListForDragAndDrop = container.querySelector(":scope > .tabs-list-for-drag-and-drop");
 		if (tabsListForDragAndDrop !== null) {
 			const elementsToDrag = [];
@@ -3419,7 +3489,7 @@ document.addEventListener("click", (e) => {
 			updateSelectedTabElementIds();
 		}
 	} else {
-		if (e.target.closest(".actions-panel") === null) {
+		if ((e.target.closest(".groups-root-list") !== null || e.target.closest("div") == mainContent) && e.target.closest("[data-action]") === null) {
 			deselectAllSelectedTabElements();
 		}
 	}
@@ -3645,7 +3715,8 @@ document.addEventListener("click", (e) => {
 		{
 			const tabId = parseInt(currentlySelectedTabElements[0].dataset.tabid);	
 			db.tabs.get({id: tabId}).then((tab) => {
-				navigator.clipboard.writeText(tab.url);
+				navigator.clipboard.writeText(tab.url);				
+				openTextBubble("Copied!");
 			});
 			break;
 		}

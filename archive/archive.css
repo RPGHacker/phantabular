@@ -325,6 +325,10 @@ ul.tabs-list > li[data-isselected=true]:hover {
 	align-items: center;
 }
 
+.tab-entry-test-results {
+	overflow: scroll;
+}
+
 .tab-entry > .fav-icon-list-item {
 	pointer-events: none;
 }
@@ -894,6 +898,7 @@ body[data-dragmode="tab"] .group-details:not([data-dragparent=true]) > summary >
 	font-weight: bold;
 	font-size: x-large;
 	background-color: light-dark(var(--oc-gray-3), var(--oc-gray-7));
+	cursor: pointer;
 }
 
 .actions-panel-toggle::before {
@@ -1134,10 +1139,27 @@ button.code-side-button:active {
 }
 
 #testAutoCatchRuleDialog > form {
-	--fixed-width: min(300px, 90vw);
+	--fixed-width: min(500px, 80vw);
 	width: var(--fixed-width);
 	min-width: var(--fixed-width);
 	max-width: var(--fixed-width);
+}
+
+#testAutoCatchRuleDialog > form hr {
+	margin: 1rem 0;
+}
+
+#testAutoCatchRuleDialog > form .group-box, #testAutoCatchRuleDialog > form code {
+	width: 100%;
+}
+
+#testAutoCatchRuleDialog > form pre {
+	background-color: var(--color-accent);
+	overflow-x: auto;
+}
+
+#testAutoCatchRuleDialog > form code {
+	background-color: transparent;
 }
 
 .group-box[data-metadata_context="testResults"][data-containedtabcount="0"] {

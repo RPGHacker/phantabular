@@ -1,5 +1,0 @@
-dist/
-esnext/
-.eslintcache
-**/tmp/
-test/**/bundle.*

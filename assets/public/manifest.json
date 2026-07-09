@@ -1,0 +1,35 @@
+{
+	"manifest_version": 2,
+	"name": "PhanTabular",
+	"version": "1.0",
+
+	"description": "Automatically archives open tabs into categories based on customizable patterns.",
+
+	"icons": {
+		"48": "icons/phantabular.svg",
+		"96": "icons/phantabular.svg"
+	},
+	
+	"permissions": ["activeTab", "tabGroups", "tabHide", "tabs", "storage", "unlimitedStorage", "cookies", "sessions"],
+	"optional_permissions": ["<all_urls>", "bookmarks", "downloads"],
+	
+	"browser_specific_settings": {
+		"gecko": {
+			"id": "phantabular@rpghacker.github.io",
+			"strict_min_version": "153.0"
+		}
+	},
+
+	"browser_action": {
+		"default_icon": "icons/phantabular.svg",
+		"default_title": "PhanTabular",
+		"default_popup": "popup/popup.html"
+	},
+	
+	"options_page": "settings/settings.html",
+
+	"background": {
+		"page": "background/background.html",
+		"persistent": false
+	}
+}

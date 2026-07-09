@@ -1,0 +1,42 @@
+{
+  "name": "phantabular",
+  "version": "1.0.0",
+  "description": "A feature-rich browser extension for archiving, categorizing, bookmarking and backing up browser tabs.",
+  "keywords": [
+    "Browser",
+    "Extension",
+    "Tabs",
+    "Archive",
+    "Categories",
+    "Bookmarks",
+    "Backup"
+  ],
+  "homepage": "https://github.com/RPGHacker/phantabular#readme",
+  "bugs": {
+    "url": "https://github.com/RPGHacker/phantabular/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RPGHacker/phantabular.git"
+  },
+  "license": "GPL-2.0-only",
+  "author": "Markus \"RPG Hacker\" Wall",
+  "scripts": {
+    "dev": "vite build --watch --mode development",
+    "build": "vite build --mode release"
+  },
+  "dependencies": {
+    "dexie": "^4.4.4",
+    "dexie-export-import": "^4.4.0",
+    "jsonata": "^2.2.1",
+    "mvp.css": "^1.17.3",
+    "open-color": "^1.9.1"
+  },
+  "devDependencies": {
+    "vite": "^7.3.6",
+    "vite-plugin-css-sourcemap": "^1.0.5"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true
+  }
+}

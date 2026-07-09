@@ -1,0 +1,254 @@
+@import "../shared/shared-styles.css";
+
+html,
+body {
+	padding: 8px;
+}
+
+:root {
+	/* MVP theme caps labels to 800px by default */
+	--width-card-wide: auto;
+}
+
+hr {
+	margin: 1rem 0;
+}
+
+
+/* Prevent contents of buttons from being selectable */
+button img {
+	pointer-events: none;
+	user-select: none;
+}
+
+
+/* General stylings for sections */
+div.settings-section {
+	margin: 1em 0px 1em 0px;
+	padding: 10px 10px 10px 10px;
+	border-radius: 5px;
+}
+
+div.settings-section > div {
+	width: 100%;
+}
+
+
+/* Stylings for buttons section */
+.buttons-section {
+	width: fit-content;
+	float: right;
+}
+
+
+/* Spinner animation */
+.spinner-animation {
+	display: flex;
+	padding: 10px 10px 10px 10px;
+}
+
+.spinner {
+	width: 32px;
+	height: 32px;
+	border: 5px dotted var(--spinner-color);
+	border-radius: 50%;
+	border-top-color: var(--spinner-fill-color);
+	animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+
+/* Styles for confirmation dialogs */
+.confirmation-dialog label {	
+	text-align: center;
+}
+
+.confirmation-dialog * {	
+	justify-content: center;
+}
+
+
+/* Styles for labels */
+label {
+	font-weight: normal;
+	display: inline-block;
+}
+
+/* Styles for select boxes */
+select {
+	display: inline-block;
+	margin-bottom: 0.4rem;
+}
+
+/* Styles for ranges */
+input[type="range"], input[type="number"] {
+	display: inline-block;
+	margin: 0px 5px 0px 5px;
+	padding: 0px;
+}
+
+/* Styles for centering inputs with labels */
+.inputs-with-labels {
+	display: flex;
+}
+
+/* Styles of image previews */
+.capture-preview-container[open]::details-content {
+	display: grid;
+	grid: 'source target';
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	
+	border-style: solid;
+	border-radius: 5px;
+	border-width: 2px;
+	border-color: light-dark(var(--oc-black), var(--oc-white));
+}
+
+.capture-preview-container[open] > * {
+	margin: 5px;
+}
+
+.capture-preview-source {
+	grid-area: source;
+}
+
+.capture-preview-target {
+	grid-area: target;
+}
+
+.capture-preview-source-content {
+	padding: 5px;
+}
+
+.capture-preview-target-content {
+}
+
+/* Stylings for inner sections */
+div.settings-section div.inner-section {
+	--section-margin: 10px;
+	--section-padding: 15px;
+	width: calc(100% - ((var(--section-margin) + var(--section-padding)) * 2));
+	margin: var(--section-margin);
+	padding: var(--section-padding);
+	box-shadow: 1px 1px 3px gray;
+}
+
+/* Stylings for dependent settings */
+ul.dependent-settings {
+	margin: 0px;
+}
+
+ul.dependent-settings > li {
+	margin: 0px;
+	padding: 0px;
+}
+
+ul.dependent-settings > li::marker {
+	content: "";
+}
+
+/* Stylings for notes */
+.note {
+	display: block;
+	margin-left: 24px;
+}
+
+
+/* Stylings for context-specific settings and matrices */
+.config-specific-settings {
+	width: max-content;
+}
+
+.config-specific-settings > table > tbody {
+	width: 100%;
+}
+
+table.settings-matrix {
+	display: table;
+	margin: 15px 0px 15px 0px;
+	border-collapse: collapse;
+}
+
+table.settings-matrix > tbody > tr > th:first-child,
+table.settings-matrix > tbody > tr > td:first-child {
+	max-width: 300px;
+	padding-right: 40px;
+}
+
+table.settings-matrix > tbody > tr.separator-row {
+	height: 35px;
+	background-color: transparent;
+	border-top-style: dashed;
+	border-bottom-style: dashed;
+	border-top-width: 2px;
+	border-bottom-width: 2px;
+	border-color: var(--color-bg-secondary);
+}
+
+table.settings-matrix > tbody > tr > th:not(:first-child),
+table.settings-matrix > tbody > tr > td:not(:first-child) {
+	text-align: center;
+}
+
+table.settings-matrix > tbody > tr > * > input[type="checkbox"] {
+	background-color: light-dark(var(--oc-gray-1), var(--oc-gray-9));
+	appearance: none;
+	padding: 0px;
+	width: 14px;
+	height: 14px;
+	border-width: 1px;
+	border-style: solid;
+	border-color: light-dark(var(--oc-gray-6), var(--oc-gray-6));
+	border-radius: 2px;
+	margin-top: 9px;
+	margin-bottom: 7px;
+}
+
+table.settings-matrix > tbody > tr > * > input[type="checkbox"]:hover {
+	background-color: light-dark(var(--oc-gray-0), var(--oc-gray-8));
+	border-color: light-dark(var(--oc-gray-5), var(--oc-gray-5));
+}
+
+table.settings-matrix > tbody > tr > * > input[type="checkbox"]:active {
+	background-color: light-dark(var(--oc-white), var(--oc-gray-7));
+	border-color: light-dark(var(--oc-gray-4), var(--oc-gray-4));
+}
+
+table.settings-matrix > tbody > tr > * > input[type="checkbox"]:checked {
+	background-color: light-dark(var(--oc-gray-7), var(--oc-gray-4));
+	border-color: light-dark(var(--oc-gray-7), var(--oc-gray-4));
+}
+
+table.settings-matrix > tbody > tr > * > input[type="checkbox"]:checked:hover {
+	background-color: light-dark(var(--oc-gray-6), var(--oc-gray-2));
+	border-color: light-dark(var(--oc-gray-6), var(--oc-gray-2));
+}
+
+table.settings-matrix > tbody > tr > * > input[type="checkbox"]:checked:active {
+	background-color: light-dark(var(--oc-gray-5), var(--oc-gray-0));
+	border-color: light-dark(var(--oc-gray-5), var(--oc-gray-0));
+}
+
+table.settings-matrix > tbody > tr > * > input[type="checkbox"][disabled],
+table.settings-matrix > tbody > tr > * > input[type="checkbox"][disabled]:checked {
+	background-color: light-dark(var(--oc-gray-4), var(--oc-black));
+	border-color: light-dark(var(--oc-gray-5), var(--oc-gray-7));
+}
+
+table.settings-matrix > tbody > tr > * > input[type="checkbox"]:checked::before {
+	color: light-dark(var(--oc-white), var(--oc-black));
+	content: "\2713";
+	font-weight: bold;
+	position: relative;
+	top: -4px;
+	font-size: 14px;
+	display: table-row;
+}

@@ -1,8 +1,24 @@
 import zipfile
 import os
 from pathlib import Path
+import subprocess
+import sys
 
 self_dirname = os.path.dirname(__file__)
+
+# Build extension
+os.chdir(self_dirname)
+
+print("Installing dependencies...")
+if subprocess.run(["npm", "install"], shell=True).returncode != 0:
+	sys.exit("npm install failed.")
+
+print("Building extension...")
+if subprocess.run(["npm", "run", "build"], shell=True).returncode != 0:
+	sys.exit("npm run build failed.")
+
+# Package extension
+print("Packaing extension...")
 
 Path(self_dirname + "/build").mkdir(parents=True, exist_ok=True)
 
@@ -16,7 +32,7 @@ def add_dir_to_target_dir(source_dir_name, target_dir_name):
 			print("Writing dir: \"" + source + "\" -> \"" + target + "\"")
 			add_dir_to_target_dir(source, target)
 			
-			dirnames[:] = []
+		dirnames[:] = []
 		
 		for filename in filenames:
 			source = dirpath + "/" + filename
@@ -24,9 +40,11 @@ def add_dir_to_target_dir(source_dir_name, target_dir_name):
 			print("Writing file: \"" + source + "\" -> \"" + target + "\"")
 			output_file.write(source, target)
 
-def add_dir(relative_dir_name):
+def add_dir(relative_dir_name, target_dir_override = None):
+	if target_dir_override == None:
+		target_dir_override = relative_dir_name
 	source_dir_name = self_dirname + "/" + relative_dir_name
-	add_dir_to_target_dir(source_dir_name, relative_dir_name)
+	add_dir_to_target_dir(source_dir_name, target_dir_override)
 	
 def add_file(relative_file_name):
 	source_file_name = self_dirname + "/" + relative_file_name
@@ -34,21 +52,7 @@ def add_file(relative_file_name):
 
 
 
-# We manually select what to include in our archive, so that we can exclude
-# unused stuff and minimize overall package size.
-add_dir("archive")
-add_dir("background")
-add_dir("deps/dexie/dist")
-add_file("deps/dexie/LICENSE")
-add_file("deps/mvp/mvp.css")
-add_file("deps/mvp/LICENSE")
-add_file("deps/open-color/open-color.css")
-add_file("deps/open-color/LICENSE")
-add_dir("deps/jsonata/dist")
-add_dir("icons")
-add_dir("images")
-add_dir("popup")
-add_dir("settings")
-add_dir("shared")
-add_dir("LICENSE")
-add_file("manifest.json")
+add_dir("dist", "")
+add_file("LICENSE")
+
+print("Packaging successfully completed!")

@@ -23,7 +23,7 @@
 	"browser_action": {
 		"default_icon": "icons/phantabular.svg",
 		"default_title": "PhanTabular",
-		"default_popup": "popup/popup.html"
+		"default_popup": "popup/popup.html?mode=popup"
 	},
 	
 	"options_page": "settings/settings.html",

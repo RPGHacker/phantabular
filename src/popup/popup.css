@@ -2,7 +2,8 @@
 
 html,
 body {
-	width: 275px;
+	width: 300px;
+	height: 4000px;
 	/* Having only the padding in body > div doesn't seem to work for bottom padding, though... */
 	padding-bottom: 8px;
 }
@@ -17,6 +18,34 @@ body > div {
 button img {
 	pointer-events: none;
 	user-select: none;
+}
+
+
+/* General layout */
+body {
+	height: 100%;
+	overflow: overlay;
+}
+
+.content-root {
+	/*
+		I believe the 16 pixels here are from the paddings defined above.
+		It's necessary to substract SOMETHING here so that not too much of
+		the content gets cut-off in a pop-up window.
+	*/
+	height: calc(calc(100%) - 16px);
+		
+	/* Useful for debugging */
+	/* border-color: blue; */
+	/* border-style: solid; */
+}
+
+.scrollable-content {
+	min-height: fit-content;
+	
+	/* Useful for debugging */
+	/* border-color: green; */
+	/* border-style: solid; */
 }
 
 
@@ -49,9 +78,17 @@ div.button-section {
 
 
 /* Stylings for buttons section */
-.buttons-section {
+.image-buttons-section {
+	display: flex;
+	width: 100%;
+}
+
+.image-buttons-section-spacer-left {
+	width: 100%;
+}
+
+.image-buttons-section > button {
 	width: fit-content;
-	float: right;
 }
 
 

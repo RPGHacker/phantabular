@@ -142,7 +142,7 @@ function createGroup(container, className, id, displayName, actionsContent, meta
 					<span class="summary-dynamics">
 						<span class="summary-badge has-tooltip" data-tooltiptype="badge">0</span>
 						<span class="summary-overlap overlapping-content">
-							<span class="summary-title">${displayName}</span>
+							<span class="summary-title">${escapeHTML(displayName)}</span>
 							<span class="summary-actions">${actionsContent}</span>
 						</span>
 					</span>
@@ -936,7 +936,7 @@ function updateShowTooltip(mousePos, mouseTarget) {
 							tab.metadata = tab;
 							tooltipLayer.insertAdjacentHTML("afterbegin", `
 								<div>
-									<span class="fav-icon-list-item" data-validimage="${tab.metadata.favIconUrl !== undefined}"><img src="${tab.metadata.favIconUrl}" class="fav-icon-small" /></span><span class="tooltip-title">${tab.title}</span>
+									<span class="fav-icon-list-item" data-validimage="${tab.metadata.favIconUrl !== undefined}"><img src="${tab.metadata.favIconUrl}" class="fav-icon-small" /></span><span class="tooltip-title">${escapeHTML(tab.title)}</span>
 								</div>
 								<div><a href="${tab.url}" class="colorize-link">${tab.url}</a></div>
 								<div>
@@ -953,7 +953,7 @@ function updateShowTooltip(mousePos, mouseTarget) {
 							const tab = await db.tabs.get({id: parseInt(tooltipElement.dataset.tabid)});
 							tooltipLayer.insertAdjacentHTML("afterbegin", `
 								<div>
-									<span class="fav-icon-list-item" data-validimage="${tab.metadata.favIconUrl !== undefined}"><img src="${tab.metadata.favIconUrl}" class="fav-icon-small" /></span><span class="tooltip-title">${tab.title}</span>
+									<span class="fav-icon-list-item" data-validimage="${tab.metadata.favIconUrl !== undefined}"><img src="${tab.metadata.favIconUrl}" class="fav-icon-small" /></span><span class="tooltip-title">${escapeHTML(tab.title)}</span>
 								</div>
 								<div><a href="${tab.url}" class="colorize-link">${tab.url}</a></div>
 								<div>
@@ -1809,7 +1809,7 @@ async function populateTabListGroup(group) {
 							</span>
 						</li>
 						<div id="test-results-${group.id}-${tab.id}" class="tab-entry-test-results colorize-${color}" ${tab.metadata.error === undefined ? "hidden" : ""}>
-							<pre><code>${tab.metadata.error}</code></pre>
+							<pre><code>${escapeHTML(tab.metadata.error)}</code></pre>
 						</div>
 					`);
 					
@@ -2874,7 +2874,7 @@ function createGroupSelector(container, properties, tabs, groupAccessor) {
 		<div class="group-selector-root colorize-${properties.color}" data-selected="${selected}">
 			<div class="colorize-group-selector" data-action="actions-panel-select-${groupAccessor}" data-${groupAccessor}id="${properties.id}" tabindex="0">
 				<span class="group-selector-icon-root"></span>
-				${properties.name}
+				${escapeHTML(properties.name)}
 			</div>
 		</div>
 	`);
@@ -3094,7 +3094,8 @@ function getBookmarkDirectoriesRecursive(bookmarkNodes, directories, path) {
 		if (bookmarkNode.type == "folder" && bookmarkNode.parentId) {
 			directories.push({
 				id: bookmarkNode.id,
-				title: path + bookmarkNode.title,
+				indentationString: path,
+				title: bookmarkNode.title,
 				rawTitle: bookmarkNode.title
 			});
 		}
@@ -3132,7 +3133,7 @@ async function convertTabsToBookmarks(tabs, defaultDirectoryName) {
 		}
 		const selectedString = (directoryMatchesDefaultName ? " selected" : "");
 		convertToBookmarksTargetDirectory.insertAdjacentHTML("beforeend", `
-			<option value="${bookmarkDirectory.id}"${selectedString}>${bookmarkDirectory.title}</option>
+			<option value="${bookmarkDirectory.id}"${selectedString}>${bookmarkDirectory.indentationString}${escapeHTML(bookmarkDirectory.title)}</option>
 		`);
 	}
 	

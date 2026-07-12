@@ -3,7 +3,7 @@
 	"name": "PhanTabular",
 	"version": "1.0",
 
-	"description": "Automatically archives open tabs into categories based on customizable patterns.",
+	"description": "Feature-rich archival, categorization, bookmarking and backup tool for browser tabs.",
 
 	"icons": {
 		"48": "icons/phantabular.svg",

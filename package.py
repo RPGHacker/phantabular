@@ -9,12 +9,18 @@ self_dirname = os.path.dirname(__file__)
 # Build extension
 os.chdir(self_dirname)
 
+if sys.platform == "win32":
+    npm_requires_shell = True
+else:
+    npm_requires_shell = False
+
+
 print("Installing dependencies...")
-if subprocess.run(["npm", "install"], shell=True).returncode != 0:
+if subprocess.run(["npm", "install"], shell=npm_requires_shell).returncode != 0:
 	sys.exit("npm install failed.")
 
 print("Building extension...")
-if subprocess.run(["npm", "run", "build"], shell=True).returncode != 0:
+if subprocess.run(["npm", "run", "build"], shell=npm_requires_shell).returncode != 0:
 	sys.exit("npm run build failed.")
 
 # Package extension

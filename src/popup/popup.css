@@ -116,6 +116,7 @@ div.button-section {
 }
 
 .spinner-animation {
+	width: fit-content;
 	position: relative;
 	display: flex;
 	padding: 10px 10px 10px 10px;

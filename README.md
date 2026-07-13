@@ -10,7 +10,7 @@ To install all required dependencies, open a command prompt in the project's roo
 npm install
 ```
 
-In order to test the extension, any build of [Firefox](https://www.firefox.com) (version 154.0 or newer) is required. However, if you intend to test session restore functionality (which doesn't work when only loading extensions temporarily), you will need [Firefox Developer Edition](https://www.firefox.com/en-US/channel/desktop/developer/) in order to load unsigned .xpi extension files. Another benefit of using Firefox Developer Edition edition is that it uses its own profiles, so there's no risk of accidentally messing with data in your main browser while working on the extension.
+In order to test the extension, any build of [Firefox](https://www.firefox.com) (version 152.0 or newer) is required. However, if you intend to test session restore functionality (which doesn't work when only loading extensions temporarily), you will need [Firefox Developer Edition](https://www.firefox.com/en-US/channel/desktop/developer/) in order to load unsigned .xpi extension files. Another benefit of using Firefox Developer Edition edition is that it uses its own profiles, so there's no risk of accidentally messing with data in your main browser while working on the extension.
 
 Once dependencies have been installed, simply run
 

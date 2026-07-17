@@ -794,7 +794,7 @@ function initializeEntryCountLiveQuery(group, groupFunctions, queryCountArgument
 const rootGroups = {
 	categories: createGroup(groupsRootList, "root-details group-box colorize-cyan", "categoriesGroup", "Categories", "", { type: "groupsList", context: "mainArchive" }),
 	sessions: createGroup(groupsRootList, "root-details group-box colorize-cyan", "sessionsGroup", "Sessions", "", { type: "groupsList", context: "mainArchive" }),
-	unsortedTabs: createGroup(groupsRootList, "root-details group-box colorize-cyan", "unsortedTabsGroup", "Unsorted Tabs", "", { type: "groupsList", context: "mainArchive", storagelocation: "archivedTabs" }),
+	unsortedTabs: createGroup(groupsRootList, "root-details group-box colorize-cyan", "unsortedTabsGroup", "All Archived Tabs", "", { type: "groupsList", context: "mainArchive", storagelocation: "archivedTabs" }),
 }
 
 function getCategoryProperties(category) {
@@ -1346,7 +1346,7 @@ function generateRuleTextFromTemplate() {
 
 			let capturingGroupElements = categoryRegexRuleCaptureGroups.querySelectorAll("li input");
 
-			let capturingGroupIndex = 0;
+			let capturingGroupIndex = 1;
 			for (const input of capturingGroupElements) {
 				const groupMatchContent = escapeStringContents(input.value);
 				ruleText += ` and (${stringTransform(`$_match.groups[${capturingGroupIndex}]`)} = ${stringTransform(`"${groupMatchContent}"`)})`

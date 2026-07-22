@@ -91,6 +91,12 @@ localcache.archive.then((archiveCache) => {
 				}
 				break;
 		}
+		
+		// Nothing will be displayed to the user until we hit this line.
+		// This causes a slight delay in the page load process during which
+		// nothing is rendered at all, but the benefit is that there's less
+		// flashing content, which can be very unpleasant to observe.
+		archiveRoot.hidden = false;
 	});
 });
 

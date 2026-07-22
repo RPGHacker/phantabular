@@ -2062,7 +2062,7 @@ async function openTab(tab) {
 	}
 	
 	switch (openSettings.tabOpenPosition) {
-		case "originalPosition":			
+		case "originalPosition":
 			break;
 			
 		case "nextToActiveTab":
@@ -2237,6 +2237,13 @@ async function openTabsByIds(tabIds) {
 	const openSettings = await settings.openSettings;
 	
 	const tabs = await sortedQuery(db.tabs.bulkGet(tabIds), compareSortKeys);
+	
+	// Due to how openTab() sets the index of new tabs, most tabOpenPosition settings will
+	// actually lead to the tabs being created in reverse order. Since this is kinda confusing
+	// for a user, as an easy workaround, we just reverse the list of tabs beforehand.
+	if (openSettings.tabOpenPosition != "originalPosition") {
+		tabs.reverse();
+	}
 	
 	const defaultTabsToClose = [];
 	if (openSettings.tabOpenPosition == "originalPosition") {

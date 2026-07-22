@@ -109,3 +109,44 @@ browser.runtime.onInstalled.addListener(async () => {
 	debugh.log("Extension was just installed. Running open window check.");
 	await initializeAllOpenWindows();
 });
+
+async function toggleArchive() {
+	const archiveUrl = browser.runtime.getURL("archive/archive.html");
+	
+	const openArchiveTabs = await browser.tabs.query({ currentWindow: true, url: archiveUrl });
+	
+	if (openArchiveTabs.length > 0) {
+		let openTab = openArchiveTabs[0];
+		
+		for (const openArchiveTab of openArchiveTabs) {
+			if (openArchiveTab.active) {
+				openTab = openArchiveTab;
+				break;
+			}
+		}
+		
+		if (openTab.active) {
+			debugh.logVerbose("Archive tab already open and active - closing it.");
+			browser.tabs.remove(openTab.id);
+		} else {
+			debugh.logVerbose("Archive tab already open, but inactive - activating it.");
+			browser.tabs.update(openTab.id, {active: true});
+		}
+	} else {
+		debugh.logVerbose("No archive tab open - creating a new one.");
+		
+		const createProperties = {
+			active: true,
+			url: archiveUrl,
+		};		
+		
+		browser.tabs.create(createProperties);
+	}
+}
+
+browser.commands.onCommand.addListener((command) => {
+	if (command === "open-close-archive") {
+		debugh.log("\"open-close-archive\" shortcut activated.");
+		toggleArchive();
+	}
+});

@@ -1,7 +1,7 @@
 {
 	"manifest_version": 2,
 	"name": "PhanTabular",
-	"version": "1.0.1",
+	"version": "1.1.0",
 
 	"description": "Feature-rich archival, categorization, bookmarking and backup tool for browser tabs.",
 

@@ -1675,7 +1675,7 @@ function createTabsListForDragAndDrop(group, tabsList) {
 	`);
 }
 
-async function populateTabListGroup(group) {	
+async function populateTabListGroup(group) {
 	const currentVersion = parseInt(group.dataset.version);
 	let queriedVersion = parseInt(group.dataset.queriedversion);
 	if (currentVersion > queriedVersion) {
@@ -1748,7 +1748,13 @@ async function populateTabListGroup(group) {
 		
 		showSpinnerAnimation(group);
 		
-		groupFunctions.query(queryArgument).then((tabs) => {					
+		const viewSettings = await settings.viewSettings;
+		
+		groupFunctions.query(queryArgument).then((tabs) => {
+			if (viewSettings.reverseTabOrder) {
+				tabs.reverse();
+			}
+			
 			// Additional brief timer to prevent the spinner from ever
 			// disappearing so quickly that the UI just appears glitchy.
 			new Promise(r => setTimeout(r, minimumSpinnerDisplayTime)).then(() => {

@@ -78,6 +78,7 @@ export class Settings {
 			},
 			viewSettings: {
 				initialActionsPanelState: "rememberLastState",
+				reverseTabOrder: false,
 			},
 			openSettings: {
 				deleteTabsUponOpen: false,

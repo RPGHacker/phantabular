@@ -79,6 +79,7 @@ export class Settings {
 			viewSettings: {
 				initialActionsPanelState: "rememberLastState",
 				reverseTabOrder: false,
+				initialGroupState: "rememberLastState",
 			},
 			openSettings: {
 				deleteTabsUponOpen: false,

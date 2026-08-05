@@ -36,7 +36,7 @@ let filterTimer = null;
 let filterPromise = null;
 let filterStrings = [];
 
-const openGroups = {};
+let previouslyOpenGroupIds = {};
 const previousGroupEntryCounts = {};
 
 let hasBookmarkingPermission = false;
@@ -71,6 +71,9 @@ const testAutoCatchRuleResults = {
 	},
 };
 
+const groupsRootList = document.querySelector("#groups-root-list");
+
+
 localcache.archive.then((archiveCache) => {
 	settings.viewSettings.then((viewSettings) => {
 		switch (viewSettings.initialActionsPanelState)
@@ -92,6 +95,16 @@ localcache.archive.then((archiveCache) => {
 				break;
 		}
 		
+		previouslyOpenGroupIds = JSON.parse(archiveCache.previouslyOpenGroupIds);
+		
+		const rootGroups = groupsRootList.querySelectorAll("details");
+		
+		for (const group of rootGroups) {
+			if ((viewSettings.initialGroupState == "rememberLastState" && previouslyOpenGroupIds[group.id]) || viewSettings.initialGroupState == "open") {
+				group.open = true;
+			}
+		}
+		
 		// Nothing will be displayed to the user until we hit this line.
 		// This causes a slight delay in the page load process during which
 		// nothing is rendered at all, but the benefit is that there's less
@@ -101,8 +114,6 @@ localcache.archive.then((archiveCache) => {
 });
 
 
-const groupsRootList = document.querySelector("#groups-root-list");
-	
 function escapeHTML(unescaped) {
 	const div = document.createElement("div");
 	div.textContent = unescaped;
@@ -1195,6 +1206,10 @@ async function confirmCategoryDeletion(categoryId, deleteContainedTabs) {
 	
 	await db.deleteCategory(categoryId);
 	
+	delete previouslyOpenGroupIds[`category-${categoryId}`];
+	
+	updateLocalCache();
+	
 	incrementGroupVersion(document.querySelector("[data-iscategorieslist]"));
 }
 
@@ -1890,6 +1905,7 @@ async function populateGroupListGroup(group) {
 		// TODO: This kinda has the same purpose as "draggable" in the group properties.
 		// Unify this into just a single property.
 		let supportsReorderGroups = false;
+		let resetOpenGroups = false;
 		const groupMetaData = {
 			type: "tabsList",
 			context: "mainArchive"
@@ -1913,24 +1929,28 @@ async function populateGroupListGroup(group) {
 			innerAccessor = "tabsInTestAutoCatchRuleCaughtTabs";
 			getGroupPropertiesFunction = getTestAutoCatchResultProperties;
 			groupMetaData.context = "testResults";
+			resetOpenGroups = true;
 		} else if (group.dataset.istestautocatchruleuncaughttabslist) {
 			idPrefix = "testautocatchruleuncaughttabs";
 			accessor = idPrefix;
 			innerAccessor = "tabsInTestAutoCatchRuleUncaughtTabs";
 			getGroupPropertiesFunction = getTestAutoCatchResultProperties;
 			groupMetaData.context = "testResults";
+			resetOpenGroups = true;
 		} else if (group.dataset.istestautocatchruleerrorslist) {
 			idPrefix = "testautocatchruleerrors";
 			accessor = idPrefix;
 			innerAccessor = "tabsInTestAutoCatchRuleErrors";
 			getGroupPropertiesFunction = getTestAutoCatchResultProperties;
 			groupMetaData.context = "testResults";
+			resetOpenGroups = true;
 		} else if (group.dataset.istestautocatchruleallresultslist) {
 			idPrefix = "testautocatchruleallresults";
 			accessor = idPrefix;
 			innerAccessor = "tabsInTestAutoCatchRuleAllResults";
 			getGroupPropertiesFunction = getTestAutoCatchResultProperties;
 			groupMetaData.context = "testResults";
+			resetOpenGroups = true;
 		} else {
 			debugh.error("The following group list is of an unknown type: " + group);
 		}
@@ -1955,51 +1975,94 @@ async function populateGroupListGroup(group) {
 		showSpinnerAnimation(group);
 		
 		groupFunctions.query().then((innerGroupDatas) => {
-			// Additional brief timer to prevent the spinner from ever
-			// disappearing so quickly that the UI just appears glitchy.
-			new Promise(r => setTimeout(r, minimumSpinnerDisplayTime)).then(() => {
-				hideSpinnerAnimation(group);
-				
-				let receivedVersion = parseInt(group.dataset.receivedversion);
-				
-				if (queriedVersion <= receivedVersion) {
-					// We got the result of a query that's older than our current contents.
-					// An unlikely scenario, but could potentially happen when two queries
-					// are simultaneously in flight and the older one takes longer to complete
-					// than the newer one. If this ever happens, just discard the result and abort.
-					return;
-				}
-				
-				receivedVersion = queriedVersion;
-				group.dataset.receivedversion = receivedVersion;
-				
-				let innerGroupsList = group.querySelector(".groups-list");
-				innerGroupsList.textContent = "";
-				flushMutationsQueue(group);
-				
-				let dropTargetIndex = 0;
-				for (const innerGroupData of innerGroupDatas) {
-					const innerGroup = initializeInnerGroup(innerGroupsList, innerGroupData, idPrefix, getGroupPropertiesFunction, groupMetaData);
-					innerGroup.dataset.droptargetindex = dropTargetIndex;
-					innerGroup.dataset.sortkey = JSON.stringify(innerGroupData.sortkey);
-					
-					let queryCountArgument = parseInt(innerGroup.dataset[queryCountIdAccessor]);
-					if (isNaN(queryCountArgument)) {
-						queryCountArgument = innerGroup.dataset[queryCountIdAccessor];
-					}
-					initializeEntryCountLiveQuery(innerGroup, innerGroupFunctions, queryCountArgument);
-					
-					if (openGroups[innerGroup.id]) {
-						innerGroup.open = true;
+			// See if any groups we have in previouslyOpenGroupIds no longer exist and need to be
+			// removed, or if we need to remove groups for other reasons.
+			const fullPrefix = idPrefix + "-";
+			
+			let deletedAnything = false;
+			
+			for (const groupId in previouslyOpenGroupIds) {
+				if (groupId.startsWith(fullPrefix)) {
+					if (resetOpenGroups) {
+						delete previouslyOpenGroupIds[groupId];
+						deletedAnything = true;
+						continue;
 					}
 					
-					++dropTargetIndex;
+					const rawIdString = groupId.slice(fullPrefix.length);
+					const rawId = parseInt(rawIdString);
+					
+					// Slow and inefficient inner loop. Probably excusable, because
+					// users won't have thousands of groups and this happens rarely.
+					let foundGroup = false;
+					
+					for (const innerGroupData of innerGroupDatas) {
+						const properties = getGroupPropertiesFunction(innerGroupData);
+						
+						if (properties.id == rawId) {
+							foundGroup = true;
+							break;
+						}
+					}
+					
+					if (!foundGroup) {
+						delete previouslyOpenGroupIds[groupId];
+						deletedAnything = true;
+					}
 				}
-				
-				if (supportsReorderGroups) {
-					createGroupsListForDragAndDrop(group, innerGroupsList);
-				}
-				refreshSelectedTabElements();
+			}
+			
+			if (deletedAnything) {
+				updateLocalCache();
+			}
+			
+			settings.viewSettings.then((viewSettings) => {
+				// Additional brief timer to prevent the spinner from ever
+				// disappearing so quickly that the UI just appears glitchy.
+				new Promise(r => setTimeout(r, minimumSpinnerDisplayTime)).then(() => {
+					hideSpinnerAnimation(group);
+					
+					let receivedVersion = parseInt(group.dataset.receivedversion);
+					
+					if (queriedVersion <= receivedVersion) {
+						// We got the result of a query that's older than our current contents.
+						// An unlikely scenario, but could potentially happen when two queries
+						// are simultaneously in flight and the older one takes longer to complete
+						// than the newer one. If this ever happens, just discard the result and abort.
+						return;
+					}
+					
+					receivedVersion = queriedVersion;
+					group.dataset.receivedversion = receivedVersion;
+					
+					let innerGroupsList = group.querySelector(".groups-list");
+					innerGroupsList.textContent = "";
+					flushMutationsQueue(group);
+					
+					let dropTargetIndex = 0;
+					for (const innerGroupData of innerGroupDatas) {
+						const innerGroup = initializeInnerGroup(innerGroupsList, innerGroupData, idPrefix, getGroupPropertiesFunction, groupMetaData);
+						innerGroup.dataset.droptargetindex = dropTargetIndex;
+						innerGroup.dataset.sortkey = JSON.stringify(innerGroupData.sortkey);
+						
+						let queryCountArgument = parseInt(innerGroup.dataset[queryCountIdAccessor]);
+						if (isNaN(queryCountArgument)) {
+							queryCountArgument = innerGroup.dataset[queryCountIdAccessor];
+						}
+						initializeEntryCountLiveQuery(innerGroup, innerGroupFunctions, queryCountArgument);
+						
+						if ((viewSettings.initialGroupState == "rememberLastState" && previouslyOpenGroupIds[innerGroup.id]) || viewSettings.initialGroupState == "open") {
+							innerGroup.open = true;
+						}
+						
+						++dropTargetIndex;
+					}
+					
+					if (supportsReorderGroups) {
+						createGroupsListForDragAndDrop(group, innerGroupsList);
+					}
+					refreshSelectedTabElements();
+				});
 			});
 		});
 	}
@@ -2026,10 +2089,12 @@ document.addEventListener("toggle", async (e) => {
 	if (e.target.tagName === "DETAILS") {
 		const group = e.target;
 		
-		openGroups[group.id] = group.open;
-		if (!openGroups[group.id]) {
-			delete openGroups[group.id];
+		previouslyOpenGroupIds[group.id] = group.open;
+		if (!previouslyOpenGroupIds[group.id]) {
+			delete previouslyOpenGroupIds[group.id];
 		}
+		
+		updateLocalCache();
 		
 		populateGroup(group);
 	}
@@ -2899,24 +2964,27 @@ function createGroupSelector(container, properties, tabs, groupAccessor) {
 	`);
 }
 
+async function updateLocalCache() {
+	const archiveCache = await localcache.archive;
+		
+	archiveCache.actionsPanelWasOpen = !actionsPanel.hidden;
+	archiveCache.previouslyOpenGroupIds = JSON.stringify(previouslyOpenGroupIds);
+	
+	localcache.update();
+}
+
 function showActionsPanel() {
 	actionsPanel.hidden = false;
 	archiveRoot.dataset.actionsvisible = true;
 	
-	localcache.archive.then((archiveCache) => {
-		archiveCache.actionsPanelWasOpen = true;
-		localcache.update();
-	});
+	updateLocalCache();
 }
 
 function hideActionsPanel() {	
 	actionsPanel.hidden = true;
 	archiveRoot.dataset.actionsvisible = false;
 	
-	localcache.archive.then((archiveCache) => {
-		archiveCache.actionsPanelWasOpen = false;
-		localcache.update();
-	});
+	updateLocalCache();
 }
 
 function toggleActionsPanel() {

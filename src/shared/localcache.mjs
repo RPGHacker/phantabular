@@ -1,8 +1,9 @@
 export class LocalCache {
-	constructor() {		
+	constructor() {	
 		this._defaultStorage = {
 			archive: {
 				actionsPanelWasOpen: true,
+				previouslyOpenGroupIds: "",
 			}
 		};
 		this._storage = JSON.parse(JSON.stringify(this._defaultStorage));
@@ -58,7 +59,7 @@ export class LocalCache {
 		})();
 	}
 	
-	async update() {		
+	async update() {
 		return browser.storage.local.set(this._storage);
 	}
 }

@@ -42,6 +42,7 @@ function initializeForms(archiveSettings, viewSettings, openSettings) {
 	
 	initialActionsPanelStateSelect.value = viewSettings.initialActionsPanelState;
 	reverseTabOrderCheckbox.checked = viewSettings.reverseTabOrder;
+	initialGroupStateSelect.value = viewSettings.initialGroupState;
 	
 	restoreHiddenTabsAsHiddenCheckbox.checked = openSettings.restoreHiddenTabsAsHidden;
 	jumpToOpenedTabCheckbox.checked = openSettings.jumpToOpenedTab;
@@ -97,6 +98,7 @@ async function saveChanges() {
 	
 	viewSettings.initialActionsPanelState = initialActionsPanelStateSelect.value;
 	viewSettings.reverseTabOrder = reverseTabOrderCheckbox.checked;
+	viewSettings.initialGroupState = initialGroupStateSelect.value;
 	
 	openSettings.restoreHiddenTabsAsHidden = restoreHiddenTabsAsHiddenCheckbox.checked;
 	openSettings.jumpToOpenedTab = jumpToOpenedTabCheckbox.checked;

@@ -348,8 +348,8 @@ document.addEventListener("click", (e) => {
 			
 			break;
 			
-		case "select-tab":
-			const tabsView = e.target.closest(".tabs-view");
-			tabsView.dataset.selectedtab = e.target.dataset.tabindex;
+		case "configure-extension-shortcuts":
+			browser.commands.openShortcutSettings();
+			break;
 	}
 });

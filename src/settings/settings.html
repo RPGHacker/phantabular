@@ -62,11 +62,11 @@
 						<table class="settings-matrix colorize-table">
 							<tr>
 								<th></th>
-								<th>Popup</th>
+								<th>Popup&nbsp;*</th>
 								<th>Session Restore</th>
 							</tr>
 							<tr>
-								<td>Activation archives all tabs in the current window&nbsp;*</td>
+								<td>Activation archives all tabs in the current window&nbsp;**</td>
 								<td></td>
 								<td><input id="sessionRestore_archiveAllTabs_checkbox" type="checkbox" /></td>
 							</tr>
@@ -77,7 +77,8 @@
 							</tr>
 						</table>
 						
-						<div><label class="note">*&nbsp;Only applies to session restore - the popup can always archive tabs via its action buttons.<br/>
+						<div><label class="note">*&nbsp;Popup settings also apply to extension shortcuts (hotkeys).</label></div>
+						<div><label class="note">**&nbsp;Only applies to session restore - the popup can always archive tabs via its action buttons.<br/>
 						&nbsp;&nbsp;NOTE: This behavior will also be triggered whenever an update for the extension is installed, so on rare occasions, you might see your tabs disappearing mid-session.</label></div>
 					
 					</div>
@@ -91,11 +92,11 @@
 						<table class="settings-matrix colorize-table">
 							<tr>
 								<th>Hidden Tabs</th>
-								<th>Popup</th>
+								<th>Popup&nbsp;*</th>
 								<th>Session Restore</th>
 							</tr>
 							<tr>
-								<td>Can be archived&nbsp;*</td>
+								<td>Can be archived&nbsp;**</td>
 								<td><input id="popup_hidden_canArchive_checkbox" type="checkbox" /></td>
 								<td><input id="sessionRestore_hidden_canArchive_checkbox" type="checkbox" /></td>
 							</tr>
@@ -112,11 +113,11 @@
 							
 							<tr>
 								<th>Pinned Tabs</th>
-								<th>Popup</th>
+								<th>Popup&nbsp;*</th>
 								<th>Session Restore</th>
 							</tr>
 							<tr>
-								<td>Can be archived&nbsp;*</td>
+								<td>Can be archived&nbsp;**</td>
 								<td><input id="popup_pinned_canArchive_checkbox" type="checkbox" /></td>
 								<td><input id="sessionRestore_pinned_canArchive_checkbox" type="checkbox" /></td>
 							</tr>
@@ -132,12 +133,12 @@
 							</tr>
 							
 							<tr>
-								<th>Functional Tabs ("about:", "chrome:", ...)&nbsp;**</th>
-								<th>Popup</th>
+								<th>Functional Tabs ("about:", "chrome:", ...)&nbsp;***</th>
+								<th>Popup&nbsp;*</th>
 								<th>Session Restore</th>
 							</tr>
 							<tr>
-								<td>Can be archived&nbsp;*</td>
+								<td>Can be archived&nbsp;**</td>
 								<td><input id="popup_browser_canArchive_checkbox" type="checkbox" /></td>
 								<td><input id="sessionRestore_browser_canArchive_checkbox" type="checkbox" /></td>
 							</tr>
@@ -154,11 +155,11 @@
 							
 							<tr>
 								<th>Extension Tabs ("moz-extension:")</th>
-								<th>Popup</th>
+								<th>Popup&nbsp;*</th>
 								<th>Session Restore</th>
 							</tr>
 							<tr>
-								<td>Can be archived&nbsp;*</td>
+								<td>Can be archived&nbsp;**</td>
 								<td><input id="popup_extension_canArchive_checkbox" type="checkbox" /></td>
 								<td><input id="sessionRestore_extension_canArchive_checkbox" type="checkbox" /></td>
 							</tr>
@@ -169,8 +170,9 @@
 							</tr>
 						</table>
 						
-						<div><label class="note">*&nbsp;The "Selected Tab(s)" button in the popup can always archive tabs.</label></div>
-						<div><label class="note">**&nbsp;Most functional tabs are considered privileged tabs by the browser. Even when they're archived, they can't be opened from the archive for security reasons.</label></div>
+						<div><label class="note">*&nbsp;Popup settings also apply to extension shortcuts (hotkeys).</label></div>
+						<div><label class="note">**&nbsp;The "Selected Tab(s)" button in the popup can always archive tabs.</label></div>
+						<div><label class="note">***&nbsp;Most functional tabs are considered privileged tabs by the browser. Even when they're archived, they can't be opened from the archive for security reasons.</label></div>
 					</div>
 					
 					<hr />
@@ -261,6 +263,11 @@
 						</select>
 					</div>
 					<div><input type="checkbox" id="confirmTabDeletionCheckbox" /><label for="confirmTabDeletionCheckbox">Show confirmation dialog when deleting individual tabs</label></div>
+				</div>
+				
+				<h2>Extension shortcuts:</h2>
+				<div id="extension-shortcuts-settings" class="settings-section colorize-section">
+					<button data-action="configure-extension-shortcuts" class="colorize-button">Configure Extension Shortcuts</button>
 				</div>
 				
 				<div class="buttons-section">

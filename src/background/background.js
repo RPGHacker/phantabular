@@ -144,9 +144,68 @@ async function toggleArchive() {
 	}
 }
 
+async function archiveTabsViaShortcut(usedShortcut) {	
+	const archiveSettings = await settings.archiveSettings;
+	
+	let tabQuery = null;
+	let origin = "popup";
+	
+	switch (usedShortcut) {
+		case "archive-selected-tabs":
+			debugh.log("Archiving selected tabs.");
+			
+			tabQuery = {
+				highlighted: true,
+				currentWindow: true
+			};
+			
+			origin = "popup-manual-selection";
+			break;
+			
+		case "archive-tabs-in-window":
+			debugh.log("Archiving tabs in current window.");
+			
+			tabQuery = {
+				currentWindow: true
+			};
+			break;
+			
+		case "archive-all-tabs":
+			debugh.log("Archiving tabs in all windows.");
+			
+			tabQuery = {
+			};
+			break;
+	}
+	
+	if (tabQuery !== null) {
+		const tabs = await browser.tabs.query(tabQuery);
+		
+		const archivedTabs = await db.archiveTabs(tabs, origin);
+		
+		if (archiveSettings.contextSpecificSettings.popup.autoCloseArchivedTabs) {
+			db.doPostArchivalClose(archivedTabs, origin);
+		}
+	}
+}
+
 browser.commands.onCommand.addListener((command) => {
-	if (command === "open-close-archive") {
-		debugh.log("\"open-close-archive\" shortcut activated.");
-		toggleArchive();
+	switch (command) {
+		case "open-close-archive":
+			debugh.log("\"open-close-archive\" shortcut activated.");
+			toggleArchive();
+			break;
+			
+		case "archive-selected-tabs":
+			archiveTabsViaShortcut(command);
+			break;
+			
+		case "archive-tabs-in-window":
+			archiveTabsViaShortcut(command);
+			break;
+			
+		case "archive-all-tabs":
+			archiveTabsViaShortcut(command);
+			break;
 	}
 });
